@@ -39,7 +39,7 @@ import (
 
 const (
 	// debugViewWidth is the line width the aligned rows wrap at.
-	debugViewWidth = 120
+	debugViewWidth = 400
 
 	// debugGap is the cell text for "no word here".
 	debugGap = "·"

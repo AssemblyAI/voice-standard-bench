@@ -321,6 +321,15 @@ under the same record IDs is replayed as if it hadn't been. A run that stashed
 only one pass (its TTFT pass never finished, say) is replayed for that pass, with
 a warning, and the other runs live.
 
+## Gathering without judging (`-skip-judge`)
+
+`-skip-judge` makes every model call (both passes) and stashes it, but judges
+nothing — neither the LLM judge nor dictation's mechanical scoring — and ends
+before the canonical merge, since unjudged samples would replace canonical's
+judged rows for the same (model, task, bucket). The staged report has the
+samples with no scores. Judge the run later with `-replay <name>` (the run logs
+the exact command), which makes no model calls.
+
 ## Per-task quality breakdown
 
 Every `summary.csv`/table/JSON row also carries a `task_quality`

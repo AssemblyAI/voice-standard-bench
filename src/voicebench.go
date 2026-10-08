@@ -44,6 +44,7 @@ func main() {
 	approveMerge := flag.Bool("approve-merge", false, "skip the interactive merge confirmation and merge the staged results into canonical immediately -- for scripted/CI use once a run is already trusted")
 	debug := flag.Bool("debug", false, "debug mode: print extra diagnostics as the run goes -- currently, text_correction prints each scored sample's truth, the input the model was shown, and the model's output word-aligned on top of each other, with its scores, the judge's note on the meaning comparison, and the word-level edit counts; changes nothing that is measured or recorded")
 	replay := flag.String("replay", "", "name of an earlier run (its directory under results/, as logged at the end of that run -- a path to it works too) to replay: every model call that run already made and stashed (both the standard and the TTFT pass, under task_runs/) is reused instead of called again, and only the judging runs live; any (model, record) it didn't stash runs live as usual. Refused before anything is called if the run stashed nothing, if none of the requested models (at the requested -reasoning-effort) and tasks was stashed, or if a requested task's prompt has changed since")
+	skipJudge := flag.Bool("skip-judge", false, "gather and stash the candidates' outputs (both passes) but skip all judging -- the LLM judge and dictation's mechanical scoring alike -- and skip the canonical merge, which unjudged samples must not overwrite; judge the run later with -replay")
 	refreshSummary := flag.Bool("refresh-canonical-summary", false, "recompute -canonical-version's summary.json/summary.csv/use_cases.json from its already-staged report-*.json/ttft-report*.json and exit -- no benchmark run, gateway, or ASSEMBLY_AI_TOKEN needed")
 	flag.Parse()
 
@@ -71,6 +72,7 @@ func main() {
 		CanonicalVersion:    *canonicalVersion,
 		ApproveMerge:        *approveMerge,
 		Debug:               *debug,
+		SkipJudge:           *skipJudge,
 		Replay:              *replay,
 	})
 

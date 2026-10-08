@@ -949,3 +949,27 @@ func TestRunnerRunTTFTReplaysStashedTaskRunsInsteadOfStreaming(t *testing.T) {
 		assert.Nil(t, s.Judge)
 	}
 }
+
+// TestRunnerRunSkipJudgeStashesButNeverJudges: with SkipJudge the task calls are
+// made and stashed as usual, RunJudge is never called, and the samples come back
+// unjudged but otherwise complete (measurements, cost).
+func TestRunnerRunSkipJudgeStashesButNeverJudges(t *testing.T) {
+	task := &fakeTask{delay: time.Millisecond}
+	store := NewTaskRunStore(t.TempDir())
+	models := []ModelInfo{{ID: "model-0", PromptPricePerMillion: 3, CompletionPricePerMillion: 15}}
+
+	runner := NewRunner[fakeRecord](task, RunConfig{Models: models, JudgeModel: "judge", Concurrency: 2, TaskRuns: store, SkipJudge: true})
+	samples := runner.Run(context.Background(), testRecords(3))
+
+	require.Len(t, samples, 3)
+	assert.EqualValues(t, 3, task.recordCalls.Load())
+	assert.EqualValues(t, 0, task.judgeCalls.Load(), "no judging at all")
+	assert.Equal(t, 3, store.Count())
+
+	for _, s := range samples {
+		assert.NoError(t, s.Err)
+		assert.Nil(t, s.Judge)
+		assert.Equal(t, 42*time.Millisecond, s.TotalLatency)
+		assert.InDelta(t, 11*3.0/1e6+7*15.0/1e6, s.CostUSD, 1e-12)
+	}
+}

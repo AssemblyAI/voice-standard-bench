@@ -147,6 +147,11 @@ type RunConfig struct {
 	// TaskRuns, a pass is given the earlier run's matching store: what the
 	// standard pass replays is not what the TTFT pass does.
 	Replay *TaskRunStore
+	// SkipJudge, when true, makes Run stop after the task call and its stash:
+	// RunJudge is never called, so every sample comes back unjudged (for every
+	// task, the mechanically scored ones included). It is for gathering outputs
+	// now and judging them later, by replaying the run (see Replay).
+	SkipJudge bool
 	// Debug is the -debug flag: a task that has extra diagnostics to offer
 	// prints them as it runs (today only text_correction does -- see
 	// correction_debug.go). It never changes what is measured, recorded, or

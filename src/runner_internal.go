@@ -73,6 +73,10 @@ func (r *Runner[R]) runRecord(ctx context.Context, model ModelInfo, record R, ju
 
 	r.stashTaskRun(sample, result)
 
+	if r.config.SkipJudge {
+		return sample
+	}
+
 	judged, err := runSync(judgeLimiter, func() (Sample, error) {
 		return r.task.RunJudge(ctx, model, record, r.config.JudgeModel, result, r.config.Failures)
 	})

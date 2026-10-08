@@ -1186,6 +1186,69 @@ func TestRunFrameworkBenchmarkPass_replayCallsLiveWhatTheEarlierRunDidNotStash(t
 	assert.Equal(t, map[string]float64{"faithfulness": 5, "coverage": 5, "conciseness": 5}, report["summarization"].Judge)
 }
 
+// TestRunFrameworkBenchmarkPass_skipJudgeGathersThenReplayJudges: -skip-judge makes
+// every candidate call (both passes), stashes them, judges nothing -- dictation's
+// mechanical scoring included -- and merges nothing into canonical; replaying the
+// run afterwards judges it without a single new candidate call.
+func TestRunFrameworkBenchmarkPass_skipJudgeGathersThenReplayJudges(t *testing.T) {
+	writeFrameworkFixtures(t)
+
+	g := newCountingGateway(t)
+	cfg := frameworkPassConfig{
+		GatewayURL:          g.URL,
+		APIKey:              "test-key",
+		Timeout:             5 * time.Second,
+		TasksFlag:           "dictation,summarization",
+		JudgeModel:          "the-judge",
+		MaxSamplesPerBucket: -1,
+		Concurrency:         2,
+		ApproveMerge:        true,
+		SkipJudge:           true,
+	}
+
+	runFrameworkBenchmarkPass(context.Background(), cfg)
+
+	assert.EqualValues(t, 2, g.candidateCalls.Load())
+	assert.EqualValues(t, 2, g.streamCalls.Load())
+	assert.EqualValues(t, 0, g.judgeCalls.Load())
+
+	runs := runNamesOtherThan(t)
+	require.Len(t, runs, 1)
+
+	report := readRunReport(t, filepath.Join(frameworkOutputPath, runs[0]), "the-judge")
+	require.Len(t, report, 2)
+
+	for task, sample := range report {
+		assert.Empty(t, sample.Judge, task)
+		assert.Empty(t, sample.Error, task)
+	}
+
+	assert.NoDirExists(t, frameworkCanonicalRoot, "unjudged samples must not be merged into canonical")
+
+	for _, root := range []string{frameworkOutputPath, frameworkTTFTOutputPath} {
+		paths, err := filepath.Glob(filepath.Join(root, runs[0], taskRunsDirName, "*", "*.json"))
+		require.NoError(t, err)
+		assert.Len(t, paths, 2, root)
+	}
+
+	// Judge it later.
+	g.startAgain("LIVE OUTPUT")
+
+	replayCfg := cfg
+	replayCfg.SkipJudge = false
+	replayCfg.Replay = runs[0]
+	runFrameworkBenchmarkPass(context.Background(), replayCfg)
+
+	assert.EqualValues(t, 0, g.candidateCalls.Load())
+	assert.EqualValues(t, 0, g.streamCalls.Load())
+	assert.EqualValues(t, 1, g.judgeCalls.Load())
+
+	judged := readRunReport(t, filepath.Join(frameworkOutputPath, runNamesOtherThan(t, runs[0])[0]), "the-judge")
+	assert.Equal(t, map[string]float64{"faithfulness": 5, "coverage": 5, "conciseness": 5}, judged["summarization"].Judge)
+	assert.Equal(t, map[string]float64{"exact_match": 1}, judged["dictation"].Judge)
+	assert.DirExists(t, frameworkCanonicalRoot)
+}
+
 // ---------------------------------------------------------------------------
 // frameworkTasks -- filtering logic in isolation, no gateway/filesystem
 // needed since task construction alone does no I/O.

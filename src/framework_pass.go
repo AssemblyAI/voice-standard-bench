@@ -61,6 +61,13 @@ type frameworkPassConfig struct {
 	// RunConfig.Debug). It never changes what is measured, recorded, or merged.
 	Debug bool
 
+	// SkipJudge mirrors -skip-judge: the standard pass gathers and stashes the
+	// task outputs but judges nothing (see RunConfig.SkipJudge), and the run ends
+	// before the canonical merge -- unjudged samples merged in would replace
+	// canonical's judged rows for the same (model, task, bucket). The TTFT pass
+	// still runs: it never judges anyway.
+	SkipJudge bool
+
 	// Replay mirrors -replay: the name of an earlier run (see replayRunName for
 	// the forms it takes) whose stashed task runs this run reuses instead of
 	// calling the candidate models again -- both passes' -- so that only the
@@ -250,6 +257,12 @@ func runFrameworkBenchmarkPass(ctx context.Context, cfg frameworkPassConfig) {
 	reportDir := runFrameworkStandardPass(ctx, gw, models, requestedTasks, buckets, cfg, replay)
 	ttftDir := runFrameworkTTFTPass(ctx, gw, models, requestedTasks, buckets, cfg, filepath.Base(reportDir), replay)
 
+	if cfg.SkipJudge {
+		log.Printf("framework: -skip-judge: nothing was judged, so nothing is merged into canonical; judge this run later with -replay %s (staged under %s and %s)", filepath.Base(reportDir), reportDir, ttftDir)
+
+		return
+	}
+
 	canonicalVersion := cfg.CanonicalVersion
 	if strings.TrimSpace(canonicalVersion) == "" {
 		canonicalVersion = DefaultCanonicalVersion
@@ -307,6 +320,7 @@ func runFrameworkStandardPass(ctx context.Context, gw *Gateway, models []ModelIn
 		Failures:            failures,
 		TaskRuns:            taskRuns,
 		Replay:              replay.standardRuns(),
+		SkipJudge:           cfg.SkipJudge,
 		Debug:               cfg.Debug,
 	}, requestedTasks)
 	if err != nil {
