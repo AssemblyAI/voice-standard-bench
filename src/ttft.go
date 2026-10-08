@@ -29,7 +29,6 @@ import (
 	"time"
 
 	"github.com/AssemblyAI/voice-standard-bench/src/prompts"
-	"github.com/google/uuid"
 )
 
 // TTFTBuckets is the fixed set of audio-length buckets the TTFT benchmark
@@ -362,19 +361,17 @@ func toTTFTJSONSamples(samples []TTFTSample) []ttftJSONSample {
 	return out
 }
 
-// WriteTTFTJSONReport writes samples and their aggregation to a fresh,
-// uniquely-named subfolder under path — mirroring the layout NewRunDir and
-// WriteJSONReport (report.go) give the standard pass — as "ttft-report.json"
-// (no judge-model suffix: there is no judge on this path, so no name to
-// disambiguate by) -- and returns that subfolder's path, mirroring NewRunDir's
-// own return for the same reason (see its doc comment). The summary tool
-// (summary.go) globs for exactly this filename pattern.
-//
-// The subfolder is created with os.MkdirAll: the TTFT output directory (see
-// frameworkTTFTOutputPath in framework_pass.go) doesn't necessarily exist yet
-// the first time a TTFT pass runs, and this path has no equivalent of the
-// standard pass's already-checked-in "results/" convention to lean on.
-func WriteTTFTJSONReport(path string, samples []TTFTSample, cells []TTFTCell) (string, error) {
+// WriteTTFTJSONReport writes samples and their aggregation as indented JSON to
+// "ttft-report.json" in dir (no judge-model suffix: there is no judge on this
+// path, so no name to disambiguate by), which must already exist -- mirroring
+// WriteJSONReport (report.go), which does the same for the standard pass. dir is
+// the TTFT pass's staging directory, made when the pass STARTS (see
+// NewNamedRunDir) so that the outputs it stashes along the way can be written
+// into it as they appear. The summary tool (summary.go) globs for exactly this
+// filename pattern. The TTFT output root (see frameworkTTFTOutputPath in
+// framework_pass.go) doesn't necessarily exist yet the first time a TTFT pass
+// runs; NewNamedRunDir creates it, as it does any missing parent.
+func WriteTTFTJSONReport(dir string, samples []TTFTSample, cells []TTFTCell) error {
 	report := ttftJSONReport{
 		GeneratedAt: time.Now().UTC(),
 		Aggregates:  cells,
@@ -383,19 +380,8 @@ func WriteTTFTJSONReport(path string, samples []TTFTSample, cells []TTFTCell) (s
 
 	data, err := json.MarshalIndent(report, "", "  ")
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	now := time.Now().Format(time.DateOnly)
-	dirPath := path + "/" + now + "-" + uuid.NewString()
-
-	if err := os.MkdirAll(dirPath, 0o777); err != nil {
-		return "", err
-	}
-
-	if err := os.WriteFile(filepath.Join(dirPath, "ttft-report.json"), data, 0o644); err != nil {
-		return "", err
-	}
-
-	return dirPath, nil
+	return os.WriteFile(filepath.Join(dir, "ttft-report.json"), data, 0o644)
 }

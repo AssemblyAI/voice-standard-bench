@@ -174,10 +174,31 @@ func toJSONSamples(samples []Sample) []jsonSample {
 // (see ReviewAndMergeIntoCanonical in canonical.go) also needs the path to know
 // what it just staged without re-deriving or globbing for it.
 func NewRunDir(path string) (string, error) {
-	now := time.Now().Format(time.DateOnly)
-	dirPath := path + "/" + now + "-" + uuid.NewString()
+	return NewNamedRunDir(path, newRunName())
+}
 
-	if err := os.MkdirAll(dirPath, 0o777); err != nil {
+// newRunName returns a fresh run name, "<date>-<uuid>": what a run's staging
+// directory is called under results/, and -- since the TTFT pass names its own
+// directory under results_ttft/ the same (see NewNamedRunDir) -- the one name
+// that finds everything the run staged, which is what -replay takes.
+func newRunName() string {
+	return time.Now().Format(time.DateOnly) + "-" + uuid.NewString()
+}
+
+// NewNamedRunDir creates the new directory path/name -- and path itself, if it
+// doesn't exist yet -- and returns its path. Unlike a bare MkdirAll it fails if
+// path/name is already there: a run directory is always a fresh one, never a
+// second run written over the first. NewRunDir is the same with a fresh name;
+// this is for the TTFT pass, which gives its directory the name the standard
+// pass gave its own, so a run is one name across results/ and results_ttft/.
+func NewNamedRunDir(path, name string) (string, error) {
+	if err := os.MkdirAll(path, 0o777); err != nil {
+		return "", err
+	}
+
+	dirPath := path + "/" + name
+
+	if err := os.Mkdir(dirPath, 0o777); err != nil {
 		return "", err
 	}
 

@@ -185,7 +185,9 @@ its own everything besides the shared model-discovery/dataset-loading setup,
 so it can never change a single number the standard pass produces: its own
 sample/cell/report types (`src`) and its own staging directories
 (`results_ttft/` and `errors_ttft/`, mirroring `results/` and `errors/`,
-never shared with them).
+never shared with them). A run's TTFT directory is named like its standard one
+— `results_ttft/<name>` beside `results/<name>` — so one name finds everything
+the run staged (see `-replay` below).
 
 The TTFT reports are merged into the summary: a TTFT latency breakdown
 (`ttft_n` through `ttft_max`) appears in every `summary.csv`/table/JSON row by
@@ -226,18 +228,21 @@ go run . \
 
 ## Stashed task outputs (`task_runs/`)
 
-Every candidate call costs money, and the judge step is the part that gets
+Every model call costs money, and the judge step is the part that gets
 reworked — a new rubric, a different judge model, a judge that was down — so
-redoing the judging shouldn't mean paying for the candidate calls again. Every
-candidate call that comes back is therefore written to disk the moment it
-returns, before it is judged, in the run's staged directory beside its report:
+redoing the judging shouldn't mean paying for the model calls again. Every call
+that comes back is therefore written to disk the moment it returns, before it is
+judged, in the run's staged directory beside its report — and the TTFT pass's
+streaming calls the same way, in the directory of the same name under
+`results_ttft/`:
 
 ```
-results/<date>-<uuid>/
+results/<name>/                      <name> is <date>-<uuid>
   report-<judge>.json
-  task_runs/
-    <task>/
-      <model>__<reasoning effort>__<bucket>__<record id>.json
+  task_runs/<task>/<model>__<reasoning effort>__<bucket>__<record id>.json
+results_ttft/<name>/
+  ttft-report.json
+  task_runs/<task>/<model>__<reasoning effort>__<bucket>__<record id>.json
 ```
 
 One file per (model, reasoning effort, task, bucket, record). Characters a file
@@ -246,19 +251,75 @@ the *name* only. Each file holds who it was for (`model`, `reasoning_effort`,
 `task`, `bucket`, `record_id` — the same fields a `report-*.json` sample has),
 what the model said (`text`), what the call measured (`total_latency_s`,
 `time_to_first_token_s`, `prompt_tokens`, `completion_tokens`, unrounded), and
-the verbatim gateway `request` and `response`.
+the verbatim gateway `request` and `response` (a streamed call has no single
+response document, so a TTFT file has none).
 
-Only the standard pass writes them — in `Runner.runRecord`, which every task goes
-through (`runner_internal.go`, `TaskRunStore` in `task_runs.go`). The TTFT pass
-never judges what it gets back, so it has nothing to keep. A call that failed has
-no output, so it isn't stashed; it's under `errors/`, as before. Because each file
-is written as soon as its call returns, a judge that is down — or a run that is
-killed partway through — still leaves every output it had already paid for.
+Both passes write them — in `Runner.runRecord` and `Runner.runTTFTRecord`, which
+every task goes through (`runner_internal.go`, `TaskRunStore` in `task_runs.go`).
+A call that failed has no output, so it isn't stashed; it's under `errors/`, as
+before. Because each file is written as soon as its call returns, a judge that is
+down — or a run that is killed partway through — still leaves every output it had
+already paid for. `-replay` reads them back (next section). The canonical merge
+and the summary ignore `task_runs/` (they only look for `report-*.json` and
+`ttft-report*.json`), and so does git (`results/` is ignored).
 
-Nothing reads these files back yet: reusing them to re-run only the judge step is
-the next piece of work. The canonical merge and the summary ignore `task_runs/`
-(they only look for `report-*.json` and `ttft-report*.json`), and so does git
-(`results/` is ignored).
+## Replaying a run (`-replay`)
+
+`-replay` re-runs the judge step over an earlier run's outputs, without calling
+the models again:
+
+```bash
+go run . \
+  -replay 2026-10-08-0a12264a-105b-4bb3-a5c8-7a2067fa870a \
+  -judge-model some-other-judge
+```
+
+The argument is the earlier run's name — its directory name under `results/`, as
+logged at the end of that run (`wrote full results to ../results/<name>`) — or a
+path to it. Give it the `-models`, `-tasks`, `-buckets`,
+`-max-samples-per-bucket` and `-reasoning-effort` you want replayed, as for any
+run. For every (model, record) the earlier run stashed, in both passes:
+
+- the standard pass skips the model call and uses the stashed output; the judge
+  still runs live over it, and a task that is scored mechanically (dictation, and
+  the word-level context for text_correction) is scored again from it;
+- the TTFT pass skips the streaming call and uses the stashed measurement;
+- the original call's latency and token counts are kept, so a replayed sample
+  reports the numbers it was measured at; cost is stamped from the model's
+  current pricing, as for any sample.
+
+Anything the earlier run didn't stash runs live, as in a normal run: a call that
+failed, a model it didn't include, a record beyond its `-max-samples-per-bucket`,
+a pass that never finished. A replay therefore also finishes a run that was
+interrupted, and adds a model to one. The log says, per task and pass, how much
+came out of the stash and how much was called (`framework: replay:
+summarization: reused 38 of 40 task run(s) from …, called 2 live`) — read it if
+the replay was meant to cost nothing in candidate calls.
+
+A replay is otherwise an ordinary run: its own staged directories and report, the
+canonical merge, and its own copy of the stash — so it can be replayed in turn,
+and the run it replayed can be deleted.
+
+Before anything is called, `-replay` refuses what can't be replayed
+faithfully, or would reuse nothing:
+
+- a name that isn't a run under `results/`, or a run that stashed nothing (only a
+  run made since outputs were stashed can be replayed, and a mistyped name would
+  otherwise run everything live at full price);
+- a run that stashed none of what this run asks for — none of its models, at the
+  reasoning effort it will call them at, for none of its tasks. Every run is
+  stashed under its model *and* reasoning effort, so the usual cause is `-models`,
+  `-tasks` or `-reasoning-effort` not matching the run being replayed: one made
+  with `-reasoning-effort low` is all misses without it. The error lists what the
+  run stashed next to what this one asks for. (Some reuse is enough: a model the
+  run didn't have is added, and runs live.);
+- a requested task whose prompt has changed since the run stashed its outputs,
+  since replaying them would score the old prompt's outputs as the new one's.
+
+It does **not** check that the record text is unchanged — a dataset regenerated
+under the same record IDs is replayed as if it hadn't been. A run that stashed
+only one pass (its TTFT pass never finished, say) is replayed for that pass, with
+a warning, and the other runs live.
 
 ## Per-task quality breakdown
 
@@ -428,7 +489,8 @@ benchmark/
   editdistance.go  banded word-level Levenshtein distance (and alignment) behind both, sized for 15,000-word transcripts
   dictation.go   dictation's own dataset loading, runner, and mechanical scoring — see "Dictation" above
   report.go      stdout table + report JSON, and the staged run directory
-  task_runs.go   stashes every successful candidate call's output under the run directory — see "Stashed task outputs" above
+  task_runs.go   stashes every successful model call's output under the run directory, and reads them back — see "Stashed task outputs" above
+  replay.go      -replay: finds an earlier run's stash and refuses one that can't be replayed — see "Replaying a run" above
   ttft.go        separate streaming-only TTFT path — see "Time-to-first-token" above
   summary.go     reads report-*.json/ttft-report*.json and writes a by-judge/combined summary.json+csv+table, incl. cost per quality
   use_cases.go   post-summary use_cases.json derivation for the canonical version dir — see "Use cases" above

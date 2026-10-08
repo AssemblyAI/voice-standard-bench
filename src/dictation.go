@@ -80,6 +80,12 @@ func (r DictationRecord) RecordBucket() string {
 	return r.Bucket
 }
 
+// RecordID implements framework.go's Record, letting Runner[DictationRecord]
+// find an earlier run's stashed result for this record (see RunConfig.Replay).
+func (r DictationRecord) RecordID() string {
+	return r.ID
+}
+
 // rawDictationRecord decodes only the fields of dictation/synthetic.jsonl
 // this tool reads. Unknown fields (schema_version, dataset, split, language,
 // domain, tags, source, ...) are ignored by encoding/json, not an error —

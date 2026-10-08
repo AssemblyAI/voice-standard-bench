@@ -129,3 +129,19 @@ func TestNewRunDir_createsAFreshUniqueDirUnderPath(t *testing.T) {
 		assert.Equal(t, root, filepath.Dir(dir), "each run directory must live directly under path")
 	}
 }
+
+// TestNewNamedRunDir_usesTheNameItIsGivenAndNeverReusesADirectory: the TTFT pass
+// names its directory after the standard pass's, so a run is one name across
+// results/ and results_ttft/ -- and a run directory is always a fresh one, never a
+// second run written over, or into, the first.
+func TestNewNamedRunDir_usesTheNameItIsGivenAndNeverReusesADirectory(t *testing.T) {
+	root := filepath.Join(t.TempDir(), "results_ttft") // doesn't exist yet: made too
+
+	dir, err := NewNamedRunDir(root, "2026-10-08-abc")
+	require.NoError(t, err)
+	assert.Equal(t, root+"/2026-10-08-abc", dir)
+	assert.DirExists(t, dir)
+
+	_, err = NewNamedRunDir(root, "2026-10-08-abc")
+	assert.Error(t, err, "a run directory that already exists is not a fresh one")
+}

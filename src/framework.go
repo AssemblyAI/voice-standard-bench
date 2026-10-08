@@ -19,6 +19,18 @@ type Bucketed interface {
 	RecordBucket() string
 }
 
+// Record is what Runner needs from a Task's record type: its bucket (Bucketed)
+// and its ID, which together with the model and task name identify one task run
+// -- the key a stashed result is found by when a run replays an earlier one (see
+// RunConfig.Replay). Every record type used with NewRunner implements it -- see
+// TranscriptRecord.RecordID (dataset.go) and DictationRecord.RecordID
+// (dictation.go). Named RecordID rather than ID for the same reason as
+// RecordBucket: those types have an ID field of their own.
+type Record interface {
+	Bucketed
+	RecordID() string
+}
+
 // Task is a grouping of functionality that is needed to run an complete benchmark
 // it has methods for all the consistent steps needed in order to run a benchmark
 // so that we can organize code coherently, even if the core details of each
@@ -41,13 +53,16 @@ type Task[R any] interface {
 	SampleDataset(records []R, maxSamples int) []R
 
 	// RunRecord executes the task's completion call for one record against
-	// model. It always returns an identified Sample -- Model/Task/Bucket/
-	// RecordID populated, plus latency/token measurements on success or Err
-	// on failure -- alongside the raw CompletionResult a following RunJudge
-	// call needs. Returning a real Sample here, rather than only a
-	// CompletionResult, is what lets a Runner report a failed record's error
-	// rate without ever needing to read Bucket/RecordID off the opaque
-	// record R itself. It records any failures to the FailureRecorder.
+	// model. It always returns an identified Sample -- Model/ReasoningEffort/
+	// Task/Bucket/RecordID populated (the model's ID and ReasoningEffortLabel,
+	// the task's Name, the record's RecordBucket and RecordID -- the very values
+	// a Runner looks a stashed run up by when it replays an earlier one, see
+	// RunConfig.Replay), plus latency/token measurements on success or Err on
+	// failure -- alongside the raw CompletionResult a following RunJudge call
+	// needs. Returning a real Sample here, rather than only a CompletionResult,
+	// is what lets a Runner report a failed record's error rate without having
+	// to build that Sample itself. It records any failures to the
+	// FailureRecorder.
 	RunRecord(ctx context.Context, model ModelInfo, record R, failures *FailureRecorder) (Sample, CompletionResult, error)
 
 	// RunTTFT is RunRecord's streaming counterpart, used purely to measure a
@@ -55,10 +70,10 @@ type Task[R any] interface {
 	// uses streaming completions instead of a synchronous one. Like
 	// RunRecord it returns both an identified Sample and the raw
 	// CompletionResult -- but a TTFT sample is never judged (its Judge is
-	// always left empty/nil), so unlike RunRecord's output, nothing chains
-	// off of RunTTFT's CompletionResult; it is returned only so a caller can
-	// inspect or log the raw call the same way it can for RunRecord. It
-	// records any failures to the FailureRecorder.
+	// always left empty/nil), so unlike RunRecord's output, nothing is scored
+	// off of RunTTFT's CompletionResult; a Runner stashes it, as it does
+	// RunRecord's, so a later run can replay the call (see RunConfig.Replay).
+	// It records any failures to the FailureRecorder.
 	RunTTFT(ctx context.Context, model ModelInfo, record R, failures *FailureRecorder) (Sample, CompletionResult, error)
 
 	// RunJudge scores a candidate's output against record -- either via an
@@ -112,13 +127,26 @@ type RunConfig struct {
 	// Failures records failed samples for later inspection; nil disables
 	// failure recording entirely, matching FailureRecorder's own contract.
 	Failures *FailureRecorder
-	// TaskRuns, when non-nil, receives every successful RunRecord result -- the
-	// candidate's output -- the moment it comes back, before RunJudge sees it,
-	// so the judge step can be repeated later against those same outputs without
-	// paying for the candidate calls again (see TaskRunStore). nil disables it,
-	// matching Failures. Only Run uses it: RunTTFT's streamed output is never
-	// judged, so there is nothing in it worth reusing.
+	// TaskRuns, when non-nil, receives every successful task call's result -- the
+	// candidate's output -- the moment it comes back (RunRecord's, in Run;
+	// RunTTFT's, in RunTTFT), before RunJudge sees it, so the judge step can be
+	// repeated later against those same outputs without paying for the candidate
+	// calls again (see TaskRunStore). nil disables it, matching Failures. A pass
+	// is given a store of its own: the standard pass's and the TTFT pass's
+	// outputs are different measurements and never share one.
 	TaskRuns *TaskRunStore
+	// Replay, when non-nil, is an earlier run's stash, consulted before every
+	// RunRecord (in Run) and RunTTFT (in RunTTFT) call: a (model, record) whose
+	// result is in it is not called at all -- its stashed Sample and
+	// CompletionResult stand in for the call's -- and Run goes on to judge that
+	// result live, as it would a fresh one. One that is NOT in it (the call
+	// failed, or never ran: another model, a bigger sample) runs live as usual,
+	// so a replay also finishes a run that was interrupted. A replayed result is
+	// stashed to TaskRuns like any other, which keeps every run's directory
+	// complete and lets a replay be replayed in turn. nil replays nothing. Like
+	// TaskRuns, a pass is given the earlier run's matching store: what the
+	// standard pass replays is not what the TTFT pass does.
+	Replay *TaskRunStore
 	// Debug is the -debug flag: a task that has extra diagnostics to offer
 	// prints them as it runs (today only text_correction does -- see
 	// correction_debug.go). It never changes what is measured, recorded, or
@@ -142,7 +170,11 @@ type RunConfig struct {
 // many judge calls are in flight at once, since every candidate's samples
 // grade against the very same judge model, which does not get that
 // per-candidate isolation.
-type Runner[R Bucketed] struct {
+//
+// RunConfig.Replay lets a Runner skip the task calls an earlier run already made
+// and judge what that run stashed instead -- see callOrReplay
+// (runner_internal.go), the one place the decision is made.
+type Runner[R Record] struct {
 	task   Task[R]
 	config RunConfig
 }
@@ -150,7 +182,7 @@ type Runner[R Bucketed] struct {
 // NewRunner returns a Runner for task, configured by config. Concurrency
 // values below 1 are normalized to 1 -- a concurrency.JobLimiter constructed
 // with a max of 0 would block every job forever (see runner_internal.go).
-func NewRunner[R Bucketed](task Task[R], config RunConfig) *Runner[R] {
+func NewRunner[R Record](task Task[R], config RunConfig) *Runner[R] {
 	if config.Concurrency < 1 {
 		config.Concurrency = 1
 	}
@@ -194,7 +226,8 @@ func (r *Runner[R]) LoadAndSample() ([]R, error) {
 // never called for a record whose task call didn't succeed, since there is
 // nothing to grade. A success is stashed to config.TaskRuns (when set) first,
 // so a judge call that fails, or a run that dies, never loses an output that
-// was already paid for.
+// was already paid for. With config.Replay set, a (model, record) the earlier
+// run already stashed skips RunRecord altogether and goes straight to the judge.
 //
 // Run must never run concurrently with RunTTFT against the same models:
 // mixing streaming and synchronous latency numbers for the same candidate at
@@ -210,11 +243,11 @@ func (r *Runner[R]) Run(ctx context.Context, records []R) []Sample {
 // RunTTFT executes the streaming, unjudged pass over records, purely to
 // measure a real time-to-first-token per (model, record) -- see RunTTFT on
 // the Task interface. It shares Run's per-model concurrency shape but has no
-// judge step, so it needs no judge concurrency cap. The Task's own
-// CompletionResult return is discarded here -- nothing downstream of a TTFT
-// pass needs the raw candidate output, only its Sample -- a caller that does
-// need it (e.g. to log or replay the raw call) should call Task.RunTTFT
-// directly instead of going through Runner.
+// judge step, so it needs no judge concurrency cap. Nothing downstream of a
+// TTFT pass needs the raw candidate output, only its Sample, so the Task's
+// CompletionResult goes no further than config.TaskRuns, where it is stashed so
+// a later run can replay the call (config.Replay) rather than stream again. As
+// in Run, a (model, record) the earlier run's stash holds is not called at all.
 //
 // records is first restricted to TTFTBuckets (see ttft.go's package doc
 // comment on why TTFT only ever measures 30s/120s, the same restriction the
@@ -235,8 +268,7 @@ func (r *Runner[R]) RunTTFT(ctx context.Context, records []R) []Sample {
 	records = filterBucketed(records, TTFTBuckets)
 
 	return r.runAll(ctx, records, func(ctx context.Context, model ModelInfo, record R) Sample {
-		sample, _, _ := r.task.RunTTFT(ctx, model, record, r.config.Failures)
-		return sample
+		return r.runTTFTRecord(ctx, model, record)
 	})
 }
 

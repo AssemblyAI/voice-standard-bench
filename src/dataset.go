@@ -41,6 +41,12 @@ func (r TranscriptRecord) RecordBucket() string {
 	return r.Bucket
 }
 
+// RecordID implements framework.go's Record, letting Runner[TranscriptRecord]
+// find an earlier run's stashed result for this record (see RunConfig.Replay).
+func (r TranscriptRecord) RecordID() string {
+	return r.ID
+}
+
 // rawRecord decodes only the fields of the normalized schema this tool reads.
 // Unknown fields (expected, tags, source, metrics, ...) are ignored by
 // encoding/json, not an error.

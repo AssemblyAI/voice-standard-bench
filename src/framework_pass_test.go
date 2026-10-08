@@ -3,11 +3,14 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -690,7 +693,8 @@ func TestRunFrameworkBenchmarkPass_reasoningEffort(t *testing.T) {
 // call lands as its own file under task_runs/<task>/ in THE SAME run directory
 // as the report scored from it -- one directory per run, not one for each --
 // carrying who it was for, what the model said, what the call measured, and the
-// raw request and response, and nothing else is stashed.
+// raw request and response. The TTFT pass stashes its streaming calls the same
+// way, in the directory of the same name under results_ttft/.
 func TestRunFrameworkBenchmarkPass_stashesEachTaskRunBesideTheReport(t *testing.T) {
 	writeFrameworkFixtures(t)
 
@@ -802,11 +806,27 @@ func TestRunFrameworkBenchmarkPass_stashesEachTaskRunBesideTheReport(t *testing.
 		assert.Len(t, stashed, 1, "sample %s/%s has no stashed task run", sample.Task, sample.RecordID)
 	}
 
-	// The TTFT pass never judges what it gets back, so it stashes nothing.
+	// The TTFT pass stashes its own calls, in a directory of its own -- named
+	// like the standard pass's, so one name finds both -- never in the standard
+	// pass's.
 	ttftEntries, err := os.ReadDir(frameworkTTFTOutputPath)
 	require.NoError(t, err)
 	require.Len(t, ttftEntries, 1)
-	assert.NoDirExists(t, filepath.Join(frameworkTTFTOutputPath, ttftEntries[0].Name(), taskRunsDirName))
+	assert.Equal(t, entries[0].Name(), ttftEntries[0].Name(), "a run is one name across results/ and results_ttft/")
+
+	ttftRunDir := filepath.Join(frameworkTTFTOutputPath, ttftEntries[0].Name())
+	assert.FileExists(t, filepath.Join(ttftRunDir, "ttft-report.json"))
+
+	for task, recordID := range wantRecordIDs {
+		ttftPath := filepath.Join(ttftRunDir, taskRunsDirName, task, "candidate-model__default__30s__"+recordID+".json")
+		require.FileExists(t, ttftPath)
+
+		file := readTaskRunFile(t, ttftPath)
+		assert.Equal(t, "streamed", file.Text, "what the streaming call returned, not the synchronous one's")
+		assert.Greater(t, file.TimeToFirstTokenS, 0.0, "a streaming call measures a real time to first token")
+		assert.Empty(t, file.Response, "a stream has no single response document to keep")
+		assert.NotEmpty(t, file.Request)
+	}
 
 	// ...and the canonical merge, which already ran, has no use for task_runs/.
 	versionDir := filepath.Join(frameworkCanonicalRoot, CanonicalVersionDirName(DefaultCanonicalVersion))
@@ -853,6 +873,317 @@ func TestRunFrameworkBenchmarkPass_doesNotStashFailedTaskRuns(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, failureDirs, 1)
 	assert.Len(t, readFailureMeta(t, filepath.Join(frameworkErrorsPath, failureDirs[0].Name())), 2, "both failures are recorded where they always were")
+}
+
+// ---------------------------------------------------------------------------
+// -replay -- end to end
+// ---------------------------------------------------------------------------
+
+// countingGateway is a fake llm_gateway that counts the calls it gets by kind --
+// a candidate's synchronous completion, a candidate's streaming one (the TTFT
+// pass), a judge's -- and keeps what the judge was sent, so a replay test can
+// prove which calls were NOT made and what the judge was shown instead.
+// Candidates answer with output; a judge scores by name: "the-judge" gives every
+// dimension a 5, "the-new-judge" a 2.
+type countingGateway struct {
+	*httptest.Server
+
+	candidateCalls atomic.Int32
+	streamCalls    atomic.Int32
+	judgeCalls     atomic.Int32
+
+	mu          sync.Mutex
+	output      string
+	judgeBodies []string
+}
+
+func newCountingGateway(t *testing.T) *countingGateway {
+	t.Helper()
+
+	g := &countingGateway{output: "Hey, world."}
+
+	g.Server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet && r.URL.Path == "/v1/models" {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"data":[{"id":"candidate-model","name":"Candidate","creator":"Acme"}]}`))
+
+			return
+		}
+
+		body := readBody(t, r)
+
+		g.mu.Lock()
+		output := g.output
+		g.mu.Unlock()
+
+		switch {
+		case strings.Contains(body, `"model":"the-judge"`), strings.Contains(body, `"model":"the-new-judge"`):
+			g.judgeCalls.Add(1)
+
+			g.mu.Lock()
+			g.judgeBodies = append(g.judgeBodies, body)
+			g.mu.Unlock()
+
+			score := 5
+			if strings.Contains(body, `"model":"the-new-judge"`) {
+				score = 2
+			}
+
+			writeChatCompletion(w, fmt.Sprintf(`{"faithfulness": %d, "coverage": %d, "conciseness": %d, "notes": "ok"}`, score, score, score), 20, 10)
+		case strings.Contains(body, `"stream":true`):
+			g.streamCalls.Add(1)
+			time.Sleep(5 * time.Millisecond) // a real gap before the first chunk, so a TTFT is measurable
+			writeChatCompletionStream(w, []string{output}, 10, 5)
+		default:
+			g.candidateCalls.Add(1)
+			writeChatCompletion(w, output, 10, 5)
+		}
+	}))
+
+	t.Cleanup(g.Server.Close)
+
+	return g
+}
+
+// startAgain makes a candidate say output from here on and zeroes the counters,
+// so what the gateway sees from now on is only what the next run does.
+func (g *countingGateway) startAgain(output string) {
+	g.mu.Lock()
+	g.output = output
+	g.judgeBodies = nil
+	g.mu.Unlock()
+
+	g.candidateCalls.Store(0)
+	g.streamCalls.Store(0)
+	g.judgeCalls.Store(0)
+}
+
+func (g *countingGateway) sentToTheJudge() []string {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+
+	return append([]string(nil), g.judgeBodies...)
+}
+
+// readRunReport reads runDir's report-<judge>.json, keyed by task (every test
+// here runs one record per task).
+func readRunReport(t *testing.T, runDir, judge string) map[string]jsonSample {
+	t.Helper()
+
+	data, err := os.ReadFile(filepath.Join(runDir, "report-"+judge+".json"))
+	require.NoError(t, err)
+
+	var report jsonReport
+	require.NoError(t, json.Unmarshal(data, &report))
+
+	byTask := map[string]jsonSample{}
+	for _, s := range report.Samples {
+		byTask[s.Task] = s
+	}
+
+	return byTask
+}
+
+// readTTFTRunReport is readRunReport for a TTFT run directory.
+func readTTFTRunReport(t *testing.T, runDir string) map[string]ttftJSONSample {
+	t.Helper()
+
+	data, err := os.ReadFile(filepath.Join(runDir, "ttft-report.json"))
+	require.NoError(t, err)
+
+	var report ttftJSONReport
+	require.NoError(t, json.Unmarshal(data, &report))
+
+	byTask := map[string]ttftJSONSample{}
+	for _, s := range report.Samples {
+		byTask[s.Task] = s
+	}
+
+	return byTask
+}
+
+// runNamesOtherThan lists the run directories under results/ other than skip.
+func runNamesOtherThan(t *testing.T, skip ...string) []string {
+	t.Helper()
+
+	var names []string
+
+	for _, e := range frameworkOutputRunDirs(t) {
+		if !slices.Contains(skip, e.Name()) {
+			names = append(names, e.Name())
+		}
+	}
+
+	return names
+}
+
+// TestRunFrameworkBenchmarkPass_replayReusesAnEarlierRunAndOnlyJudges is -replay
+// end to end: a normal run, then a replay of it with a different judge. The
+// replay calls no candidate model and streams nothing -- yet its report has the
+// new judge's scores over the earlier run's outputs, the earlier run's
+// measurements, and a stash of its own that can be replayed in turn.
+func TestRunFrameworkBenchmarkPass_replayReusesAnEarlierRunAndOnlyJudges(t *testing.T) {
+	writeFrameworkFixtures(t)
+
+	g := newCountingGateway(t)
+	cfg := frameworkPassConfig{
+		GatewayURL:          g.URL,
+		APIKey:              "test-key",
+		Timeout:             5 * time.Second,
+		TasksFlag:           "dictation,summarization",
+		JudgeModel:          "the-judge",
+		MaxSamplesPerBucket: -1,
+		Concurrency:         2,
+		ApproveMerge:        true,
+	}
+
+	// The earlier run: an ordinary one.
+	runFrameworkBenchmarkPass(context.Background(), cfg)
+
+	require.EqualValues(t, 2, g.candidateCalls.Load())
+	require.EqualValues(t, 2, g.streamCalls.Load())
+	require.EqualValues(t, 1, g.judgeCalls.Load(), "dictation is scored mechanically: only summarization has a judge call")
+
+	firstRuns := runNamesOtherThan(t)
+	require.Len(t, firstRuns, 1)
+
+	first := firstRuns[0]
+
+	// From here on a candidate that IS called would say something else, so an
+	// output that still reads "Hey, world." can only have come out of the stash.
+	g.startAgain("LIVE OUTPUT")
+
+	logged := captureLog(t)
+
+	replayCfg := cfg
+	replayCfg.Replay = first
+	replayCfg.JudgeModel = "the-new-judge"
+	runFrameworkBenchmarkPass(context.Background(), replayCfg)
+
+	assert.EqualValues(t, 0, g.candidateCalls.Load(), "no candidate model is called again")
+	assert.EqualValues(t, 0, g.streamCalls.Load(), "...nor streamed from again")
+	assert.EqualValues(t, 1, g.judgeCalls.Load(), "the judge is, and it is the new one")
+
+	judgeSaw := g.sentToTheJudge()
+	require.Len(t, judgeSaw, 1)
+	assert.Contains(t, judgeSaw[0], "Hey, world.", "the judge is shown the stashed output")
+	assert.NotContains(t, judgeSaw[0], "LIVE OUTPUT")
+
+	// The log says what was reused, per pass and task.
+	assert.Contains(t, logged.String(), "replay: summarization: reused 1 of 1 task run(s)")
+	assert.Contains(t, logged.String(), "ttft: replay: dictation: reused 1 of 1 task run(s)")
+	assert.Contains(t, logged.String(), "called 0 live")
+
+	secondRuns := runNamesOtherThan(t, first)
+	require.Len(t, secondRuns, 1)
+
+	second := secondRuns[0]
+	firstDir, secondDir := filepath.Join(frameworkOutputPath, first), filepath.Join(frameworkOutputPath, second)
+
+	// The report: the new judge's scores, and the mechanical score recomputed
+	// over the stashed text.
+	firstReport, secondReport := readRunReport(t, firstDir, "the-judge"), readRunReport(t, secondDir, "the-new-judge")
+
+	assert.Equal(t, map[string]float64{"faithfulness": 5, "coverage": 5, "conciseness": 5}, firstReport["summarization"].Judge)
+	assert.Equal(t, map[string]float64{"faithfulness": 2, "coverage": 2, "conciseness": 2}, secondReport["summarization"].Judge)
+	assert.Equal(t, map[string]float64{"exact_match": 1}, secondReport["dictation"].Judge)
+
+	// What the candidate calls measured is the earlier run's, not new numbers.
+	for task, a := range firstReport {
+		b := secondReport[task]
+		assert.Equal(t, a.TotalLatencyS, b.TotalLatencyS, task)
+		assert.Equal(t, a.TimeToFirstTokenS, b.TimeToFirstTokenS, task)
+		assert.Equal(t, a.PromptTokens, b.PromptTokens, task)
+		assert.Equal(t, a.CompletionTokens, b.CompletionTokens, task)
+		assert.Equal(t, a.CostUSD, b.CostUSD, task)
+	}
+
+	// ...and so is the TTFT, which was replayed under the same name.
+	firstTTFT := readTTFTRunReport(t, filepath.Join(frameworkTTFTOutputPath, first))
+	secondTTFT := readTTFTRunReport(t, filepath.Join(frameworkTTFTOutputPath, second))
+	require.Len(t, secondTTFT, 2)
+
+	for task, a := range firstTTFT {
+		b := secondTTFT[task]
+		assert.Greater(t, a.TimeToFirstTokenS, 0.0, task)
+		assert.Equal(t, a.TimeToFirstTokenS, b.TimeToFirstTokenS, task)
+		assert.Equal(t, a.TotalLatencyS, b.TotalLatencyS, task)
+	}
+
+	// The replay stashed what it reused, in the new run's directories: complete
+	// in themselves, holding the stashed output -- not what a live call would say.
+	for _, root := range []string{frameworkOutputPath, frameworkTTFTOutputPath} {
+		for _, task := range []string{"dictation", "summarization"} {
+			paths, err := filepath.Glob(filepath.Join(root, second, taskRunsDirName, task, "*.json"))
+			require.NoError(t, err)
+			require.Len(t, paths, 1, "%s/%s", root, task)
+			assert.Equal(t, "Hey, world.", readTaskRunFile(t, paths[0]).Text)
+		}
+	}
+
+	// Both judges' reports merged into canonical.
+	versionDir := filepath.Join(frameworkCanonicalRoot, CanonicalVersionDirName(DefaultCanonicalVersion))
+	assert.FileExists(t, filepath.Join(versionDir, "report-the-judge.json"))
+	assert.FileExists(t, filepath.Join(versionDir, "report-the-new-judge.json"))
+
+	// A replay can itself be replayed -- the first run's directories out of the
+	// picture, as if deleted -- and still nothing is called.
+	g.startAgain("LIVE OUTPUT")
+
+	require.NoError(t, os.RemoveAll(firstDir))
+	require.NoError(t, os.RemoveAll(filepath.Join(frameworkTTFTOutputPath, first)))
+
+	thirdCfg := cfg
+	thirdCfg.Replay = second
+	runFrameworkBenchmarkPass(context.Background(), thirdCfg)
+
+	assert.EqualValues(t, 0, g.candidateCalls.Load())
+	assert.EqualValues(t, 0, g.streamCalls.Load())
+	assert.EqualValues(t, 1, g.judgeCalls.Load())
+}
+
+// TestRunFrameworkBenchmarkPass_replayCallsLiveWhatTheEarlierRunDidNotStash: a
+// replay skips the calls that were made and makes the ones that weren't -- here a
+// whole task the earlier run never ran, both passes' calls for it.
+func TestRunFrameworkBenchmarkPass_replayCallsLiveWhatTheEarlierRunDidNotStash(t *testing.T) {
+	writeFrameworkFixtures(t)
+
+	g := newCountingGateway(t)
+	cfg := frameworkPassConfig{
+		GatewayURL:          g.URL,
+		APIKey:              "test-key",
+		Timeout:             5 * time.Second,
+		TasksFlag:           "dictation",
+		JudgeModel:          "the-judge",
+		MaxSamplesPerBucket: -1,
+		Concurrency:         2,
+		ApproveMerge:        true,
+	}
+
+	runFrameworkBenchmarkPass(context.Background(), cfg)
+
+	firstRuns := runNamesOtherThan(t)
+	require.Len(t, firstRuns, 1)
+
+	g.startAgain("Hey, world.")
+
+	// The replay adds summarization, which the earlier run never ran.
+	replayCfg := cfg
+	replayCfg.TasksFlag = "dictation,summarization"
+	replayCfg.Replay = firstRuns[0]
+	runFrameworkBenchmarkPass(context.Background(), replayCfg)
+
+	assert.EqualValues(t, 1, g.candidateCalls.Load(), "only summarization's candidate call is made; dictation's is replayed")
+	assert.EqualValues(t, 1, g.streamCalls.Load(), "...and only its streaming call")
+	assert.EqualValues(t, 1, g.judgeCalls.Load())
+
+	secondRuns := runNamesOtherThan(t, firstRuns[0])
+	require.Len(t, secondRuns, 1)
+
+	report := readRunReport(t, filepath.Join(frameworkOutputPath, secondRuns[0]), "the-judge")
+	assert.Contains(t, report, "dictation")
+	assert.Contains(t, report, "summarization")
+	assert.Equal(t, map[string]float64{"faithfulness": 5, "coverage": 5, "conciseness": 5}, report["summarization"].Judge)
 }
 
 // ---------------------------------------------------------------------------

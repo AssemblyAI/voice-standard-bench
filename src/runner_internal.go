@@ -52,18 +52,19 @@ func (r *Runner[R]) runAll(ctx context.Context, records []R, perRecord func(ctx 
 	return samples()
 }
 
-// runRecord runs one (model, record) pair through RunRecord and, on
-// success, immediately through RunJudge -- bridging the RunJudge call
-// through judgeLimiter, a concurrency gate SHARED across every model's
-// goroutines (see Runner's doc comment), even though runRecord itself is
-// already running inside one model's own, separate per-record concurrency
-// slot (see runAll). Also stamps Sample.CostUSD from model's pricing here,
-// the one place both model and RunRecord's real token usage are in scope --
-// and stashes each successful result to config.TaskRuns, ahead of the judge
-// call: every task's RunRecord passes through here, so that is done once, for
-// all of them, rather than in each task.
+// runRecord runs one (model, record) pair through RunRecord -- or takes the
+// result an earlier run stashed for it, when config.Replay holds one (see
+// callOrReplay) -- and, on success, immediately through RunJudge, bridging the
+// RunJudge call through judgeLimiter, a concurrency gate SHARED across every
+// model's goroutines (see Runner's doc comment), even though runRecord itself is
+// already running inside one model's own, separate per-record concurrency slot
+// (see runAll). Also stamps Sample.CostUSD from model's pricing here, the one
+// place both model and RunRecord's real token usage are in scope -- and stashes
+// each successful result to config.TaskRuns, ahead of the judge call: every
+// task's RunRecord passes through here, so that is done once, for all of them,
+// rather than in each task.
 func (r *Runner[R]) runRecord(ctx context.Context, model ModelInfo, record R, judgeLimiter concurrency.Limiter) Sample {
-	sample, result, err := r.task.RunRecord(ctx, model, record, r.config.Failures)
+	sample, result, err := r.callOrReplay(ctx, model, record, r.task.RunRecord)
 	if err != nil {
 		return sample
 	}
@@ -92,6 +93,55 @@ func (r *Runner[R]) runRecord(ctx context.Context, model ModelInfo, record R, ju
 	sample.SchemaInvalid = judged.SchemaInvalid
 
 	return sample
+}
+
+// runTTFTRecord is runRecord's streaming counterpart: one (model, record) pair
+// through RunTTFT -- or the stashed result of an earlier run's, when
+// config.Replay holds it -- and nothing after, since a TTFT sample is never
+// judged. Its result is stashed like a standard one, so a later run can replay
+// it. A failed call's Sample comes back as it is, Err and all, and is never
+// stashed.
+func (r *Runner[R]) runTTFTRecord(ctx context.Context, model ModelInfo, record R) Sample {
+	sample, result, err := r.callOrReplay(ctx, model, record, r.task.RunTTFT)
+	if err == nil {
+		r.stashTaskRun(sample, result)
+	}
+
+	return sample
+}
+
+// callOrReplay makes one task call for (model, record) -- call is the Task's
+// RunRecord or its RunTTFT -- unless config.Replay already holds that run's
+// result, in which case the stashed Sample and CompletionResult are returned in
+// the call's place and the model is never asked. It is the one place a replay is
+// decided, for both passes.
+//
+// The run is looked up by the identity every task puts in the Sample it returns
+// -- the model's ID and reasoning effort label, the task's name, the record's
+// bucket and ID -- which is the identity TaskRunStore.Save files it under, so a
+// run saved by one pass is found by the next (a Task that filled its Sample's
+// identity in differently would save runs a replay could never find, and every
+// one of them would run live).
+//
+// A run that isn't in the stash is not an error: the call runs live, exactly as
+// it would without a Replay -- that's what lets a replay add a model or finish an
+// interrupted run. Neither is a stashed file that can't be trusted (unreadable,
+// or holding some other run -- see TaskRunStore.Load): that is logged, and the
+// call runs live too. The one thing not to do with a stash that can't be trusted
+// is use it.
+func (r *Runner[R]) callOrReplay(ctx context.Context, model ModelInfo, record R, call func(context.Context, ModelInfo, R, *FailureRecorder) (Sample, CompletionResult, error)) (Sample, CompletionResult, error) {
+	if r.config.Replay != nil {
+		sample, result, ok, err := r.config.Replay.Load(model.ID, model.ReasoningEffortLabel(), r.task.Name(), record.RecordBucket(), record.RecordID())
+
+		switch {
+		case err != nil:
+			log.Printf("model %s task %s record %s: not replaying its stashed task run, calling it live instead: %v", model.ID, r.task.Name(), record.RecordID(), err)
+		case ok:
+			return sample, result, nil
+		}
+	}
+
+	return call(ctx, model, record, r.config.Failures)
 }
 
 // stashTaskRun saves one successful task run to config.TaskRuns, if there is

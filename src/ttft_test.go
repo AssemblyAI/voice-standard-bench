@@ -268,15 +268,16 @@ func TestWriteTTFTJSONReport_roundTrips(t *testing.T) {
 	}
 	cells := AggregateTTFT(samples)
 
-	root := t.TempDir()
-	ttftDir, err := WriteTTFTJSONReport(root, samples, cells)
+	// WriteTTFTJSONReport writes into a directory that already exists -- in a
+	// real run, the one the TTFT pass made when it started, named after the
+	// standard pass's (see NewNamedRunDir).
+	ttftDir, err := NewNamedRunDir(filepath.Join(t.TempDir(), "results_ttft"), "a-run")
 	require.NoError(t, err)
-	assert.DirExists(t, ttftDir)
+	require.NoError(t, WriteTTFTJSONReport(ttftDir, samples, cells))
 
-	matches, err := filepath.Glob(filepath.Join(root, "*", "ttft-report.json"))
+	matches, err := filepath.Glob(filepath.Join(ttftDir, "ttft-report*.json"))
 	require.NoError(t, err)
-	require.Len(t, matches, 1, "exactly one run subdirectory with exactly one ttft-report.json")
-	assert.Equal(t, ttftDir, filepath.Dir(matches[0]), "returned path must be the same directory the file was actually written under")
+	require.Len(t, matches, 1, "exactly one ttft-report.json in the run directory")
 
 	raw, err := os.ReadFile(matches[0])
 	require.NoError(t, err)
@@ -297,4 +298,12 @@ func TestWriteTTFTJSONReport_roundTrips(t *testing.T) {
 
 	require.Len(t, parsed.Aggregates, 1)
 	assert.Equal(t, 1, parsed.Aggregates[0].Errors)
+}
+
+// TestWriteTTFTJSONReport_failsIfDirDoesNotExist: like WriteJSONReport, the
+// report goes into a run directory somebody else already made.
+func TestWriteTTFTJSONReport_failsIfDirDoesNotExist(t *testing.T) {
+	err := WriteTTFTJSONReport(filepath.Join(t.TempDir(), "missing"), nil, nil)
+
+	assert.Error(t, err)
 }

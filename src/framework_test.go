@@ -21,10 +21,14 @@ type fakeRecord struct {
 	Bucket string
 }
 
-// RecordBucket implements framework.go's Bucketed, the constraint NewRunner
-// requires of its type argument.
+// RecordBucket and RecordID implement framework.go's Record, the constraint
+// NewRunner requires of its type argument.
 func (r fakeRecord) RecordBucket() string {
 	return r.Bucket
+}
+
+func (r fakeRecord) RecordID() string {
+	return r.ID
 }
 
 // peakTracker tracks the maximum number of concurrent enter/leave pairs
@@ -74,7 +78,8 @@ type fakeTask struct {
 	// below.
 	delay time.Duration
 
-	// failRecordID, if set, makes RunRecord fail for exactly that record ID.
+	// failRecordID, if set, makes RunRecord and RunTTFT fail for exactly that
+	// record ID.
 	failRecordID string
 
 	recordCalls atomic.Int32
@@ -105,7 +110,7 @@ func (t *fakeTask) RunRecord(_ context.Context, model ModelInfo, record fakeReco
 
 	time.Sleep(t.delay)
 
-	sample := Sample{Model: model.ID, Task: t.Name(), Bucket: record.Bucket, RecordID: record.ID}
+	sample := Sample{Model: model.ID, ReasoningEffort: model.ReasoningEffortLabel(), Task: t.Name(), Bucket: record.Bucket, RecordID: record.ID}
 
 	if record.ID == t.failRecordID {
 		err := fmt.Errorf("simulated failure for %s", record.ID)
@@ -130,7 +135,21 @@ func (t *fakeTask) RunTTFT(_ context.Context, model ModelInfo, record fakeRecord
 
 	time.Sleep(t.delay)
 
-	sample := Sample{Model: model.ID, Task: t.Name(), Bucket: record.Bucket, RecordID: record.ID}
+	sample := Sample{Model: model.ID, ReasoningEffort: model.ReasoningEffortLabel(), Task: t.Name(), Bucket: record.Bucket, RecordID: record.ID}
+
+	if record.ID == t.failRecordID {
+		err := fmt.Errorf("simulated ttft failure for %s", record.ID)
+		sample.Err = err
+
+		return sample, CompletionResult{}, err
+	}
+
+	// Deliberately different from RunRecord's measurements, so a test can tell
+	// which of the two calls a sample's numbers came from.
+	sample.TotalLatency = 9 * time.Millisecond
+	sample.TimeToFirstToken = 5 * time.Millisecond
+	sample.CompletionTokens = 2
+	sample.PromptTokens = 3
 
 	return sample, CompletionResult{Text: "streamed output for " + record.ID}, nil
 }
@@ -525,8 +544,8 @@ func TestRunnerZeroConcurrencyDoesNotDeadlock(t *testing.T) {
 
 // ---------------------------------------------------------------------------
 // RunConfig.TaskRuns -- every successful RunRecord result is stashed to disk,
-// ahead of the judge call. fakeTask leaves Sample.ReasoningEffort blank, so a
-// run's file is at store.path(model, "", "fake", bucket, record).
+// ahead of the judge call. A run's file is at
+// store.path(model, reasoningEffortDefaultLabel, "fake", bucket, record).
 // ---------------------------------------------------------------------------
 
 // judgeProbeTask wraps fakeTask, calling probe at the top of every RunJudge
@@ -535,13 +554,13 @@ func TestRunnerZeroConcurrencyDoesNotDeadlock(t *testing.T) {
 type judgeProbeTask struct {
 	*fakeTask
 
-	probe    func(model ModelInfo, record fakeRecord)
+	probe    func(model ModelInfo, record fakeRecord, result CompletionResult)
 	judgeErr error
 }
 
 func (t *judgeProbeTask) RunJudge(ctx context.Context, model ModelInfo, record fakeRecord, judgeModel string, result CompletionResult, failures *FailureRecorder) (Sample, error) {
 	if t.probe != nil {
-		t.probe(model, record)
+		t.probe(model, record, result)
 	}
 
 	if t.judgeErr != nil {
@@ -568,7 +587,7 @@ func TestRunnerRunStashesEverySuccessfulTaskRun(t *testing.T) {
 
 	for _, model := range models {
 		for _, record := range records {
-			path := store.path(model.ID, "", "fake", record.Bucket, record.ID)
+			path := store.path(model.ID, reasoningEffortDefaultLabel, "fake", record.Bucket, record.ID)
 
 			if record.ID == "rec-1" {
 				assert.NoFileExists(t, path, "a failed task call has no output to keep")
@@ -599,8 +618,8 @@ func TestRunnerRunStashesTaskRunBeforeJudgingIt(t *testing.T) {
 	var onDiskAtJudgeTime atomic.Int32
 
 	task := &judgeProbeTask{fakeTask: &fakeTask{delay: time.Millisecond}}
-	task.probe = func(model ModelInfo, record fakeRecord) {
-		if _, err := os.Stat(store.path(model.ID, "", "fake", record.Bucket, record.ID)); err == nil {
+	task.probe = func(model ModelInfo, record fakeRecord, _ CompletionResult) {
+		if _, err := os.Stat(store.path(model.ID, reasoningEffortDefaultLabel, "fake", record.Bucket, record.ID)); err == nil {
 			onDiskAtJudgeTime.Add(1)
 		}
 	}
@@ -634,22 +653,28 @@ func TestRunnerRunKeepsTaskRunsWhoseJudgeCallFailed(t *testing.T) {
 	require.Equal(t, 3, store.Count())
 
 	for _, record := range records {
-		file := readTaskRunFile(t, store.path("model-0", "", "fake", record.Bucket, record.ID))
+		file := readTaskRunFile(t, store.path("model-0", reasoningEffortDefaultLabel, "fake", record.Bucket, record.ID))
 		assert.Equal(t, "output for "+record.ID, file.Text)
 	}
 }
 
-// TestRunnerRunTTFTNeverStashesTaskRuns: a TTFT sample's streamed output is
-// never judged, so there is nothing in it to reuse -- and a stash that filled
-// with it would only be noise beside the judged pass's outputs.
-func TestRunnerRunTTFTNeverStashesTaskRuns(t *testing.T) {
+// TestRunnerRunTTFTStashesTaskRuns: the streaming pass stashes what its calls
+// return, like Run does, so a later run can replay them -- into the store its
+// pass was given, which is never the standard pass's (see RunConfig.TaskRuns).
+func TestRunnerRunTTFTStashesTaskRuns(t *testing.T) {
 	store := NewTaskRunStore(t.TempDir())
+	records := testRecords(2)
 
-	runner := NewRunner[fakeRecord](&fakeTask{delay: time.Millisecond}, RunConfig{Models: testModels(1), Concurrency: 1, TaskRuns: store})
-	runner.RunTTFT(context.Background(), testRecords(2))
+	runner := NewRunner[fakeRecord](&fakeTask{delay: time.Millisecond, failRecordID: "rec-1"}, RunConfig{Models: testModels(1), Concurrency: 1, TaskRuns: store})
+	runner.RunTTFT(context.Background(), records)
 
-	assert.Zero(t, store.Count())
-	assert.NoDirExists(t, store.Dir())
+	require.Equal(t, 1, store.Count(), "the call that failed has nothing to stash")
+
+	file := readTaskRunFile(t, store.path("model-0", reasoningEffortDefaultLabel, "fake", "30s", "rec-0"))
+	assert.Equal(t, "streamed output for rec-0", file.Text)
+	assert.Equal(t, (9 * time.Millisecond).Seconds(), file.TotalLatencyS)
+	assert.Equal(t, (5 * time.Millisecond).Seconds(), file.TimeToFirstTokenS)
+	assert.NoFileExists(t, store.path("model-0", reasoningEffortDefaultLabel, "fake", "30s", "rec-1"))
 }
 
 // TestRunnerRunStillJudgesWhenStashingFails: the stash is only a copy of what
@@ -673,4 +698,254 @@ func TestRunnerRunStillJudgesWhenStashingFails(t *testing.T) {
 	}
 
 	assert.Zero(t, store.Count())
+}
+
+// ---------------------------------------------------------------------------
+// RunConfig.Replay -- an earlier run's stashed task runs stand in for the calls
+// ---------------------------------------------------------------------------
+
+// earlierRun runs task over records for models through a Runner that stashes into
+// a fresh run directory -- the earlier run a replay replays -- and returns that
+// directory. ttft picks the pass: Run's outputs and RunTTFT's go to separate
+// stores in a real run, and each test here replays just one of them.
+func earlierRun(t *testing.T, task Task[fakeRecord], models []ModelInfo, records []fakeRecord, ttft bool) (runDir string) {
+	t.Helper()
+
+	runDir = t.TempDir()
+	runner := NewRunner[fakeRecord](task, RunConfig{Models: models, JudgeModel: "judge", Concurrency: 2, TaskRuns: NewTaskRunStore(runDir)})
+
+	if ttft {
+		runner.RunTTFT(context.Background(), records)
+	} else {
+		runner.Run(context.Background(), records)
+	}
+
+	return runDir
+}
+
+// TestRunnerRunReplaysStashedTaskRunsInsteadOfCallingTheTask is the point of
+// replay: the candidate call is skipped for every (model, record) the earlier run
+// stashed, and the judge runs live over what it stashed.
+func TestRunnerRunReplaysStashedTaskRunsInsteadOfCallingTheTask(t *testing.T) {
+	models := []ModelInfo{
+		{ID: "model-0", PromptPricePerMillion: 3, CompletionPricePerMillion: 15},
+		{ID: "model-1", PromptPricePerMillion: 3, CompletionPricePerMillion: 15},
+	}
+	records := testRecords(3)
+	earlier := earlierRun(t, &fakeTask{delay: time.Millisecond}, models, records, false)
+
+	// The replaying run's task has counters of its own, so none of them moving is
+	// proof the call was never made. Its judge notes the output it was handed.
+	replaying := &fakeTask{delay: time.Millisecond}
+
+	var handed sync.Map
+
+	task := &judgeProbeTask{fakeTask: replaying, probe: func(model ModelInfo, record fakeRecord, result CompletionResult) {
+		handed.Store(model.ID+"/"+record.ID, result.Text)
+	}}
+
+	replay := NewTaskRunStore(earlier)
+	runner := NewRunner[fakeRecord](task, RunConfig{Models: models, JudgeModel: "judge", Concurrency: 2, Replay: replay})
+
+	samples := runner.Run(context.Background(), records)
+
+	require.Len(t, samples, 6)
+	assert.EqualValues(t, 0, replaying.recordCalls.Load(), "no candidate call is made for a run the earlier run stashed")
+	assert.EqualValues(t, 6, replaying.judgeCalls.Load(), "...but every one is judged, live")
+	assert.Equal(t, 6, replay.Reused("fake"))
+
+	for _, s := range samples {
+		assert.NoError(t, s.Err)
+		assert.Equal(t, float64(5), s.Judge["quality"])
+
+		// The measurements are the earlier run's own (see fakeTask.RunRecord), and
+		// the cost is stamped from them the way it is for any sample.
+		assert.Equal(t, 42*time.Millisecond, s.TotalLatency)
+		assert.Equal(t, 11, s.PromptTokens)
+		assert.Equal(t, 7, s.CompletionTokens)
+		assert.InDelta(t, 11*3.0/1e6+7*15.0/1e6, s.CostUSD, 1e-12)
+
+		text, ok := handed.Load(s.Model + "/" + s.RecordID)
+		require.True(t, ok, "%s/%s was never judged", s.Model, s.RecordID)
+		assert.Equal(t, "output for "+s.RecordID, text, "the judge is handed the stashed output")
+	}
+}
+
+// TestRunnerRunReplayCallsLiveWhatTheEarlierRunDidNotStash: a replay skips only
+// the calls that were made. A model the earlier run never ran, a record beyond
+// its sample, run live, exactly as they would without a replay.
+func TestRunnerRunReplayCallsLiveWhatTheEarlierRunDidNotStash(t *testing.T) {
+	earlier := earlierRun(t, &fakeTask{delay: time.Millisecond}, testModels(1), testRecords(3), false)
+
+	task := &fakeTask{delay: time.Millisecond}
+	replay := NewTaskRunStore(earlier)
+
+	// One model more, and a fourth record.
+	runner := NewRunner[fakeRecord](task, RunConfig{Models: testModels(2), JudgeModel: "judge", Concurrency: 2, Replay: replay})
+	samples := runner.Run(context.Background(), testRecords(4))
+
+	require.Len(t, samples, 8)
+	assert.Equal(t, 3, replay.Reused("fake"), "model-0 x the three records it ran before")
+	assert.EqualValues(t, 5, task.recordCalls.Load(), "model-0's fourth record, and all four of model-1's")
+	assert.EqualValues(t, 8, task.judgeCalls.Load(), "everything is judged either way")
+
+	for _, s := range samples {
+		assert.NoError(t, s.Err)
+		assert.Equal(t, float64(5), s.Judge["quality"])
+	}
+}
+
+// TestRunnerRunReplayRetriesARunThatFailedTheFirstTime: a call that failed was
+// never stashed, so replaying the run makes it again -- which is also how a run
+// that was interrupted gets finished.
+func TestRunnerRunReplayRetriesARunThatFailedTheFirstTime(t *testing.T) {
+	earlier := earlierRun(t, &fakeTask{delay: time.Millisecond, failRecordID: "rec-1"}, testModels(1), testRecords(3), false)
+
+	task := &fakeTask{delay: time.Millisecond} // it doesn't fail this time
+	replay := NewTaskRunStore(earlier)
+
+	runner := NewRunner[fakeRecord](task, RunConfig{Models: testModels(1), JudgeModel: "judge", Concurrency: 2, Replay: replay})
+	samples := runner.Run(context.Background(), testRecords(3))
+
+	require.Len(t, samples, 3)
+	assert.Equal(t, 2, replay.Reused("fake"))
+	assert.EqualValues(t, 1, task.recordCalls.Load(), "only the call that failed is made again")
+
+	for _, s := range samples {
+		assert.NoError(t, s.Err)
+		assert.Equal(t, float64(5), s.Judge["quality"])
+	}
+}
+
+// TestRunnerRunReplayRejudgesRunsWhoseJudgeFailedBefore is the scenario the
+// stash was built for, end to end: the candidates were called, the judge was
+// down, and a replay judges what the candidates said without asking them again.
+func TestRunnerRunReplayRejudgesRunsWhoseJudgeFailedBefore(t *testing.T) {
+	models, records := testModels(1), testRecords(3)
+
+	earlier := t.TempDir()
+	judgeDown := &judgeProbeTask{fakeTask: &fakeTask{delay: time.Millisecond}, judgeErr: errors.New("judge is down")}
+	first := NewRunner[fakeRecord](judgeDown, RunConfig{Models: models, JudgeModel: "judge", Concurrency: 2, TaskRuns: NewTaskRunStore(earlier)})
+
+	for _, s := range first.Run(context.Background(), records) {
+		require.Nil(t, s.Judge, "the first run's judge was down")
+	}
+
+	task := &fakeTask{delay: time.Millisecond}
+	second := NewRunner[fakeRecord](task, RunConfig{Models: models, JudgeModel: "judge", Concurrency: 2, Replay: NewTaskRunStore(earlier)})
+	samples := second.Run(context.Background(), records)
+
+	require.Len(t, samples, 3)
+	assert.EqualValues(t, 0, task.recordCalls.Load(), "nothing the candidates already said is asked again")
+
+	for _, s := range samples {
+		assert.NoError(t, s.Err)
+		assert.Equal(t, float64(5), s.Judge["quality"])
+	}
+}
+
+// TestRunnerRunReplayStashesWhatItReusedSoTheNewRunCanBeReplayed: a replayed run
+// is stashed into the new run's directory like any other, byte for byte, so that
+// directory is complete in itself -- the earlier run can be deleted, and the new
+// run replayed in its turn.
+func TestRunnerRunReplayStashesWhatItReusedSoTheNewRunCanBeReplayed(t *testing.T) {
+	models, records := testModels(2), testRecords(3)
+	first := earlierRun(t, &fakeTask{delay: time.Millisecond}, models, records, false)
+
+	secondDir := t.TempDir()
+	second := NewRunner[fakeRecord](&fakeTask{delay: time.Millisecond}, RunConfig{
+		Models: models, JudgeModel: "judge", Concurrency: 2,
+		Replay: NewTaskRunStore(first), TaskRuns: NewTaskRunStore(secondDir),
+	})
+	second.Run(context.Background(), records)
+
+	firstStore, secondStore := NewTaskRunStore(first), NewTaskRunStore(secondDir)
+	require.Equal(t, 6, secondStore.Stashed())
+
+	for _, model := range models {
+		for _, record := range records {
+			original, err := os.ReadFile(firstStore.path(model.ID, reasoningEffortDefaultLabel, "fake", record.Bucket, record.ID))
+			require.NoError(t, err)
+
+			copied, err := os.ReadFile(secondStore.path(model.ID, reasoningEffortDefaultLabel, "fake", record.Bucket, record.ID))
+			require.NoError(t, err)
+
+			assert.Equal(t, string(original), string(copied))
+		}
+	}
+
+	// Replayed in its turn, with the first run out of the picture, no call is made.
+	third := &fakeTask{delay: time.Millisecond}
+	NewRunner[fakeRecord](third, RunConfig{Models: models, JudgeModel: "judge", Concurrency: 2, Replay: NewTaskRunStore(secondDir)}).
+		Run(context.Background(), records)
+
+	assert.EqualValues(t, 0, third.recordCalls.Load())
+}
+
+// TestRunnerRunReplayCallsLiveWhenAStashedFileCannotBeTrusted: a stash file that
+// is unreadable, or holds some other run than its name says (names are lossy),
+// is not used -- using it would score the wrong output. Those runs are called
+// live instead, the rest are still replayed, and nothing panics.
+func TestRunnerRunReplayCallsLiveWhenAStashedFileCannotBeTrusted(t *testing.T) {
+	earlier := earlierRun(t, &fakeTask{delay: time.Millisecond}, testModels(1), testRecords(3), false)
+	store := NewTaskRunStore(earlier)
+
+	stashed := func(record string) string {
+		return store.path("model-0", reasoningEffortDefaultLabel, "fake", "30s", record)
+	}
+
+	// rec-0's file is garbage; rec-1's holds rec-2's run, as a name collision would leave it.
+	require.NoError(t, os.WriteFile(stashed("rec-0"), []byte("{not json"), 0o644))
+
+	rec2, err := os.ReadFile(stashed("rec-2"))
+	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(stashed("rec-1"), rec2, 0o644))
+
+	task := &fakeTask{delay: time.Millisecond}
+	newStash := NewTaskRunStore(t.TempDir())
+
+	runner := NewRunner[fakeRecord](task, RunConfig{Models: testModels(1), JudgeModel: "judge", Concurrency: 2, Replay: NewTaskRunStore(earlier), TaskRuns: newStash})
+	samples := runner.Run(context.Background(), testRecords(3))
+
+	require.Len(t, samples, 3)
+	assert.EqualValues(t, 2, task.recordCalls.Load(), "the two files that can't be trusted are not used")
+
+	for _, s := range samples {
+		assert.NoError(t, s.Err)
+		assert.Equal(t, float64(5), s.Judge["quality"])
+	}
+
+	// The new run's stash holds all three, each its own run's output.
+	for _, record := range testRecords(3) {
+		file := readTaskRunFile(t, newStash.path("model-0", reasoningEffortDefaultLabel, "fake", "30s", record.ID))
+		assert.Equal(t, record.ID, file.RecordID)
+		assert.Equal(t, "output for "+record.ID, file.Text)
+	}
+}
+
+// TestRunnerRunTTFTReplaysStashedTaskRunsInsteadOfStreaming: the same for the
+// streaming pass -- no call, and the samples carry the earlier run's measured
+// time to first token, not a new one.
+func TestRunnerRunTTFTReplaysStashedTaskRunsInsteadOfStreaming(t *testing.T) {
+	models, records := testModels(2), testRecords(2)
+	earlier := earlierRun(t, &fakeTask{delay: time.Millisecond}, models, records, true)
+
+	task := &fakeTask{delay: time.Millisecond}
+	replay := NewTaskRunStore(earlier)
+
+	runner := NewRunner[fakeRecord](task, RunConfig{Models: models, Concurrency: 2, Replay: replay})
+	samples := runner.RunTTFT(context.Background(), records)
+
+	require.Len(t, samples, 4)
+	assert.EqualValues(t, 0, task.ttftCalls.Load(), "no streaming call is made for a run the earlier run stashed")
+	assert.EqualValues(t, 0, task.judgeCalls.Load(), "a TTFT pass never judges, replayed or not")
+	assert.Equal(t, 4, replay.Reused("fake"))
+
+	for _, s := range samples {
+		assert.NoError(t, s.Err)
+		assert.Equal(t, 9*time.Millisecond, s.TotalLatency)
+		assert.Equal(t, 5*time.Millisecond, s.TimeToFirstToken)
+		assert.Zero(t, s.CostUSD, "TTFT never computes cost")
+		assert.Nil(t, s.Judge)
+	}
 }

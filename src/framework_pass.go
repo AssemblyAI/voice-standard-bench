@@ -6,6 +6,11 @@
 // stages both, then reviews and merges them into -canonical-version via
 // ReviewAndMergeIntoCanonical (see canonical.go). There is no flag to opt out of
 // the merge step.
+//
+// Both passes stash every successful model call's output as it comes back (see
+// TaskRunStore), in a staging directory named for the run -- the same name under
+// results/ and results_ttft/ -- and -replay takes that name to re-run only the
+// judging over an earlier run's outputs (see replay.go).
 package main
 
 import (
@@ -14,6 +19,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"time"
@@ -54,6 +60,13 @@ type frameworkPassConfig struct {
 	// Debug mirrors -debug: tasks print extra diagnostics as they run (see
 	// RunConfig.Debug). It never changes what is measured, recorded, or merged.
 	Debug bool
+
+	// Replay mirrors -replay: the name of an earlier run (see replayRunName for
+	// the forms it takes) whose stashed task runs this run reuses instead of
+	// calling the candidate models again -- both passes' -- so that only the
+	// judge step is paid for. A (model, record) the earlier run didn't stash
+	// runs live. Empty replays nothing.
+	Replay string
 }
 
 // frameworkOutputPath, frameworkErrorsPath, frameworkCanonicalRoot,
@@ -157,6 +170,18 @@ func runFrameworkBenchmarkPass(ctx context.Context, cfg frameworkPassConfig) {
 		fatal(fmt.Errorf("framework: %w", err))
 	}
 
+	// Resolved before anything is called -- the gateway included: a replay that
+	// can't be done faithfully is refused here, not discovered halfway through
+	// (see openReplaySource).
+	var replay *replaySource
+
+	if cfg.Replay != "" {
+		replay, err = openReplaySource(cfg.Replay, requestedTasks)
+		if err != nil {
+			fatal(fmt.Errorf("framework: %w", err))
+		}
+	}
+
 	key := cfg.APIKey
 	if key == "" {
 		key = os.Getenv("ASSEMBLY_AI_TOKEN")
@@ -212,12 +237,18 @@ func runFrameworkBenchmarkPass(ctx context.Context, cfg frameworkPassConfig) {
 		log.Printf("framework: restricting to bucket(s): %s", strings.Join(buckets, ", "))
 	}
 
+	if replay != nil {
+		if err := replay.checkSelection(models, requestedTasks); err != nil {
+			fatal(fmt.Errorf("framework: %w", err))
+		}
+	}
+
 	if cfg.Debug && !slices.Contains(requestedTasks, prompts.TextCorrection) {
 		log.Printf("framework: -debug only prints for %s, which isn't in -tasks -- nothing extra will be printed", prompts.TextCorrection)
 	}
 
-	reportDir := runFrameworkStandardPass(ctx, gw, models, requestedTasks, buckets, cfg)
-	ttftDir := runFrameworkTTFTPass(ctx, gw, models, requestedTasks, buckets, cfg)
+	reportDir := runFrameworkStandardPass(ctx, gw, models, requestedTasks, buckets, cfg, replay)
+	ttftDir := runFrameworkTTFTPass(ctx, gw, models, requestedTasks, buckets, cfg, filepath.Base(reportDir), replay)
 
 	canonicalVersion := cfg.CanonicalVersion
 	if strings.TrimSpace(canonicalVersion) == "" {
@@ -245,7 +276,12 @@ func runFrameworkBenchmarkPass(ctx context.Context, cfg frameworkPassConfig) {
 // TaskRunStore) the moment it returns. A pass that dies before it has a
 // report -- or whose judge calls fail -- therefore still leaves every output
 // it had paid for.
-func runFrameworkStandardPass(ctx context.Context, gw *Gateway, models []ModelInfo, requestedTasks []string, buckets []string, cfg frameworkPassConfig) (reportDir string) {
+//
+// replay, when non-nil, is an earlier run whose stashed task runs stand in for
+// the RunRecord calls it made (see RunConfig.Replay): those are not called again,
+// only judged. The pass still stashes them into its own directory, so every run's
+// directory is complete in itself and can be replayed in turn.
+func runFrameworkStandardPass(ctx context.Context, gw *Gateway, models []ModelInfo, requestedTasks []string, buckets []string, cfg frameworkPassConfig, replay *replaySource) (reportDir string) {
 	failures, err := NewFailureRecorder(frameworkErrorsPath)
 	if err != nil {
 		fatal(fmt.Errorf("framework: setting up failure recorder: %w", err))
@@ -270,6 +306,7 @@ func runFrameworkStandardPass(ctx context.Context, gw *Gateway, models []ModelIn
 		Buckets:             buckets,
 		Failures:            failures,
 		TaskRuns:            taskRuns,
+		Replay:              replay.standardRuns(),
 		Debug:               cfg.Debug,
 	}, requestedTasks)
 	if err != nil {
@@ -297,6 +334,7 @@ func runFrameworkStandardPass(ctx context.Context, gw *Gateway, models []ModelIn
 
 	log.Printf("framework: recorded %d failure(s) under %s", failures.Count(), failures.RunDir())
 	log.Printf("framework: stashed %d task run output(s) under %s", taskRuns.Count(), taskRuns.Dir())
+	logReplay("", replay.standardRuns(), samples)
 
 	if err := WriteJSONReport(reportDir, samples, cells, cfg.JudgeModel); err != nil {
 		fatal(fmt.Errorf("framework: writing results: %w", err))
@@ -320,13 +358,28 @@ func runFrameworkStandardPass(ctx context.Context, gw *Gateway, models []ModelIn
 // own -- see its doc comment -- and composes with TTFTBuckets inside
 // Runner.RunTTFT (framework.go), so a buckets selection outside 30s/120s
 // simply produces no TTFT samples at all rather than an error.
-func runFrameworkTTFTPass(ctx context.Context, gw *Gateway, models []ModelInfo, requestedTasks []string, buckets []string, cfg frameworkPassConfig) (ttftDir string) {
+//
+// Its staging directory is named runName, the name the standard pass gave its
+// own, so one name finds everything a run staged (see NewNamedRunDir) -- and is
+// made up front, like the standard pass's, because the pass stashes each
+// streaming call's output into it as it returns. replay is used as in
+// runFrameworkStandardPass, for RunTTFT.
+func runFrameworkTTFTPass(ctx context.Context, gw *Gateway, models []ModelInfo, requestedTasks []string, buckets []string, cfg frameworkPassConfig, runName string, replay *replaySource) (ttftDir string) {
 	failures, err := NewFailureRecorder(frameworkTTFTErrorsPath)
 	if err != nil {
 		fatal(fmt.Errorf("framework: setting up ttft failure recorder: %w", err))
 	}
 
 	log.Printf("framework: ttft: recording failures under %s", failures.RunDir())
+
+	ttftDir, err = NewNamedRunDir(frameworkTTFTOutputPath, runName)
+	if err != nil {
+		fatal(fmt.Errorf("framework: creating ttft run directory %s under %s: %w", runName, frameworkTTFTOutputPath, err))
+	}
+
+	taskRuns := NewTaskRunStore(ttftDir)
+
+	log.Printf("framework: ttft: stashing each task run's output under %s", taskRuns.Dir())
 
 	tasks, err := frameworkTasks(gw, RunConfig{
 		Models:              models,
@@ -335,6 +388,8 @@ func runFrameworkTTFTPass(ctx context.Context, gw *Gateway, models []ModelInfo, 
 		Concurrency:         cfg.Concurrency,
 		Buckets:             buckets,
 		Failures:            failures,
+		TaskRuns:            taskRuns,
+		Replay:              replay.ttftRuns(),
 		Debug:               cfg.Debug,
 	}, requestedTasks)
 	if err != nil {
@@ -362,9 +417,10 @@ func runFrameworkTTFTPass(ctx context.Context, gw *Gateway, models []ModelInfo, 
 	PrintTTFTReport(os.Stdout, ttftCells)
 
 	log.Printf("framework: ttft: recorded %d failure(s) under %s", failures.Count(), failures.RunDir())
+	log.Printf("framework: ttft: stashed %d task run output(s) under %s", taskRuns.Count(), taskRuns.Dir())
+	logReplay("ttft: ", replay.ttftRuns(), samples)
 
-	ttftDir, err = WriteTTFTJSONReport(frameworkTTFTOutputPath, samplesToTTFTSamples(samples), ttftCells)
-	if err != nil {
+	if err := WriteTTFTJSONReport(ttftDir, samplesToTTFTSamples(samples), ttftCells); err != nil {
 		fatal(fmt.Errorf("framework: writing ttft results: %w", err))
 	}
 
