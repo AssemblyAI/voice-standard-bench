@@ -112,6 +112,13 @@ type RunConfig struct {
 	// Failures records failed samples for later inspection; nil disables
 	// failure recording entirely, matching FailureRecorder's own contract.
 	Failures *FailureRecorder
+	// TaskRuns, when non-nil, receives every successful RunRecord result -- the
+	// candidate's output -- the moment it comes back, before RunJudge sees it,
+	// so the judge step can be repeated later against those same outputs without
+	// paying for the candidate calls again (see TaskRunStore). nil disables it,
+	// matching Failures. Only Run uses it: RunTTFT's streamed output is never
+	// judged, so there is nothing in it worth reusing.
+	TaskRuns *TaskRunStore
 	// Debug is the -debug flag: a task that has extra diagnostics to offer
 	// prints them as it runs (today only text_correction does -- see
 	// correction_debug.go). It never changes what is measured, recorded, or
@@ -185,7 +192,9 @@ func (r *Runner[R]) LoadAndSample() ([]R, error) {
 // by the separate, shared judge concurrency described on Runner. A
 // RunRecord failure short-circuits straight to its own Sample -- RunJudge is
 // never called for a record whose task call didn't succeed, since there is
-// nothing to grade.
+// nothing to grade. A success is stashed to config.TaskRuns (when set) first,
+// so a judge call that fails, or a run that dies, never loses an output that
+// was already paid for.
 //
 // Run must never run concurrently with RunTTFT against the same models:
 // mixing streaming and synchronous latency numbers for the same candidate at

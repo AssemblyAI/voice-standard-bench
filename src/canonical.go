@@ -42,7 +42,7 @@ func CanonicalVersionDirName(version string) string {
 // directly under sourceDir into canonicalRoot/<version dir>'s own running
 // report-<judge>.json / ttft-report.json files, creating the version dir on
 // first use. Unlike a normal run's results/ output (a fresh, uniquely-named
-// subfolder every call -- see WriteJSONReport), canonical files live directly
+// subfolder every call -- see NewRunDir), canonical files live directly
 // in the version dir and accumulate in place across however many
 // append-canonical calls it takes to cover every model -- see
 // mergeJSONSamples/mergeCells for the per-(model, reasoning effort, task,

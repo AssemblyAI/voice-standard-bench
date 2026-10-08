@@ -165,12 +165,29 @@ func toJSONSamples(samples []Sample) []jsonSample {
 	return out
 }
 
-// WriteJSONReport writes samples and their aggregation to a fresh,
-// uniquely-named subfolder under path, as indented JSON, and returns that
-// subfolder's path -- a caller chaining into the canonical merge (see
-// ReviewAndMergeIntoCanonical in canonical.go) needs it to know what it just
-// staged without re-deriving or globbing for it.
-func WriteJSONReport(path string, samples []Sample, cells []Cell, judgeModel string) (string, error) {
+// NewRunDir creates a fresh, uniquely-named subfolder under path -- and path
+// itself, if it doesn't exist yet -- and returns the subfolder's path: the
+// directory one standard pass stages everything it produces into. It is made
+// when the pass STARTS, not when its report is ready, so that what the pass
+// produces along the way (each task run's output -- see TaskRunStore) can be
+// written into it as it appears; a caller chaining into the canonical merge
+// (see ReviewAndMergeIntoCanonical in canonical.go) also needs the path to know
+// what it just staged without re-deriving or globbing for it.
+func NewRunDir(path string) (string, error) {
+	now := time.Now().Format(time.DateOnly)
+	dirPath := path + "/" + now + "-" + uuid.NewString()
+
+	if err := os.MkdirAll(dirPath, 0o777); err != nil {
+		return "", err
+	}
+
+	return dirPath, nil
+}
+
+// WriteJSONReport writes samples and their aggregation as indented JSON to
+// report-<judgeModel>.json in dir, which must already exist -- normally a
+// directory NewRunDir made at the start of the run being reported.
+func WriteJSONReport(dir string, samples []Sample, cells []Cell, judgeModel string) error {
 	report := jsonReport{
 		Judge:       judgeModel,
 		GeneratedAt: time.Now().UTC(),
@@ -180,20 +197,8 @@ func WriteJSONReport(path string, samples []Sample, cells []Cell, judgeModel str
 
 	data, err := json.MarshalIndent(report, "", "  ")
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	now := time.Now().Format(time.DateOnly)
-	dirPath := path + "/" + now + "-" + uuid.NewString()
-
-	if err := os.MkdirAll(dirPath, 0o777); err != nil {
-		return "", err
-	}
-
-	reportPath := filepath.Join(dirPath, fmt.Sprintf("report-%s.json", judgeModel))
-	if err := os.WriteFile(reportPath, data, 0o644); err != nil {
-		return "", err
-	}
-
-	return dirPath, nil
+	return os.WriteFile(filepath.Join(dir, fmt.Sprintf("report-%s.json", judgeModel)), data, 0o644)
 }

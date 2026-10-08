@@ -47,7 +47,7 @@ func runFrameworkTestCanonicalConfig(t *testing.T, cfg frameworkPassConfig) fram
 // frameworkOutputRunDirs lists frameworkOutputPath's fresh run dir(s),
 // excluding the "canonical" entry -- frameworkCanonicalRoot ("../results/canonical") is
 // physically nested inside frameworkOutputPath ("../results"), so a merged run
-// always leaves one extra entry there alongside WriteJSONReport's own.
+// always leaves one extra entry there alongside the run's own (see NewRunDir).
 func frameworkOutputRunDirs(t *testing.T) []os.DirEntry {
 	t.Helper()
 
@@ -112,7 +112,7 @@ func TestRunFrameworkBenchmarkPass(t *testing.T) {
 	runFrameworkBenchmarkPass(context.Background(), runFrameworkTestCanonicalConfig(t, cfg))
 
 	entries := frameworkOutputRunDirs(t)
-	require.Len(t, entries, 1, "WriteJSONReport must have written exactly one fresh run directory")
+	require.Len(t, entries, 1, "the run must have staged into exactly one fresh run directory")
 
 	reportPath := filepath.Join(frameworkOutputPath, entries[0].Name(), "report-the-judge.json")
 	data, err := os.ReadFile(reportPath)
@@ -683,6 +683,176 @@ func TestRunFrameworkBenchmarkPass_reasoningEffort(t *testing.T) {
 	assert.Equal(t, "candidate-model", report.Samples[0].Model)
 	assert.Equal(t, "low", report.Samples[0].ReasoningEffort)
 	assert.True(t, sawReasoningEffort.Load(), "the candidate call must actually carry reasoning_effort on the wire, not just in the reported name")
+}
+
+// TestRunFrameworkBenchmarkPass_stashesEachTaskRunBesideTheReport exercises
+// the whole path end to end for two different tasks: every successful candidate
+// call lands as its own file under task_runs/<task>/ in THE SAME run directory
+// as the report scored from it -- one directory per run, not one for each --
+// carrying who it was for, what the model said, what the call measured, and the
+// raw request and response, and nothing else is stashed.
+func TestRunFrameworkBenchmarkPass_stashesEachTaskRunBesideTheReport(t *testing.T) {
+	writeFrameworkFixtures(t)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet && r.URL.Path == "/v1/models" {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"data":[{"id":"candidate-model","name":"Candidate","creator":"Acme"}]}`))
+
+			return
+		}
+
+		body := readBody(t, r)
+
+		if strings.Contains(body, `"model":"the-judge"`) {
+			writeChatCompletion(w, `{"faithfulness": 5, "coverage": 5, "conciseness": 5, "notes": "ok"}`, 20, 10)
+
+			return
+		}
+
+		if strings.Contains(body, `"stream":true`) {
+			writeChatCompletionStream(w, []string{"streamed"}, 10, 5)
+
+			return
+		}
+
+		writeChatCompletion(w, "Hey, world.", 10, 5)
+	}))
+	defer server.Close()
+
+	cfg := frameworkPassConfig{
+		GatewayURL:          server.URL,
+		APIKey:              "test-key",
+		Timeout:             5 * time.Second,
+		TasksFlag:           "dictation,summarization",
+		JudgeModel:          "the-judge",
+		MaxSamplesPerBucket: -1,
+		Concurrency:         2,
+	}
+	runFrameworkBenchmarkPass(context.Background(), runFrameworkTestCanonicalConfig(t, cfg))
+
+	entries := frameworkOutputRunDirs(t)
+	require.Len(t, entries, 1, "the stash must share the report's run directory, not make a second one")
+
+	runDir := filepath.Join(frameworkOutputPath, entries[0].Name())
+	assert.FileExists(t, filepath.Join(runDir, "report-the-judge.json"))
+
+	// One file per task run, under the task it belongs to -- and the files
+	// carry the candidate's own output ("Hey, world."), not the TTFT pass's
+	// streamed one, which is never stashed.
+	wantUserMessages := map[string]string{
+		"dictation":     "hey comma world period",
+		"summarization": "a call transcript",
+	}
+	wantRecordIDs := map[string]string{"dictation": "r1", "summarization": "r2"}
+
+	for task, userMessage := range wantUserMessages {
+		paths, err := filepath.Glob(filepath.Join(runDir, taskRunsDirName, task, "*.json"))
+		require.NoError(t, err)
+		require.Len(t, paths, 1, "one task run for %s", task)
+
+		wantName := "candidate-model__default__30s__" + wantRecordIDs[task] + ".json"
+		assert.Equal(t, wantName, filepath.Base(paths[0]))
+
+		file := readTaskRunFile(t, paths[0])
+		assert.Equal(t, "candidate-model", file.Model)
+		assert.Equal(t, "default", file.ReasoningEffort)
+		assert.Equal(t, task, file.Task)
+		assert.Equal(t, "30s", file.Bucket)
+		assert.Equal(t, wantRecordIDs[task], file.RecordID)
+		assert.Equal(t, "Hey, world.", file.Text)
+		assert.Equal(t, 10, file.PromptTokens)
+		assert.Equal(t, 5, file.CompletionTokens)
+		assert.Greater(t, file.TotalLatencyS, 0.0, "the call's latency is stashed too")
+
+		// The raw exchange is there verbatim: the request names the candidate
+		// and carries the record as the user message, and the response is the
+		// whole gateway body, not only the extracted text.
+		var request failureRequestBody
+		require.NoError(t, json.Unmarshal(file.Request, &request))
+		assert.Equal(t, "candidate-model", request.Model)
+		require.NotEmpty(t, request.Messages)
+		assert.Equal(t, userMessage, request.Messages[len(request.Messages)-1].Content)
+
+		var response struct {
+			Choices []struct {
+				Message struct {
+					Content string `json:"content"`
+				} `json:"message"`
+				FinishReason string `json:"finish_reason"`
+			} `json:"choices"`
+		}
+		require.NoError(t, json.Unmarshal(file.Response, &response))
+		require.Len(t, response.Choices, 1)
+		assert.Equal(t, "Hey, world.", response.Choices[0].Message.Content)
+		assert.Equal(t, "stop", response.Choices[0].FinishReason)
+	}
+
+	// Every stashed run is one the report scored, and the other way around.
+	reportData, err := os.ReadFile(filepath.Join(runDir, "report-the-judge.json"))
+	require.NoError(t, err)
+
+	var report jsonReport
+	require.NoError(t, json.Unmarshal(reportData, &report))
+	require.Len(t, report.Samples, 2)
+
+	for _, sample := range report.Samples {
+		stashed, err := filepath.Glob(filepath.Join(runDir, taskRunsDirName, sample.Task, "*"+sample.RecordID+".json"))
+		require.NoError(t, err)
+		assert.Len(t, stashed, 1, "sample %s/%s has no stashed task run", sample.Task, sample.RecordID)
+	}
+
+	// The TTFT pass never judges what it gets back, so it stashes nothing.
+	ttftEntries, err := os.ReadDir(frameworkTTFTOutputPath)
+	require.NoError(t, err)
+	require.Len(t, ttftEntries, 1)
+	assert.NoDirExists(t, filepath.Join(frameworkTTFTOutputPath, ttftEntries[0].Name(), taskRunsDirName))
+
+	// ...and the canonical merge, which already ran, has no use for task_runs/.
+	versionDir := filepath.Join(frameworkCanonicalRoot, CanonicalVersionDirName(DefaultCanonicalVersion))
+	assert.FileExists(t, filepath.Join(versionDir, "report-the-judge.json"))
+	assert.NoDirExists(t, filepath.Join(versionDir, taskRunsDirName))
+}
+
+// TestRunFrameworkBenchmarkPass_doesNotStashFailedTaskRuns: a candidate call
+// that fails has no output to keep, so it leaves no file -- and, since nothing
+// is ever written, no empty task_runs directory either. The failure itself is
+// still recorded under errors/, as before.
+func TestRunFrameworkBenchmarkPass_doesNotStashFailedTaskRuns(t *testing.T) {
+	writeFrameworkFixtures(t)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet && r.URL.Path == "/v1/models" {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"data":[{"id":"candidate-model","name":"Candidate","creator":"Acme"}]}`))
+
+			return
+		}
+
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer server.Close()
+
+	cfg := frameworkPassConfig{
+		GatewayURL:          server.URL,
+		APIKey:              "test-key",
+		Timeout:             5 * time.Second,
+		TasksFlag:           "dictation,summarization",
+		JudgeModel:          "the-judge",
+		MaxSamplesPerBucket: -1,
+		Concurrency:         2,
+	}
+	runFrameworkBenchmarkPass(context.Background(), runFrameworkTestCanonicalConfig(t, cfg))
+
+	entries := frameworkOutputRunDirs(t)
+	require.Len(t, entries, 1)
+
+	assert.NoDirExists(t, filepath.Join(frameworkOutputPath, entries[0].Name(), taskRunsDirName))
+
+	failureDirs, err := os.ReadDir(frameworkErrorsPath)
+	require.NoError(t, err)
+	require.Len(t, failureDirs, 1)
+	assert.Len(t, readFailureMeta(t, filepath.Join(frameworkErrorsPath, failureDirs[0].Name())), 2, "both failures are recorded where they always were")
 }
 
 // ---------------------------------------------------------------------------

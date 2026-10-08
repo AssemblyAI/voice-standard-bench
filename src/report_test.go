@@ -71,21 +71,15 @@ func TestWriteJSONReport_roundTrips(t *testing.T) {
 	}
 	cells := Aggregate(samples)
 
-	dir := t.TempDir()
-	reportDir, err := WriteJSONReport(dir, samples, cells, "")
+	// WriteJSONReport writes into a directory that already exists -- in a real
+	// run, the one NewRunDir made when the pass started.
+	reportDir, err := NewRunDir(t.TempDir())
 	require.NoError(t, err)
-	assert.DirExists(t, reportDir)
+	require.NoError(t, WriteJSONReport(reportDir, samples, cells, ""))
 
-	// WriteJSONReport creates a fresh, uniquely-named subdirectory under dir
-	// on every call (see its doc comment) rather than writing to dir itself,
-	// so the report file has to be located rather than read back at a fixed
-	// path -- reportDir (just asserted above) is that returned path, but
-	// re-derive it via glob too so this test still catches a regression in
-	// the returned value itself, not just in the file's actual location.
-	matches, err := filepath.Glob(filepath.Join(dir, "*", "report-.json"))
+	matches, err := filepath.Glob(filepath.Join(reportDir, "report-*.json"))
 	require.NoError(t, err)
-	require.Len(t, matches, 1, "expected exactly one report file under a fresh run subdirectory")
-	assert.Equal(t, reportDir, filepath.Dir(matches[0]), "returned path must be the same directory the file was actually written under")
+	require.Len(t, matches, 1, "expected exactly one report file in the run directory")
 
 	raw, err := os.ReadFile(matches[0])
 	require.NoError(t, err)
@@ -108,4 +102,30 @@ func TestWriteJSONReport_roundTrips(t *testing.T) {
 
 	require.Len(t, parsed.Aggregates, 1)
 	assert.Equal(t, 1, parsed.Aggregates[0].Errors)
+}
+
+// TestWriteJSONReport_failsIfDirDoesNotExist pins the contract that the report
+// goes into a run directory somebody else already made: a mistyped or missing
+// dir is an error, not a directory quietly created in its place.
+func TestWriteJSONReport_failsIfDirDoesNotExist(t *testing.T) {
+	err := WriteJSONReport(filepath.Join(t.TempDir(), "missing"), nil, nil, "judge")
+
+	assert.Error(t, err)
+}
+
+func TestNewRunDir_createsAFreshUniqueDirUnderPath(t *testing.T) {
+	root := filepath.Join(t.TempDir(), "results") // doesn't exist yet: NewRunDir must make it too
+
+	first, err := NewRunDir(root)
+	require.NoError(t, err)
+
+	second, err := NewRunDir(root)
+	require.NoError(t, err)
+
+	assert.NotEqual(t, first, second, "two runs must never share a run directory")
+
+	for _, dir := range []string{first, second} {
+		assert.DirExists(t, dir)
+		assert.Equal(t, root, filepath.Dir(dir), "each run directory must live directly under path")
+	}
 }

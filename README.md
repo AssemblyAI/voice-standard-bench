@@ -224,6 +224,42 @@ go run . \
   -models new-model-1,new-model-2
 ```
 
+## Stashed task outputs (`task_runs/`)
+
+Every candidate call costs money, and the judge step is the part that gets
+reworked — a new rubric, a different judge model, a judge that was down — so
+redoing the judging shouldn't mean paying for the candidate calls again. Every
+candidate call that comes back is therefore written to disk the moment it
+returns, before it is judged, in the run's staged directory beside its report:
+
+```
+results/<date>-<uuid>/
+  report-<judge>.json
+  task_runs/
+    <task>/
+      <model>__<reasoning effort>__<bucket>__<record id>.json
+```
+
+One file per (model, reasoning effort, task, bucket, record). Characters a file
+name can't carry (the `/` in a model ID, the `:` in a record ID) become `_` in
+the *name* only. Each file holds who it was for (`model`, `reasoning_effort`,
+`task`, `bucket`, `record_id` — the same fields a `report-*.json` sample has),
+what the model said (`text`), what the call measured (`total_latency_s`,
+`time_to_first_token_s`, `prompt_tokens`, `completion_tokens`, unrounded), and
+the verbatim gateway `request` and `response`.
+
+Only the standard pass writes them — in `Runner.runRecord`, which every task goes
+through (`runner_internal.go`, `TaskRunStore` in `task_runs.go`). The TTFT pass
+never judges what it gets back, so it has nothing to keep. A call that failed has
+no output, so it isn't stashed; it's under `errors/`, as before. Because each file
+is written as soon as its call returns, a judge that is down — or a run that is
+killed partway through — still leaves every output it had already paid for.
+
+Nothing reads these files back yet: reusing them to re-run only the judge step is
+the next piece of work. The canonical merge and the summary ignore `task_runs/`
+(they only look for `report-*.json` and `ttft-report*.json`), and so does git
+(`results/` is ignored).
+
 ## Per-task quality breakdown
 
 Every `summary.csv`/table/JSON row also carries a `task_quality`
@@ -391,7 +427,8 @@ benchmark/
   correction_debug.go  the -debug aligned truth/input/output review — see "Debug mode" above
   editdistance.go  banded word-level Levenshtein distance (and alignment) behind both, sized for 15,000-word transcripts
   dictation.go   dictation's own dataset loading, runner, and mechanical scoring — see "Dictation" above
-  report.go      stdout table + report JSON
+  report.go      stdout table + report JSON, and the staged run directory
+  task_runs.go   stashes every successful candidate call's output under the run directory — see "Stashed task outputs" above
   ttft.go        separate streaming-only TTFT path — see "Time-to-first-token" above
   summary.go     reads report-*.json/ttft-report*.json and writes a by-judge/combined summary.json+csv+table, incl. cost per quality
   use_cases.go   post-summary use_cases.json derivation for the canonical version dir — see "Use cases" above

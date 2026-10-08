@@ -363,12 +363,12 @@ func toTTFTJSONSamples(samples []TTFTSample) []ttftJSONSample {
 }
 
 // WriteTTFTJSONReport writes samples and their aggregation to a fresh,
-// uniquely-named subfolder under path — mirroring WriteJSONReport's layout
-// (report.go) — as "ttft-report.json" (no judge-model suffix: there is no
-// judge on this path, so no name to disambiguate by) -- and returns that
-// subfolder's path, mirroring WriteJSONReport's own return for the same
-// reason (see its doc comment). The summary tool (summary.go) globs for
-// exactly this filename pattern.
+// uniquely-named subfolder under path — mirroring the layout NewRunDir and
+// WriteJSONReport (report.go) give the standard pass — as "ttft-report.json"
+// (no judge-model suffix: there is no judge on this path, so no name to
+// disambiguate by) -- and returns that subfolder's path, mirroring NewRunDir's
+// own return for the same reason (see its doc comment). The summary tool
+// (summary.go) globs for exactly this filename pattern.
 //
 // The subfolder is created with os.MkdirAll: the TTFT output directory (see
 // frameworkTTFTOutputPath in framework_pass.go) doesn't necessarily exist yet

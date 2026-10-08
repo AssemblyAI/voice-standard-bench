@@ -238,6 +238,13 @@ func runFrameworkBenchmarkPass(ctx context.Context, cfg frameworkPassConfig) {
 // RunConfig.Buckets) -- so a re-run scoped to one bucket only produces a
 // report covering that bucket, which RunAppendCanonical's bucket-aware merge
 // (canonical.go) then uses to update just that bucket's rows in canonical.
+//
+// The staged run directory is created before the first model is called, not
+// when the report is written, because the pass writes into it as it goes:
+// every successful task run's output is stashed under its task_runs/ (see
+// TaskRunStore) the moment it returns. A pass that dies before it has a
+// report -- or whose judge calls fail -- therefore still leaves every output
+// it had paid for.
 func runFrameworkStandardPass(ctx context.Context, gw *Gateway, models []ModelInfo, requestedTasks []string, buckets []string, cfg frameworkPassConfig) (reportDir string) {
 	failures, err := NewFailureRecorder(frameworkErrorsPath)
 	if err != nil {
@@ -246,6 +253,15 @@ func runFrameworkStandardPass(ctx context.Context, gw *Gateway, models []ModelIn
 
 	log.Printf("framework: recording failures under %s", failures.RunDir())
 
+	reportDir, err = NewRunDir(frameworkOutputPath)
+	if err != nil {
+		fatal(fmt.Errorf("framework: creating run directory under %s: %w", frameworkOutputPath, err))
+	}
+
+	taskRuns := NewTaskRunStore(reportDir)
+
+	log.Printf("framework: stashing each task run's output under %s", taskRuns.Dir())
+
 	tasks, err := frameworkTasks(gw, RunConfig{
 		Models:              models,
 		JudgeModel:          cfg.JudgeModel,
@@ -253,6 +269,7 @@ func runFrameworkStandardPass(ctx context.Context, gw *Gateway, models []ModelIn
 		Concurrency:         cfg.Concurrency,
 		Buckets:             buckets,
 		Failures:            failures,
+		TaskRuns:            taskRuns,
 		Debug:               cfg.Debug,
 	}, requestedTasks)
 	if err != nil {
@@ -279,9 +296,9 @@ func runFrameworkStandardPass(ctx context.Context, gw *Gateway, models []ModelIn
 	PrintReport(os.Stdout, cells)
 
 	log.Printf("framework: recorded %d failure(s) under %s", failures.Count(), failures.RunDir())
+	log.Printf("framework: stashed %d task run output(s) under %s", taskRuns.Count(), taskRuns.Dir())
 
-	reportDir, err = WriteJSONReport(frameworkOutputPath, samples, cells, cfg.JudgeModel)
-	if err != nil {
+	if err := WriteJSONReport(reportDir, samples, cells, cfg.JudgeModel); err != nil {
 		fatal(fmt.Errorf("framework: writing results: %w", err))
 	}
 

@@ -7,6 +7,7 @@ package main
 
 import (
 	"context"
+	"log"
 	"sync"
 
 	"github.com/AssemblyAI/voice-standard-bench/internal/concurrency"
@@ -57,7 +58,10 @@ func (r *Runner[R]) runAll(ctx context.Context, records []R, perRecord func(ctx 
 // goroutines (see Runner's doc comment), even though runRecord itself is
 // already running inside one model's own, separate per-record concurrency
 // slot (see runAll). Also stamps Sample.CostUSD from model's pricing here,
-// the one place both model and RunRecord's real token usage are in scope.
+// the one place both model and RunRecord's real token usage are in scope --
+// and stashes each successful result to config.TaskRuns, ahead of the judge
+// call: every task's RunRecord passes through here, so that is done once, for
+// all of them, rather than in each task.
 func (r *Runner[R]) runRecord(ctx context.Context, model ModelInfo, record R, judgeLimiter concurrency.Limiter) Sample {
 	sample, result, err := r.task.RunRecord(ctx, model, record, r.config.Failures)
 	if err != nil {
@@ -65,6 +69,8 @@ func (r *Runner[R]) runRecord(ctx context.Context, model ModelInfo, record R, ju
 	}
 
 	sample.CostUSD = model.Cost(sample.PromptTokens, sample.CompletionTokens)
+
+	r.stashTaskRun(sample, result)
 
 	judged, err := runSync(judgeLimiter, func() (Sample, error) {
 		return r.task.RunJudge(ctx, model, record, r.config.JudgeModel, result, r.config.Failures)
@@ -86,6 +92,21 @@ func (r *Runner[R]) runRecord(ctx context.Context, model ModelInfo, record R, ju
 	sample.SchemaInvalid = judged.SchemaInvalid
 
 	return sample
+}
+
+// stashTaskRun saves one successful task run to config.TaskRuns, if there is
+// one. A failed write is logged, not returned: a benchmark that is otherwise
+// succeeding shouldn't abort, or drop a sample it has already paid for, over
+// trouble writing what is only a copy of its own output -- the same call
+// recordFailure makes for its own diagnostic files.
+func (r *Runner[R]) stashTaskRun(sample Sample, result CompletionResult) {
+	if r.config.TaskRuns == nil {
+		return
+	}
+
+	if err := r.config.TaskRuns.Save(sample, result); err != nil {
+		log.Printf("model %s task %s record %s: stashing task run: %v", sample.Model, sample.Task, sample.RecordID, err)
+	}
 }
 
 // newSampleCollector returns a collect function safe to call concurrently

@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -519,4 +521,156 @@ func TestRunnerZeroConcurrencyDoesNotDeadlock(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("Run deadlocked with Concurrency: 0")
 	}
+}
+
+// ---------------------------------------------------------------------------
+// RunConfig.TaskRuns -- every successful RunRecord result is stashed to disk,
+// ahead of the judge call. fakeTask leaves Sample.ReasoningEffort blank, so a
+// run's file is at store.path(model, "", "fake", bucket, record).
+// ---------------------------------------------------------------------------
+
+// judgeProbeTask wraps fakeTask, calling probe at the top of every RunJudge
+// call -- before the judge has done anything -- and, when judgeErr is set,
+// failing the call the way a judge that is down would.
+type judgeProbeTask struct {
+	*fakeTask
+
+	probe    func(model ModelInfo, record fakeRecord)
+	judgeErr error
+}
+
+func (t *judgeProbeTask) RunJudge(ctx context.Context, model ModelInfo, record fakeRecord, judgeModel string, result CompletionResult, failures *FailureRecorder) (Sample, error) {
+	if t.probe != nil {
+		t.probe(model, record)
+	}
+
+	if t.judgeErr != nil {
+		return Sample{}, t.judgeErr
+	}
+
+	return t.fakeTask.RunJudge(ctx, model, record, judgeModel, result, failures)
+}
+
+// TestRunnerRunStashesEverySuccessfulTaskRun proves the Runner -- once, for
+// every Task, not each Task separately -- writes one file per (model, record)
+// whose task call succeeded, holding what the call returned, and none for one
+// that failed: a failed call has no output to keep.
+func TestRunnerRunStashesEverySuccessfulTaskRun(t *testing.T) {
+	task := &fakeTask{delay: time.Millisecond, failRecordID: "rec-1"}
+	store := NewTaskRunStore(t.TempDir())
+	models, records := testModels(2), testRecords(3)
+
+	runner := NewRunner[fakeRecord](task, RunConfig{Models: models, JudgeModel: "judge", Concurrency: 2, TaskRuns: store})
+	runner.Run(context.Background(), records)
+
+	assert.Equal(t, 4, store.Count(), "2 models x the 2 records that did not fail")
+	assert.Len(t, taskRunPaths(t, store), 4)
+
+	for _, model := range models {
+		for _, record := range records {
+			path := store.path(model.ID, "", "fake", record.Bucket, record.ID)
+
+			if record.ID == "rec-1" {
+				assert.NoFileExists(t, path, "a failed task call has no output to keep")
+
+				continue
+			}
+
+			file := readTaskRunFile(t, path)
+			assert.Equal(t, model.ID, file.Model)
+			assert.Equal(t, "fake", file.Task)
+			assert.Equal(t, record.Bucket, file.Bucket)
+			assert.Equal(t, record.ID, file.RecordID)
+			assert.Equal(t, "output for "+record.ID, file.Text)
+			// The measurements RunRecord reported ride along (see fakeTask.RunRecord).
+			assert.Equal(t, (42 * time.Millisecond).Seconds(), file.TotalLatencyS)
+			assert.Equal(t, 11, file.PromptTokens)
+			assert.Equal(t, 7, file.CompletionTokens)
+		}
+	}
+}
+
+// TestRunnerRunStashesTaskRunBeforeJudgingIt: the output has to be on disk by
+// the time its judge call starts -- not written afterwards, or only when the
+// judge succeeds -- or a judge that hangs or crashes the run takes it along.
+func TestRunnerRunStashesTaskRunBeforeJudgingIt(t *testing.T) {
+	store := NewTaskRunStore(t.TempDir())
+
+	var onDiskAtJudgeTime atomic.Int32
+
+	task := &judgeProbeTask{fakeTask: &fakeTask{delay: time.Millisecond}}
+	task.probe = func(model ModelInfo, record fakeRecord) {
+		if _, err := os.Stat(store.path(model.ID, "", "fake", record.Bucket, record.ID)); err == nil {
+			onDiskAtJudgeTime.Add(1)
+		}
+	}
+
+	runner := NewRunner[fakeRecord](task, RunConfig{Models: testModels(2), JudgeModel: "judge", Concurrency: 2, TaskRuns: store})
+	runner.Run(context.Background(), testRecords(3))
+
+	assert.EqualValues(t, 6, task.judgeCalls.Load())
+	assert.EqualValues(t, 6, onDiskAtJudgeTime.Load(), "every run's output must already be on disk when its judge call starts")
+}
+
+// TestRunnerRunKeepsTaskRunsWhoseJudgeCallFailed is the scenario the stash
+// exists for: the candidate calls were made, and paid for, and then the judge
+// failed. The samples come back unjudged -- but their outputs are on disk, so
+// judging them again needs no new candidate call.
+func TestRunnerRunKeepsTaskRunsWhoseJudgeCallFailed(t *testing.T) {
+	store := NewTaskRunStore(t.TempDir())
+	task := &judgeProbeTask{fakeTask: &fakeTask{delay: time.Millisecond}, judgeErr: errors.New("judge is down")}
+	records := testRecords(3)
+
+	runner := NewRunner[fakeRecord](task, RunConfig{Models: testModels(1), JudgeModel: "judge", Concurrency: 2, TaskRuns: store})
+	samples := runner.Run(context.Background(), records)
+
+	require.Len(t, samples, 3)
+
+	for _, s := range samples {
+		assert.NoError(t, s.Err, "the task call itself succeeded")
+		assert.Nil(t, s.Judge, "the judge call failed")
+	}
+
+	require.Equal(t, 3, store.Count())
+
+	for _, record := range records {
+		file := readTaskRunFile(t, store.path("model-0", "", "fake", record.Bucket, record.ID))
+		assert.Equal(t, "output for "+record.ID, file.Text)
+	}
+}
+
+// TestRunnerRunTTFTNeverStashesTaskRuns: a TTFT sample's streamed output is
+// never judged, so there is nothing in it to reuse -- and a stash that filled
+// with it would only be noise beside the judged pass's outputs.
+func TestRunnerRunTTFTNeverStashesTaskRuns(t *testing.T) {
+	store := NewTaskRunStore(t.TempDir())
+
+	runner := NewRunner[fakeRecord](&fakeTask{delay: time.Millisecond}, RunConfig{Models: testModels(1), Concurrency: 1, TaskRuns: store})
+	runner.RunTTFT(context.Background(), testRecords(2))
+
+	assert.Zero(t, store.Count())
+	assert.NoDirExists(t, store.Dir())
+}
+
+// TestRunnerRunStillJudgesWhenStashingFails: the stash is only a copy of what
+// the run already has in hand, so a store that can't write -- disk full, a
+// permissions problem -- must not cost a sample its score or abort the run.
+func TestRunnerRunStillJudgesWhenStashingFails(t *testing.T) {
+	// A regular file where the run directory should be: every Save fails.
+	notADir := filepath.Join(t.TempDir(), "file")
+	require.NoError(t, os.WriteFile(notADir, nil, 0o644))
+
+	store := NewTaskRunStore(notADir)
+
+	runner := NewRunner[fakeRecord](&fakeTask{delay: time.Millisecond}, RunConfig{Models: testModels(1), JudgeModel: "judge", Concurrency: 2, TaskRuns: store})
+	samples := runner.Run(context.Background(), testRecords(2))
+
+	require.Len(t, samples, 2)
+
+	for _, s := range samples {
+		assert.NoError(t, s.Err)
+		assert.Equal(t, float64(5), s.Judge["quality"], "a stash that can't be written must not cost a sample its score")
+	}
+
+	assert.Zero(t, store.Count())
 }
