@@ -7,7 +7,7 @@ logic, no orchestration. One file per task:
 | --- | --- | --- | --- |
 | [summarization.go](summarization.go) | summarize a call transcript | grade the summary against the transcript | faithfulness, coverage, conciseness |
 | [extraction.go](extraction.go) | extract participants/action items/decisions/entities as JSON | grade the extraction against the transcript | groundedness, completeness |
-| [correction.go](correction.go) | clean up disfluencies without changing meaning | grade the cleanup against the original (reference-free); then `Compare` it to the known-true text in meaning | faithfulness, improvement; meaning_similarity |
+| [correction.go](correction.go) | clean up disfluencies without changing meaning | grade the cleanup against the corrupted transcript the model was shown (reference-free) | faithfulness, improvement |
 | [dictation.go](dictation.go) | apply the spoken dictation command grammar (comma/period/all caps/new paragraph/...) | *(none — see below)* | exact_match, word_error_rate, punctuation_accuracy, capitalization_accuracy, formatting_command_accuracy |
 
 **Dictation's Judge is the one exception to the pattern below.** Its Task is
@@ -21,8 +21,7 @@ framing still applies to dictation's Task, just not its (nonexistent) Judge.
 
 ## Two kinds of prompt, never confused
 
-Each task file defines a `Spec{Task, Judge, Rubric}` (plus, for a task with a real
-answer key, an optional `Compare` and `CompareRubric` — see below):
+Each task file defines a `Spec{Task, Judge, Rubric}`:
 
 - **`Task`** is what a candidate model — one of everything the benchmark pulled
   from `GET /v1/models` — receives as its system prompt, to actually perform
@@ -37,7 +36,7 @@ two distinctly-named fields rather than a single prompt list, and every
 caller in `../judge.go` and `../voicebench.go` reaches for one or the other by
 name, never by position.
 
-## Why every JUDGE prompt is reference-free (and the one `Compare` prompt that isn't)
+## Why every JUDGE prompt is reference-free
 
 For summarization and extraction, the transcripts these prompts run against
 (`../dataset.go`, sourced from `aai_transcripts.jsonl`) have no gold summary
@@ -46,18 +45,13 @@ and no annotated entity list — see the aai_transcripts adapter notes in
 reference" — it is always "does this hold up against the source transcript
 it was produced from."
 
-text_correction is the one exception at the DATA level — `aai_transcripts.jsonl`
-carries `missed_text` (a simulated corrupted transcript) alongside the
-known-true original in `text`, so a real answer key exists. The candidate
-model is shown only `missed_text`, and so is the `Judge` prompt in
-`correction.go`: it stays reference-free (see `correctionSpec`'s doc comment).
-The answer key reaches an LLM through exactly one other prompt, `Compare` — a
-second, reference-based judge call (`RunReferenceJudge` in `../judge.go`) that
-is shown `text` beside the candidate's output and scores how similar they are in
-actual meaning. It is a separate call, with its own `CompareRubric`, so the
-reference-free dimensions can't lean on the answer key. Every other `Judge`
-prompt in this package receives only the input the candidate model was shown as
-grading context.
+text_correction follows the same rule, though its data does carry an original
+transcript (`text`) next to the corrupted `missed_text` the model is shown. That
+original is not an accurate answer key, so nothing is scored against it: the
+`Judge` prompt in `correction.go` sees only `missed_text` and the candidate's
+output (see `correctionSpec`'s doc comment). Every `Judge` prompt in this
+package receives only the input the candidate model was shown as grading
+context.
 
 ## Where the rubrics come from
 
@@ -76,19 +70,9 @@ grading context.
 - **Correction** follows the constrained-rewriting contract from OCR/ASR
   post-correction work (see the HIPE-OCRepair task framing already used in
   `../../jobs/text_correction.py`): restore intended wording, never paraphrase.
-  A second, reference-based judge call (`Compare`, rubric `meaning_similarity`)
-  is shown the true `text` next to the output and scores how similar the two are
-  in actual meaning — possible now that `missed_text` gives this task a real
-  answer key. It is a judge rather than a word count because the truth is a raw
-  transcript: it keeps the fillers and stutters the task prompt tells the model
-  to remove and writes numerals where the model is shown the spelled-out
-  numbers it is told to leave alone, so a word-for-word comparison marks a model
-  down for following instructions. The prompt tells the judge which differences
-  to look past (fillers, stutters, punctuation, casing, a number as digits or
-  as words) and which still count (a changed word, a wrong name or amount,
-  dropped or invented text). `truth_wer` and `input_wer` (`../correction.go`) are
-  recorded beside it as word-level context only. The reference-free rubric still
-  judges what the comparison does not — whether the readability fixes are good.
+  The faithfulness/improvement rubric is reference-free: it judges whether the
+  readability fixes are good and whether any content was changed, against the
+  transcript the model was shown.
 
 Full rationale for each rubric is in that task's own file — read the doc
 comment above `summarizationSpec`, `extractionSpec`, or `correctionSpec`
@@ -98,10 +82,8 @@ before changing it.
 
 1. Add the task name as a new constant in `prompts.go` and append it to `All`.
 2. Add `<task>.go` with a `<task>Spec = Spec{Task: ..., Judge: ..., Rubric: ...}`,
-   documented like the three above. Only if the task has a real answer key can
-   it also set `Compare`/`CompareRubric`, a second judge prompt that is shown the
-   key (see correction.go); `prompts_test.go` checks every rubric against the
-   JSON shape its prompt asks for.
+   documented like the three above; `prompts_test.go` checks every rubric against
+   the JSON shape its prompt asks for.
 3. Register it in `specs` in `prompts.go`.
 
 Nothing outside this package should ever need to change — `../voicebench.go`

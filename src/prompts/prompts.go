@@ -48,16 +48,6 @@ type Spec struct {
 	// carries, in report order. Every name here must appear as a key in the
 	// JSON shape described in Judge.
 	Rubric []string
-	// Compare, when set, is the system prompt of a SECOND, reference-based
-	// judge call: the caller sends the task's known-true text and the
-	// candidate's output (see ../judge.go's RunReferenceJudge) and the judge
-	// scores how similar the two are in actual meaning. Only a task with a real
-	// answer key has one (today, text_correction). Judge stays reference-free
-	// and never sees that key; Compare is the one prompt that does.
-	Compare string
-	// CompareRubric names the numeric score fields Compare's JSON response
-	// carries, like Rubric does for Judge.
-	CompareRubric []string
 }
 
 var specs = map[string]Spec{

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -303,28 +302,28 @@ func TestRunJudge_failureModesCarryRequestAndResponseForReview(t *testing.T) {
 }
 
 func TestParseJudgeReply_returnsTheJudgesNotes(t *testing.T) {
-	rubric := []string{"meaning_similarity"}
+	rubric := []string{"faithfulness"}
 
 	t.Run("notes ride along with the scores", func(t *testing.T) {
-		scores, notes, err := parseJudgeReply("One word differs.\n"+`{"meaning_similarity": 4, "notes": "  'weak' where the reference says 'week'  "}`, rubric)
+		scores, notes, err := parseJudgeReply("One word differs.\n"+`{"faithfulness": 4, "notes": "  two words were dropped  "}`, rubric)
 
 		require.NoError(t, err)
-		assert.Equal(t, map[string]float64{"meaning_similarity": 4}, scores)
-		assert.Equal(t, "'weak' where the reference says 'week'", notes, "trimmed")
+		assert.Equal(t, map[string]float64{"faithfulness": 4}, scores)
+		assert.Equal(t, "two words were dropped", notes, "trimmed")
 	})
 
 	t.Run("notes are optional", func(t *testing.T) {
-		_, notes, err := parseJudgeReply(`{"meaning_similarity": 5}`, rubric)
+		_, notes, err := parseJudgeReply(`{"faithfulness": 5}`, rubric)
 
 		require.NoError(t, err)
 		assert.Empty(t, notes)
 	})
 
 	t.Run("a notes field that is not text is ignored, never an error", func(t *testing.T) {
-		scores, notes, err := parseJudgeReply(`{"meaning_similarity": 5, "notes": 12}`, rubric)
+		scores, notes, err := parseJudgeReply(`{"faithfulness": 5, "notes": 12}`, rubric)
 
 		require.NoError(t, err)
-		assert.Equal(t, 5.0, scores["meaning_similarity"])
+		assert.Equal(t, 5.0, scores["faithfulness"])
 		assert.Empty(t, notes)
 	})
 
@@ -332,115 +331,5 @@ func TestParseJudgeReply_returnsTheJudgesNotes(t *testing.T) {
 		_, _, err := parseJudgeReply(`{"notes": "no score"}`, rubric)
 
 		assert.Error(t, err)
-	})
-}
-
-func TestRunReferenceJudge_endToEnd(t *testing.T) {
-	var request struct {
-		Model    string `json:"model"`
-		Messages []struct {
-			Role    string `json:"role"`
-			Content string `json:"content"`
-		} `json:"messages"`
-	}
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		body, _ := io.ReadAll(r.Body)
-		_ = json.Unmarshal(body, &request)
-
-		content := "One place differs: the candidate says weak where the reference says week.\n\n" +
-			`{"meaning_similarity": 4, "notes": "weak for week"}`
-		writeChatCompletion(w, content, 30, 20)
-	}))
-	defer server.Close()
-
-	gw := NewGateway(server.URL, "test-key", 5*time.Second)
-	spec, ok := prompts.For(prompts.TextCorrection)
-	require.True(t, ok)
-
-	scores, notes, err := RunReferenceJudge(context.Background(), gw, "judge-model", spec, "the reference text", "the candidate text")
-
-	require.NoError(t, err)
-	assert.Equal(t, map[string]float64{"meaning_similarity": 4}, scores)
-	assert.Equal(t, "weak for week", notes)
-
-	assert.Equal(t, "judge-model", request.Model)
-	require.Len(t, request.Messages, 2)
-	assert.Equal(t, spec.Compare, request.Messages[0].Content, "the Compare prompt is the system message")
-	assert.Equal(t, "REFERENCE:\nthe reference text\n\nCANDIDATE:\nthe candidate text", request.Messages[1].Content)
-	assert.NotEqual(t, spec.Judge, request.Messages[0].Content, "never the reference-free prompt")
-}
-
-func TestRunReferenceJudge_aTaskWithoutAComparePromptIsRefused(t *testing.T) {
-	called := false
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		called = true
-
-		writeChatCompletion(w, `{"x": 1}`, 1, 1)
-	}))
-	defer server.Close()
-
-	gw := NewGateway(server.URL, "test-key", 5*time.Second)
-	spec, ok := prompts.For(prompts.Summarization) // has no answer key, so no Compare prompt
-	require.True(t, ok)
-
-	_, _, err := RunReferenceJudge(context.Background(), gw, "judge-model", spec, "reference", "candidate")
-
-	require.Error(t, err)
-	assert.False(t, called, "no judge call is made for a task that has nothing to compare against")
-}
-
-// The same failure modes RunJudge reports, with the same request/response
-// capture, so a failed meaning comparison can be replayed like any other.
-func TestRunReferenceJudge_failureModesCarryRequestAndResponseForReview(t *testing.T) {
-	spec, ok := prompts.For(prompts.TextCorrection)
-	require.True(t, ok)
-
-	t.Run("non-2xx response", func(t *testing.T) {
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusBadGateway)
-			_, _ = w.Write([]byte(`{"error":{"code":"bad_gateway","message":"upstream exploded","param":null,"type":"api_error"}}`))
-		}))
-		defer server.Close()
-
-		gw := NewGateway(server.URL, "test-key", 5*time.Second)
-
-		_, _, err := RunReferenceJudge(context.Background(), gw, "judge-model", spec, "the reference text", "the candidate text")
-		require.Error(t, err)
-
-		var judgeErr *JudgeError
-		require.ErrorAs(t, err, &judgeErr)
-		assert.Contains(t, judgeErr.Request, "the reference text", "Request must show what the judge was asked to compare")
-		assert.JSONEq(t, `{"code":"bad_gateway","message":"upstream exploded","param":null,"type":"api_error"}`, judgeErr.Response)
-	})
-
-	t.Run("no JSON object in the reply", func(t *testing.T) {
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			writeChatCompletion(w, "I refuse to compare these.", 10, 8)
-		}))
-		defer server.Close()
-
-		gw := NewGateway(server.URL, "test-key", 5*time.Second)
-
-		_, _, err := RunReferenceJudge(context.Background(), gw, "judge-model", spec, "the reference text", "the candidate text")
-		require.Error(t, err)
-
-		var judgeErr *JudgeError
-		require.ErrorAs(t, err, &judgeErr)
-		assert.Contains(t, judgeErr.Request, "the candidate text")
-		assert.Contains(t, judgeErr.Response, "I refuse to compare these.")
-	})
-
-	t.Run("JSON missing the score", func(t *testing.T) {
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			writeChatCompletion(w, `{"notes": "forgot the score"}`, 10, 8)
-		}))
-		defer server.Close()
-
-		gw := NewGateway(server.URL, "test-key", 5*time.Second)
-
-		_, _, err := RunReferenceJudge(context.Background(), gw, "judge-model", spec, "the reference text", "the candidate text")
-		require.Error(t, err, "a judge that doesn't score is a query error, not a fabricated score")
 	})
 }

@@ -7,8 +7,8 @@
 // to their originals.
 //
 // Reused verbatim: LoadTranscripts/SampleByBucket/Buckets (dataset.go),
-// judge.go's RunJudge/RunReferenceJudge, correction.go's ScoreCorrection, and voicebench.go's
-// recordFailure/recordLowAccuracy/RawAPIError/contextLengthExceeded/
+// judge.go's RunJudge, and voicebench.go's
+// recordFailure/RawAPIError/contextLengthExceeded/
 // estimatedTokens, plus dictation_task.go's completionResultFromStream.
 // Duplicated rather than called: taskInput's and taskMaxTokens'
 // text_correction branches (voicebench.go) -- see missedText and
@@ -20,12 +20,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"log"
-	"maps"
-	"os"
 	"path/filepath"
-	"sync"
 
 	"github.com/AssemblyAI/voice-standard-bench/src/prompts"
 )
@@ -39,23 +35,12 @@ type TextCorrectionTask struct {
 	gateway     *Gateway
 	datasetGlob string
 	spec        prompts.Spec
-
-	// debugOut, when non-nil, receives correction_debug.go's aligned
-	// truth/input/output review of every sample RunJudge scores. nil -- the
-	// default -- prints nothing and costs nothing. debugMu serializes the
-	// writes: RunJudge runs on many goroutines at once, and one sample's
-	// multi-line block must not be interleaved with another's.
-	debugOut io.Writer
-	debugMu  sync.Mutex
 }
 
 // NewTextCorrectionTask returns a TextCorrectionTask calling gateway for
 // completions and judge calls. Dataset location is fixed by convention --
 // normalized/text_correction/aai_transcripts.jsonl, under normalizedRoot.
-// debug is the -debug flag: when true, RunJudge prints each sample's aligned
-// truth/input/output review (see correction_debug.go) to standard output as it
-// is scored. It changes nothing that is measured or recorded.
-func NewTextCorrectionTask(gateway *Gateway, debug bool) (*TextCorrectionTask, error) {
+func NewTextCorrectionTask(gateway *Gateway) (*TextCorrectionTask, error) {
 	spec, ok := prompts.For(prompts.TextCorrection)
 	if !ok {
 		return nil, fmt.Errorf("no prompts.Spec registered for %q", prompts.TextCorrection)
@@ -63,28 +48,7 @@ func NewTextCorrectionTask(gateway *Gateway, debug bool) (*TextCorrectionTask, e
 
 	datasetGlob := filepath.Join(normalizedRoot, prompts.TextCorrection, "aai_transcripts.jsonl")
 
-	task := &TextCorrectionTask{gateway: gateway, datasetGlob: datasetGlob, spec: spec}
-	if debug {
-		task.debugOut = os.Stdout
-	}
-
-	return task, nil
-}
-
-// debugSample prints one scored sample's review to debugOut, if debug mode is
-// on. The whole block is rendered first and written with a single call under
-// debugMu, so concurrent samples never interleave.
-func (t *TextCorrectionTask) debugSample(model ModelInfo, record TranscriptRecord, input, output string, correction CorrectionResult, scores map[string]float64, meaningNotes string) {
-	if t.debugOut == nil {
-		return
-	}
-
-	block := formatDebugSample(model, record, input, output, correction, scores, meaningNotes)
-
-	t.debugMu.Lock()
-	defer t.debugMu.Unlock()
-
-	_, _ = io.WriteString(t.debugOut, block)
+	return &TextCorrectionTask{gateway: gateway, datasetGlob: datasetGlob, spec: spec}, nil
 }
 
 func (t *TextCorrectionTask) Name() string {
@@ -251,67 +215,26 @@ func (t *TextCorrectionTask) RunTTFT(ctx context.Context, model ModelInfo, recor
 	return sample, completionResultFromStream(stream), nil
 }
 
-// lowAccuracyThreshold is the word accuracy against the truth (1 - WER, see
-// CorrectionResult.WordAccuracy) below which a correction counts as grossly
-// wrong -- truncated, refused, or a runaway generation many times the truth's
-// length -- and is captured for inspection (FailureLowAccuracy). Worse-than-
-// input is NOT enough to trip it: a model that merely regresses a few words
-// would fill errors/ with a file per sample, each holding a full transcript.
-const lowAccuracyThreshold = 0.4
-
-// RunJudge scores a completion with two judge calls and a word-level check.
+// RunJudge scores a completion with one reference-free LLM judge call, graded
+// against the same corrupted input the model saw: faithfulness and
+// improvement. record.Text -- the dataset's original transcript -- is not used
+// to score anything: it turned out not to be an accurate answer key, so a
+// comparison with it (a word-level distance or a second, reference-based judge)
+// would measure the truth's own errors as much as the model's. The judge's
+// two dimensions are the whole quality score.
 //
-//  1. A reference-free LLM judge, graded against the same corrupted input the
-//     model saw: faithfulness and improvement. It never sees the truth.
-//  2. A reference-based LLM judge (RunReferenceJudge): record.Text -- the
-//     hidden answer key, never sent to the candidate model -- next to the
-//     candidate's output, scored for how similar the two are in actual
-//     MEANING: meaning_similarity. This is the truth-based quality score. It is
-//     a judge call rather than a word count because the truth keeps the fillers
-//     and stutters the task prompt tells the model to remove and writes numbers
-//     as numerals where the model is shown them spelled out, so a word-for-word
-//     comparison marks a model down for following instructions; the judge is
-//     told to look past exactly those differences and still count a changed
-//     word, a wrong name or amount, or dropped or invented content (see
-//     correctionSpec in ./prompts).
-//  3. ScoreCorrection's word error rates against the truth (truth_wer,
-//     input_wer), recorded as context only -- they are not quality dimensions
-//     (see summary.go's dimensionRange) -- and used to capture a grossly wrong
-//     output: a word accuracy below lowAccuracyThreshold is recorded via
-//     recordLowAccuracy (voicebench.go).
-//
-// Both judge calls must succeed: if either fails the sample is left unjudged
-// rather than scored on half a rubric. record.MissedText is used directly, not
-// re-validated via missedText: RunJudge runs only after a successful RunRecord
-// for the same record (see the Task interface), which already proved it's
-// non-empty.
+// record.MissedText is used directly, not re-validated via missedText: RunJudge
+// runs only after a successful RunRecord for the same record (see the Task
+// interface), which already proved it's non-empty.
 func (t *TextCorrectionTask) RunJudge(ctx context.Context, model ModelInfo, record TranscriptRecord, judgeModel string, result CompletionResult, failures *FailureRecorder) (Sample, error) {
 	sample := Sample{Model: model.ID, Task: t.Name(), Bucket: record.Bucket, RecordID: record.ID, ReasoningEffort: model.ReasoningEffortLabel()}
 
-	input := record.MissedText
-
-	scores, err := RunJudge(ctx, t.gateway, judgeModel, t.spec, input, result.Text)
+	scores, err := RunJudge(ctx, t.gateway, judgeModel, t.spec, record.MissedText, result.Text)
 	if err != nil {
 		return sample, t.judgeFailed(model, record, failures, err)
 	}
-
-	meaning, meaningNotes, err := RunReferenceJudge(ctx, t.gateway, judgeModel, t.spec, record.Text, result.Text)
-	if err != nil {
-		return sample, t.judgeFailed(model, record, failures, err)
-	}
-
-	maps.Copy(scores, meaning)
-
-	correction := ScoreCorrection(record.Text, input, result.Text)
-	maps.Copy(scores, correction.Scores())
 
 	sample.Judge = scores
-
-	t.debugSample(model, record, input, result.Text, correction, scores, meaningNotes)
-
-	if correction.WordAccuracy() < lowAccuracyThreshold && failures != nil {
-		recordLowAccuracy(failures, model.ID, model.ReasoningEffortLabel(), t.Name(), record, input, result.Text, sample.Judge, result.RawRequest, result.RawResponse)
-	}
 
 	return sample, nil
 }
@@ -337,20 +260,13 @@ func (t *TextCorrectionTask) judgeFailed(model ModelInfo, record TranscriptRecor
 	return err
 }
 
-// DimensionRanges derives faithfulness/improvement from t.spec.Rubric and
-// meaning_similarity from t.spec.CompareRubric: every quality dimension here is
-// an LLM judge's 1-5 Likert score (like SummarizationTask.DimensionRanges).
-// truth_wer and input_wer are recorded alongside them but are informational
-// context, not quality dimensions, so they are deliberately absent here and
-// from summary.go's dimensionRange (see correction.go).
+// DimensionRanges derives faithfulness/improvement from t.spec.Rubric: every
+// quality dimension here is an LLM judge's 1-5 Likert score (like
+// SummarizationTask.DimensionRanges).
 func (t *TextCorrectionTask) DimensionRanges() map[string]scale {
-	ranges := make(map[string]scale, len(t.spec.Rubric)+len(t.spec.CompareRubric))
+	ranges := make(map[string]scale, len(t.spec.Rubric))
 
 	for _, dim := range t.spec.Rubric {
-		ranges[dim] = scale{lo: 1, hi: 5}
-	}
-
-	for _, dim := range t.spec.CompareRubric {
 		ranges[dim] = scale{lo: 1, hi: 5}
 	}
 

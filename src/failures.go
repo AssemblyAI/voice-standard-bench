@@ -12,15 +12,12 @@ import (
 
 // Failure reasons runOne records: a completion that came back and parsed,
 // but didn't match the task's required output shape; a completion call that
-// never came back at all (non-2xx, timeout, network error, ...); for
-// text_correction, a completion that succeeded and judged fine but scored
-// below the accuracy floor against the hidden ground truth; or the judge
-// call itself failing — a non-2xx response, a reply with no JSON object in
-// it, or a reply whose JSON doesn't match the rubric (see JudgeError).
+// never came back at all (non-2xx, timeout, network error, ...); or the
+// judge call itself failing — a non-2xx response, a reply with no JSON object
+// in it, or a reply whose JSON doesn't match the rubric (see JudgeError).
 const (
 	FailureInvalidSchema = "invalid_schema"
 	FailureAPIError      = "api_error"
-	FailureLowAccuracy   = "low_accuracy"
 	FailureJudgeError    = "judge_error"
 )
 
@@ -54,18 +51,6 @@ type FailureRecord struct {
 	Err             error
 	Request         string
 	Response        string
-	// OriginalText, InputText, CorrectedText, and JudgeScores are populated
-	// only for FailureLowAccuracy: the hidden ground-truth transcript
-	// (record.Text), what the model was actually shown (the corrupted
-	// MissedText), what it produced, and every judge score (including
-	// meaning_similarity/truth_wer/input_wer) — everything needed to see why the correction
-	// diverged from the original without re-running the sample. Left zero
-	// for the other two failure reasons, which have no text or score to
-	// attach — the completion call itself is the failure there.
-	OriginalText  string
-	InputText     string
-	CorrectedText string
-	JudgeScores   map[string]float64
 }
 
 // failureMetaEntry is one line of meta.json. It deliberately excludes the
@@ -80,13 +65,7 @@ type failureMetaEntry struct {
 	RecordID        string `json:"record_id"`
 	Reason          string `json:"reason"`
 	Error           string `json:"error"`
-	// TruthWER is the candidate's word error rate against the truth, in
-	// percent (the truth_wer score -- see correction.go), whose excess tripped
-	// the FailureLowAccuracy threshold, surfaced here so a low-accuracy run
-	// can be scanned/sorted from meta.json alone without opening every output
-	// file. nil (omitted) for every other failure reason.
-	TruthWER   *float64 `json:"truth_wer,omitempty"`
-	OutputFile string   `json:"output_file"` // relative to the run directory (FailureRecorder.RunDir)
+	OutputFile      string `json:"output_file"` // relative to the run directory (FailureRecorder.RunDir)
 }
 
 // failureOutput is the full per-failure JSON file: the same identifying
@@ -106,13 +85,6 @@ type failureOutput struct {
 	Error           string          `json:"error"`
 	Request         json.RawMessage `json:"request,omitempty"`
 	Response        json.RawMessage `json:"response,omitempty"`
-	// OriginalText/InputText/CorrectedText/JudgeScores are the
-	// FailureLowAccuracy-only fields described on FailureRecord; omitted
-	// entirely for the other two failure reasons.
-	OriginalText  string             `json:"original_text,omitempty"`
-	InputText     string             `json:"input_text,omitempty"`
-	CorrectedText string             `json:"corrected_text,omitempty"`
-	JudgeScores   map[string]float64 `json:"judge_scores,omitempty"`
 }
 
 // rawJSONField turns a raw request/response string into a json.RawMessage
@@ -207,10 +179,6 @@ func (r *FailureRecorder) Record(fr FailureRecord) error {
 		Reason:          fr.Reason,
 		Request:         rawJSONField(fr.Request),
 		Response:        rawJSONField(fr.Response),
-		OriginalText:    fr.OriginalText,
-		InputText:       fr.InputText,
-		CorrectedText:   fr.CorrectedText,
-		JudgeScores:     fr.JudgeScores,
 	}
 
 	if fr.Err != nil {
@@ -226,11 +194,6 @@ func (r *FailureRecorder) Record(fr FailureRecord) error {
 		return fmt.Errorf("writing failure output: %w", err)
 	}
 
-	var truthWER *float64
-	if v, ok := fr.JudgeScores[scoreTruthWER]; ok {
-		truthWER = &v
-	}
-
 	r.entries = append(r.entries, failureMetaEntry{
 		Model:           out.Model,
 		ReasoningEffort: out.ReasoningEffort,
@@ -239,7 +202,6 @@ func (r *FailureRecorder) Record(fr FailureRecord) error {
 		RecordID:        out.RecordID,
 		Reason:          out.Reason,
 		Error:           out.Error,
-		TruthWER:        truthWER,
 		OutputFile:      filename,
 	})
 

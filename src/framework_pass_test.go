@@ -412,10 +412,9 @@ func TestRunFrameworkBenchmarkPassFiltersTasks(t *testing.T) {
 }
 
 // TestRunFrameworkBenchmarkPassTextCorrection confirms text_correction's
-// framework port is reachable through the framework run, and that its
-// reference-based meaning_similarity -- and the word-level context
-// (truth_wer, input_wer) -- land in the report alongside the reference-free
-// judge's rubric scores. Self-contained fixture rather than
+// framework port is reachable through the framework run, and that the
+// reference-free judge's rubric scores -- and nothing computed from the
+// original transcript -- land in the report. Self-contained fixture rather than
 // writeFrameworkFixtures -- that helper's tasks (dictation/summarization)
 // don't carry missed_text.
 func TestRunFrameworkBenchmarkPassTextCorrection(t *testing.T) {
@@ -434,7 +433,7 @@ func TestRunFrameworkBenchmarkPassTextCorrection(t *testing.T) {
 		body := readBody(t, r)
 
 		if strings.Contains(body, `"model":"the-judge"`) {
-			writeChatCompletion(w, textCorrectionJudgeReply(body, 4, 4, 5), 20, 10)
+			writeChatCompletion(w, textCorrectionJudgeReply(4, 4), 20, 10)
 
 			return
 		}
@@ -475,12 +474,11 @@ func TestRunFrameworkBenchmarkPassTextCorrection(t *testing.T) {
 	assert.Equal(t, "r1", sample.RecordID)
 	assert.Equal(t, 4.0, sample.Judge["faithfulness"])
 	assert.Equal(t, 4.0, sample.Judge["improvement"])
-	assert.Equal(t, 5.0, sample.Judge["meaning_similarity"], "the reference-based judge's score is recorded")
-	assert.InDelta(t, 0.0, sample.Judge["truth_wer"], 1e-9, "no words differ from the hidden true text")
-	assert.InDelta(t, 20.0, sample.Judge["input_wer"], 1e-9, "one wrong word of five in the corrupted input the model was shown")
-	assert.NotContains(t, sample.Judge, "accuracy", "the retired word-overlap score must not be recorded")
-	assert.NotContains(t, sample.Judge, "edit_ratio", "the retired drift score must not be recorded")
-	assert.NotContains(t, sample.Judge, "error_reduction", "the retired word-for-word score must not be recorded")
+	assert.Len(t, sample.Judge, 2, "only the reference-free rubric is recorded")
+
+	for _, retired := range []string{"meaning_similarity", "truth_wer", "input_wer", "accuracy", "edit_ratio", "error_reduction"} {
+		assert.NotContains(t, sample.Judge, retired, "%s compared the output with the original transcript and is no longer recorded", retired)
+	}
 }
 
 // TestRunFrameworkBenchmarkPassInformationExtraction confirms

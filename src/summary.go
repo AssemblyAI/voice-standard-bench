@@ -89,8 +89,7 @@ type scale struct{ lo, hi float64 }
 // dimensionRange gives the raw [lo, hi] scale of every score that counts
 // toward quality, hi always being the best score. Every LLM-graded dimension
 // (faithfulness, coverage, conciseness, groundedness, completeness,
-// improvement, and text_correction's reference-based meaning_similarity) is a
-// 1-5 Likert scale. word_error_rate (dictation.go) is absent because LOWER is
+// improvement) is a 1-5 Likert scale. word_error_rate (dictation.go) is absent because LOWER is
 // better, so normalize inverts it separately below instead of listing it
 // here — dictation's other four mechanical scores (exact_match, a plain 0/1,
 // and punctuation_accuracy/capitalization_accuracy/formatting_command_accuracy,
@@ -99,15 +98,15 @@ type scale struct{ lo, hi float64 }
 // every LLM dimension.
 //
 // A score recorded in a report but absent from here is informational and
-// never reaches quality_score: text_correction's truth_wer/input_wer are word-
-// level context for reading meaning_similarity (a do-nothing input's near-zero
-// WER would otherwise be averaged in as free quality), and older reports carry
-// scores text_correction no longer scores -- accuracy (an order-insensitive
-// word overlap that rated a no-op 0.955-0.997), edit_ratio (distance from the
-// input, which a no-op minimizes), and error_reduction (a word-for-word
-// comparison with a truth that keeps the fillers the prompt says to remove).
-// Leaving those out is what stops an old report's credit for them inflating
-// -- or its penalty deflating -- its text_correction quality.
+// never reaches quality_score. Older reports carry scores text_correction no
+// longer records, all of which compared the output with the dataset's original
+// transcript -- which turned out not to be an accurate answer key -- or were
+// otherwise unsound: meaning_similarity (a reference-based judge), truth_wer
+// and input_wer (word error rates against it), error_reduction (a word-for-word
+// comparison), accuracy (an order-insensitive word overlap that rated a no-op
+// 0.955-0.997), and edit_ratio (distance from the input, which a no-op
+// minimizes). Leaving those out is what stops an old report's credit for them
+// inflating -- or its penalty deflating -- its text_correction quality.
 var dimensionRange = map[string]scale{
 	"faithfulness":                {1, 5},
 	"coverage":                    {1, 5},
@@ -115,7 +114,6 @@ var dimensionRange = map[string]scale{
 	"groundedness":                {1, 5},
 	"completeness":                {1, 5},
 	"improvement":                 {1, 5},
-	"meaning_similarity":          {1, 5},
 	"exact_match":                 {0, 1},
 	"punctuation_accuracy":        {0, 100},
 	"capitalization_accuracy":     {0, 100},

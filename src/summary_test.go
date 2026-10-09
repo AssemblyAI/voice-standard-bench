@@ -24,8 +24,6 @@ func TestNormalize(t *testing.T) {
 		{"likert worst", "faithfulness", 1, 0, true},
 		{"likert best", "coverage", 5, 1, true},
 		{"likert midpoint", "improvement", 3, 0.5, true},
-		{"meaning_similarity is a 1-5 Likert score like every other judged dimension", "meaning_similarity", 4, 0.75, true},
-		{"meaning_similarity worst", "meaning_similarity", 1, 0, true},
 		{"exact_match is a plain 0/1", "exact_match", 1, 1, true},
 		{"exact_match false", "exact_match", 0, 0, true},
 		{"punctuation_accuracy is a 0-100 percentage", "punctuation_accuracy", 87.5, 0.875, true},
@@ -35,13 +33,12 @@ func TestNormalize(t *testing.T) {
 		{"word_error_rate of zero is perfect quality", "word_error_rate", 0, 1, true},
 		{"word_error_rate over 100 (more insertions than truth words) clamps to zero, not negative", "word_error_rate", 150, 0, true},
 		{"unknown dimension is excluded, not guessed", "notes", 5, 0, false},
-		// text_correction's informational WERs would hand a do-nothing input a
-		// near-perfect score if they counted; the retired accuracy and
-		// edit_ratio from older reports did exactly that, and error_reduction
-		// -- a word-for-word comparison with a truth that keeps the fillers the
-		// prompt says to remove -- marked prompt-following models down.
-		{"truth_wer is informational, not a quality dimension", "truth_wer", 4.2, 0, false},
-		{"input_wer is informational, not a quality dimension", "input_wer", 4.8, 0, false},
+		// Everything text_correction once scored against the dataset's original
+		// transcript -- which turned out not to be an accurate answer key -- is
+		// retired, so an older report's copy of it must not count either way.
+		{"the retired meaning_similarity no longer counts", "meaning_similarity", 4, 0, false},
+		{"the retired truth_wer no longer counts", "truth_wer", 4.2, 0, false},
+		{"the retired input_wer no longer counts", "input_wer", 4.8, 0, false},
 		{"the retired word-overlap accuracy no longer counts", "accuracy", 0.99, 0, false},
 		{"the retired edit_ratio no longer counts", "edit_ratio", 0, 0, false},
 		{"the retired error_reduction no longer counts", "error_reduction", 0.5, 0, false},
@@ -75,15 +72,15 @@ func TestSampleQuality(t *testing.T) {
 			wantOK: true,
 		},
 		{
-			name:   "correction averages its reference-free and reference-based judge dims",
-			judge:  map[string]float64{"faithfulness": 3, "improvement": 5, "meaning_similarity": 4},
-			want:   (0.5 + 1 + 0.75) / 3,
+			name:   "correction averages its two reference-free judge dims",
+			judge:  map[string]float64{"faithfulness": 3, "improvement": 5},
+			want:   (0.5 + 1) / 2,
 			wantOK: true,
 		},
 		{
-			name:   "informational WERs and retired scores never enter the average",
+			name:   "scores retired for comparing against the original transcript never enter the average",
 			judge:  map[string]float64{"faithfulness": 3, "improvement": 5, "meaning_similarity": 4, "truth_wer": 1.2, "input_wer": 4.3, "accuracy": 0.99, "edit_ratio": 0, "error_reduction": 0.5},
-			want:   (0.5 + 1 + 0.75) / 3,
+			want:   (0.5 + 1) / 2,
 			wantOK: true,
 		},
 		{
@@ -219,7 +216,7 @@ func TestSummarize_taskQualityIsUndilutedByOtherTasks(t *testing.T) {
 		{Model: "m", Task: "summarization", Bucket: "30s", Judge: map[string]float64{"faithfulness": 5, "coverage": 5}},
 		// text_correction, same model+bucket: one worst-possible sample. If
 		// this leaked into summarization's own score, it would drag it down.
-		{Model: "m", Task: "text_correction", Bucket: "30s", Judge: map[string]float64{"faithfulness": 1, "improvement": 1, "meaning_similarity": 1}},
+		{Model: "m", Task: "text_correction", Bucket: "30s", Judge: map[string]float64{"faithfulness": 1, "improvement": 1}},
 		// information_extraction never judged (task call itself failed) --
 		// must be entirely absent from TaskQuality, not a 0 entry.
 		{Model: "m", Task: "information_extraction", Bucket: "30s", Error: "boom"},
@@ -251,7 +248,7 @@ func TestSummarize_tasksWeightedEquallyAndEmptyTasksExcluded(t *testing.T) {
 		{Model: "m", Task: "summarization", Bucket: "30s", Judge: perfect},
 		{Model: "m", Task: "summarization", Bucket: "30s", Judge: perfect},
 		// text_correction: a single worst sample -- same weight as all four above.
-		{Model: "m", Task: "text_correction", Bucket: "30s", Judge: map[string]float64{"faithfulness": 1, "improvement": 1, "meaning_similarity": 1}},
+		{Model: "m", Task: "text_correction", Bucket: "30s", Judge: map[string]float64{"faithfulness": 1, "improvement": 1}},
 		// information_extraction: never judged -- must not count as a 0 task.
 		{Model: "m", Task: "information_extraction", Bucket: "30s", Error: "boom"},
 	}
@@ -273,7 +270,7 @@ func TestSummarize_costPerQuality(t *testing.T) {
 		{Model: "m", Task: "summarization", Bucket: "30s", CostUSD: 0.01, Judge: map[string]float64{"faithfulness": 5, "coverage": 5}},
 		{Model: "m", Task: "summarization", Bucket: "30s", CostUSD: 0.02, Judge: map[string]float64{"faithfulness": 5, "coverage": 5}},
 		// text_correction: one worst-possible sample, $0.05.
-		{Model: "m", Task: "text_correction", Bucket: "30s", CostUSD: 0.05, Judge: map[string]float64{"faithfulness": 1, "improvement": 1, "meaning_similarity": 1}},
+		{Model: "m", Task: "text_correction", Bucket: "30s", CostUSD: 0.05, Judge: map[string]float64{"faithfulness": 1, "improvement": 1}},
 		// information_extraction: task call itself failed -- never judged, so
 		// this $999 must be excluded from every cost total, not just diluted.
 		{Model: "m", Task: "information_extraction", Bucket: "30s", CostUSD: 999, Error: "boom"},

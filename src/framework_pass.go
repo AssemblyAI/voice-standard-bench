@@ -20,7 +20,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 	"time"
 
@@ -56,10 +55,6 @@ type frameworkPassConfig struct {
 	// framework* constants below) -- no flag for those.
 	CanonicalVersion string
 	ApproveMerge     bool
-
-	// Debug mirrors -debug: tasks print extra diagnostics as they run (see
-	// RunConfig.Debug). It never changes what is measured, recorded, or merged.
-	Debug bool
 
 	// SkipJudge mirrors -skip-judge: the standard pass gathers and stashes the
 	// task outputs but judges nothing (see RunConfig.SkipJudge), and the run ends
@@ -122,7 +117,7 @@ var frameworkTaskConstructors = map[string]func(*Gateway, RunConfig) (frameworkR
 		return NewRunner[TranscriptRecord](task, cfg), nil
 	},
 	prompts.TextCorrection: func(gw *Gateway, cfg RunConfig) (frameworkRunner, error) {
-		task, err := NewTextCorrectionTask(gw, cfg.Debug)
+		task, err := NewTextCorrectionTask(gw)
 		if err != nil {
 			return nil, err
 		}
@@ -250,10 +245,6 @@ func runFrameworkBenchmarkPass(ctx context.Context, cfg frameworkPassConfig) {
 		}
 	}
 
-	if cfg.Debug && !slices.Contains(requestedTasks, prompts.TextCorrection) {
-		log.Printf("framework: -debug only prints for %s, which isn't in -tasks -- nothing extra will be printed", prompts.TextCorrection)
-	}
-
 	reportDir := runFrameworkStandardPass(ctx, gw, models, requestedTasks, buckets, cfg, replay)
 	ttftDir := runFrameworkTTFTPass(ctx, gw, models, requestedTasks, buckets, cfg, filepath.Base(reportDir), replay)
 
@@ -321,7 +312,6 @@ func runFrameworkStandardPass(ctx context.Context, gw *Gateway, models []ModelIn
 		TaskRuns:            taskRuns,
 		Replay:              replay.standardRuns(),
 		SkipJudge:           cfg.SkipJudge,
-		Debug:               cfg.Debug,
 	}, requestedTasks)
 	if err != nil {
 		fatal(fmt.Errorf("framework: %w", err))
@@ -404,7 +394,6 @@ func runFrameworkTTFTPass(ctx context.Context, gw *Gateway, models []ModelInfo, 
 		Failures:            failures,
 		TaskRuns:            taskRuns,
 		Replay:              replay.ttftRuns(),
-		Debug:               cfg.Debug,
 	}, requestedTasks)
 	if err != nil {
 		fatal(fmt.Errorf("framework: %w", err))

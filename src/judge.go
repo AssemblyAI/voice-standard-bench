@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -63,33 +62,7 @@ func RunJudge(ctx context.Context, gw *Gateway, judgeModel string, spec prompts.
 	return scores, err
 }
 
-// RunReferenceJudge is RunJudge's reference-based counterpart: it shows the
-// judge the task's known-true text (reference) next to the candidate's output
-// and, using spec.Compare, scores how similar the two are in actual MEANING --
-// one score per name in spec.CompareRubric. This is the one place an answer
-// key reaches an LLM, and only a task whose Spec carries a Compare prompt
-// (today, text_correction) has one: RunJudge's own prompt stays reference-free.
-// Wording that doesn't change the meaning -- fillers, stutters, punctuation,
-// a number written as digits or as words -- is for the prompt to tell the
-// judge to look past, which is the whole reason this is a judge call and not
-// a word count (see correctionSpec in ./prompts).
-//
-// It also returns the judge's own one-sentence "notes" -- the most significant
-// meaning difference it found, or "none" -- which are not scored but are what
-// a person reviewing a surprising score wants to read (-debug prints them).
-// Failures are *JudgeError exactly as RunJudge's are.
-func RunReferenceJudge(ctx context.Context, gw *Gateway, judgeModel string, spec prompts.Spec, reference, candidate string) (scores map[string]float64, notes string, err error) {
-	if spec.Compare == "" || len(spec.CompareRubric) == 0 {
-		return nil, "", errors.New("this task has no reference-based comparison prompt")
-	}
-
-	userMessage := "REFERENCE:\n" + reference + "\n\nCANDIDATE:\n" + candidate
-
-	return runJudgeCall(ctx, gw, judgeModel, spec.Compare, userMessage, spec.CompareRubric)
-}
-
-// runJudgeCall sends one judge prompt and parses its reply: the shared core of
-// RunJudge and RunReferenceJudge.
+// runJudgeCall sends one judge prompt and parses its reply: the core of RunJudge.
 func runJudgeCall(ctx context.Context, gw *Gateway, judgeModel, systemPrompt, userMessage string, rubric []string) (scores map[string]float64, notes string, err error) {
 	result, err := gw.RunCompletion(ctx, ModelInfo{ID: judgeModel}, systemPrompt, userMessage, judgeMaxTokens)
 	if err != nil {

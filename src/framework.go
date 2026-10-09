@@ -152,11 +152,6 @@ type RunConfig struct {
 	// task, the mechanically scored ones included). It is for gathering outputs
 	// now and judging them later, by replaying the run (see Replay).
 	SkipJudge bool
-	// Debug is the -debug flag: a task that has extra diagnostics to offer
-	// prints them as it runs (today only text_correction does -- see
-	// correction_debug.go). It never changes what is measured, recorded, or
-	// merged.
-	Debug bool
 }
 
 // Runner drives a Task[R] through the full benchmark lifecycle: load,

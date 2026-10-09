@@ -6,9 +6,9 @@ against real AssemblyAI call transcripts (or, for dictation, a synthetic
 dictation dataset — see "Dictation" below), tracking latency and quality
 broken down by audio-length size. Summarization and extraction are graded
 reference-free (there's no gold summary or annotated entity list to compare
-against); text correction has a real answer key (see "Data source"), which a
-second LLM judge reads: it scores how similar the model's output is to that
-truth in actual meaning, in addition to a reference-free LLM judge.
+against); text correction is graded the same way, by a single reference-free
+LLM judge (its dataset's original transcript is not used for scoring — see
+"What it measures").
 Dictation also has a real answer key, and — unlike every other task — is
 graded ENTIRELY mechanically, with no LLM judge call at all (see
 "Dictation").
@@ -46,34 +46,17 @@ For every (model × task × transcript) combination:
   every task — reference-free, because summarization and extraction have no
   gold summary or annotated entity list to compare against. See
   `src` for the full rationale and the papers each rubric is
-  drawn from. **text_correction is the exception**: `aai_transcripts.jsonl`
-  carries `missed_text`, a simulated corrupted transcript, alongside the
-  known-true original in `text` (see "Data source" below). The candidate model
-  corrects `missed_text` and never sees `text`. Its output is judged twice: by
-  the same reference-free judge as the other tasks (graded against `missed_text`,
-  so it never sees the answer key either — `faithfulness`, `improvement`), and
-  by a second, reference-based judge call that is shown `text` next to the
-  output and scores how similar the two are in actual **meaning**
-  (`meaning_similarity`, 1-5: `RunReferenceJudge` in `judge.go`, the `Compare`
-  prompt in `prompts/correction.go`). That one is a judge call rather than a
-  word comparison because the truth is a raw transcript and the task prompt asks
-  for things a raw transcript doesn't have: the model is told to drop fillers,
-  false starts and stutters, which the truth keeps (about 3% of the words at
-  3600s are "um"/"uh" and another 1.5% are immediate repeats), and to leave
-  numbers as spoken, which the truth writes as numerals. Compared word for word,
-  a model doing exactly what it was told is marked down — a simulated, perfectly
-  obedient one scored worse than doing nothing at 3600s. The judge is told to
-  look past those differences (fillers, stutters, punctuation, capitalization,
-  "5" against "five") and to count the ones that change what was said: a
-  sound-alike swap ("week" for "weak"), a wrong name or amount, text that is
-  dropped, added, or loops. `truth_wer` and `input_wer` — the output's and the
-  uncorrected input's word error rates against the truth — are recorded beside
-  it, but only as context: they are not part of `quality_score`. They flag a
-  grossly wrong output (truncated, or a runaway generation), which is captured
-  under `errors/`, and they feed `-debug`. text_correction therefore makes two
-  judge calls per sample. Reports written before this scoring carry `accuracy`
-  and `edit_ratio` (or, briefly, `error_reduction`) instead; summarizing ignores
-  those, so re-run text_correction to get `meaning_similarity` for those rows
+  drawn from. **text_correction is graded the same way**: the candidate
+  model corrects `missed_text`, a simulated corrupted transcript, and one
+  reference-free judge call grades the output against `missed_text`
+  (`faithfulness`, `improvement`). The dataset also carries the original
+  transcript in `text`, but it is **not used for scoring**: it turned out not to
+  be an accurate answer key, so any comparison with it — a word-level distance
+  (`truth_wer`/`input_wer`, `accuracy`, `error_reduction`) or a second,
+  reference-based judge (`meaning_similarity`) — would score the dataset's
+  errors as much as the model's. Reports written with those scores keep them,
+  but summarizing ignores them and `quality_score` is built from the two judge
+  dimensions only; re-run text_correction to get a score that stands on its own
   (see `correctionSpec`'s doc comment in `prompts/correction.go`).
 
 Every statistic is broken down **by audio-length bucket** (`30s`, `120s`,
@@ -83,52 +66,6 @@ side adds later works with no change here). That's the whole point of
 grouping by bucket rather than reporting one number per model: a model that's
 fast and accurate on a 30-second call and falls over on an hour-long one is a
 different tool than a report that just says "fast, accurate" would suggest.
-
-## Debug mode (`-debug`)
-
-`-debug` makes `text_correction` print, as each sample is scored, the texts the
-score was given, stacked one word per column, with the scores and the judge's
-own note on the meaning comparison — so you can read why a score is what it is:
-
-```bash
-go run . -debug -tasks text_correction -models some-model -buckets 30s -max-samples-per-bucket 3
-```
-
-```
-text_correction debug  model=some-model  reasoning_effort=default  bucket=30s  record=…
-scores:  faithfulness=5  improvement=4  input_wer=33.33  meaning_similarity=4  truth_wer=11.11
-judge:   the output still says budjet where the reference says budget
-TRUTH    9 words -- the original text, the answer key (never shown to the model)
-INPUT    3 edits from the truth, word for word (33.33% WER) -- the corrupted text the model was shown
-OUTPUT   1 edit from the truth, word for word (11.11% WER) -- the model's corrected text
-legend   [word] differs from the truth word for word (the judge scores meaning, so fillers, stutters and number formatting show here without costing the model)
-         · no word here   [·] a truth word that row is missing
-
-(truth words 1-9)
-TRUTH  we  agreed  to  ship    the  budget    review  on  ·     friday
-INPUT  we  agreed  to  [shop]  the  [budjet]  review  on  [um]  friday
-OUTPUT we  agreed  to  ship    the  [budjet]  review  on  ·     friday
-```
-
-The brackets are a word-for-word comparison, deliberately stricter than the
-score: a filler, a stutter, or "5" against "five" is bracketed here but is
-exactly what the meaning judge is told to look past, so a bracket is something
-to look at, not a mark against the model. Set the rows beside `meaning_similarity`
-and the `judge:` line to see whether the verdict is fair. Each row is aligned to
-the truth by the same minimum-edit alignment behind `truth_wer` and `input_wer`,
-over exactly the normalized words they compare, so the bracket count in a row
-**is** that row's edit count; if the view and those counts ever disagree a
-`WARNING` line says so. Words are shown as written; case and punctuation
-differences are visible but are not differences (the word comparison ignores
-them), so they are not bracketed. Rows wrap at 120 columns, each block says
-which truth words it covers, and a run of 40 or more words that is identical in
-all three rows is folded into `… N identical words …` (with 8 words of context
-kept on each side) so a 3,600-second transcript's handful of differences aren't
-buried. It prints to standard output, one whole block per sample even with
-concurrent judging, and changes nothing that is measured or recorded; with a
-task other than `text_correction` in `-tasks` it has nothing to print and says
-so. The code is `correction_debug.go`; the alignment is `alignWords` in
-`editdistance.go`.
 
 ## Dictation
 
@@ -281,8 +218,8 @@ path to it. Give it the `-models`, `-tasks`, `-buckets`,
 run. For every (model, record) the earlier run stashed, in both passes:
 
 - the standard pass skips the model call and uses the stashed output; the judge
-  still runs live over it, and a task that is scored mechanically (dictation, and
-  the word-level context for text_correction) is scored again from it;
+  still runs live over it, and a task that is scored mechanically (dictation) is
+  scored again from it;
 - the TTFT pass skips the streaming call and uses the stashed measurement;
 - the original call's latency and token counts are kept, so a replayed sample
   reports the numbers it was measured at; cost is stamped from the model's
@@ -436,7 +373,8 @@ See `src`'s doc comment on `LoadTranscripts`.
 `text_correction/aai_transcripts.jsonl` carries one extra field the other two
 tasks' files don't: `missed_text`, a simulated corrupted transcript, at the
 top level of the record (a sibling of `input`, not nested inside it) —
-`text` is the known-true original it was derived from. `TranscriptRecord`
+`text` is the original it was derived from, which is not used to score
+text_correction (see "What it measures, and how"). `TranscriptRecord`
 decodes it into `MissedText`, which `taskInput` (`main.go`) uses as the
 correction task's actual input; `MissedText` is empty for every
 summarization/extraction record and for the handful of text_correction
@@ -444,7 +382,7 @@ records the corruption simulation didn't cover — both are normal, not
 errors, but a text_correction record with no `MissedText` can't be
 benchmarked (there's nothing to correct) and fails as a per-sample error
 rather than silently falling back to `text` and handing the model the
-answer key.
+uncorrupted original.
 
 ## Judge model and self-grading
 
@@ -455,12 +393,6 @@ the candidate set so it never grades its own output (self-preference bias —
 see Zheng et al., 2023, "Judging LLM-as-a-Judge and Benchmarking..."). If you
 pass `-models` explicitly and include the judge model in it, that's respected
 as a deliberate choice, with a warning logged.
-
-text_correction makes two judge calls per sample, both through this judge model
-and both under the same `-concurrency` cap: the reference-free one, and the
-meaning comparison, which is the only prompt in the benchmark that is shown a
-task's answer key (see "What it measures, and how"). If either fails, the sample
-is left unjudged rather than scored on half a rubric.
 
 ## Concurrency and the gateway's rate limit — read this before raising `-concurrency`
 
@@ -493,9 +425,6 @@ benchmark/
   metrics.go     Sample, Stats (percentiles), Cell aggregation
   dataset.go     aai_transcripts.jsonl loading, bucket grouping/sampling
   judge.go       LLM-judge scoring, schema validation
-  correction.go  text_correction's word-level context against the truth (truth_wer, input_wer) and its gross-failure check — the quality score is the meaning judge, see "What it measures" above
-  correction_debug.go  the -debug aligned truth/input/output review — see "Debug mode" above
-  editdistance.go  banded word-level Levenshtein distance (and alignment) behind both, sized for 15,000-word transcripts
   dictation.go   dictation's own dataset loading, runner, and mechanical scoring — see "Dictation" above
   report.go      stdout table + report JSON, and the staged run directory
   task_runs.go   stashes every successful model call's output under the run directory, and reads them back — see "Stashed task outputs" above
@@ -591,5 +520,5 @@ where the code or docs actually cite it, then what it contributed.
     prompt's rules and the judge's `faithfulness` dimension enforce
     (`correctionSpec` in [`src`](src/prompts/correction.go)).
     The competition's scorer (character match error rate, preference score)
-    is not ported: `ScoreCorrection` in [`src`](src/correction.go) is this
-    benchmark's own word-level edit-distance measure against the truth.
+    is not ported: text_correction is scored by the reference-free LLM judge
+    alone.

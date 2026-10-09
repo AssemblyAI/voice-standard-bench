@@ -42,7 +42,6 @@ func main() {
 	reasoningEffort := flag.String("reasoning-effort", "", "reasoning_effort to request from every candidate model (never the judge model) whose GET /v1/models entry advertises support for it via supported_parameters; empty means don't set it at all, and a model that doesn't advertise support logs a warning and is left unset rather than sent the parameter anyway")
 	canonicalVersion := flag.String("canonical-version", DefaultCanonicalVersion, "benchmark schema version to append/update in the canonical result set (folder name uses dashes, e.g. 0.1.2 -> 0-1-2)")
 	approveMerge := flag.Bool("approve-merge", false, "skip the interactive merge confirmation and merge the staged results into canonical immediately -- for scripted/CI use once a run is already trusted")
-	debug := flag.Bool("debug", false, "debug mode: print extra diagnostics as the run goes -- currently, text_correction prints each scored sample's truth, the input the model was shown, and the model's output word-aligned on top of each other, with its scores, the judge's note on the meaning comparison, and the word-level edit counts; changes nothing that is measured or recorded")
 	replay := flag.String("replay", "", "name of an earlier run (its directory under results/, as logged at the end of that run -- a path to it works too) to replay: every model call that run already made and stashed (both the standard and the TTFT pass, under task_runs/) is reused instead of called again, and only the judging runs live; any (model, record) it didn't stash runs live as usual. Refused before anything is called if the run stashed nothing, if none of the requested models (at the requested -reasoning-effort) and tasks was stashed, or if a requested task's prompt has changed since")
 	skipJudge := flag.Bool("skip-judge", false, "gather and stash the candidates' outputs (both passes) but skip all judging -- the LLM judge and dictation's mechanical scoring alike -- and skip the canonical merge, which unjudged samples must not overwrite; judge the run later with -replay")
 	refreshSummary := flag.Bool("refresh-canonical-summary", false, "recompute -canonical-version's summary.json/summary.csv/use_cases.json from its already-staged report-*.json/ttft-report*.json and exit -- no benchmark run, gateway, or ASSEMBLY_AI_TOKEN needed")
@@ -71,7 +70,6 @@ func main() {
 		Concurrency:         *concurrency,
 		CanonicalVersion:    *canonicalVersion,
 		ApproveMerge:        *approveMerge,
-		Debug:               *debug,
 		SkipJudge:           *skipJudge,
 		Replay:              *replay,
 	})
@@ -82,10 +80,9 @@ func main() {
 // taskInput returns the text sent to the model as its user message. Every
 // task but text_correction operates on the transcript as recorded
 // (record.Text). text_correction instead corrects a SIMULATED corrupted
-// transcript (record.MissedText) against the known-true original
-// (record.Text) it was derived from — see ScoreCorrection in correction.go —
-// so it is the corrupted version that must be sent as input; sending
-// record.Text would hand the model the answer key.
+// transcript (record.MissedText) derived from the original (record.Text), so
+// it is the corrupted version that must be sent as input; sending record.Text
+// would hand the model the uncorrupted original.
 //
 // A handful of text_correction records have no MissedText (the simulation
 // didn't cover them — see TranscriptRecord's doc comment); those are reported
@@ -125,34 +122,6 @@ func recordFailure(failures *FailureRecorder, model, reasoningEffort, task, buck
 
 	if err != nil {
 		log.Printf("model %s task %s record %s: recording failure: %v", model, task, recordID, err)
-	}
-}
-
-// recordLowAccuracy writes one FailureRecord for a text_correction sample
-// whose word accuracy against the truth fell below lowAccuracyThreshold
-// (text_correction_task.go). Unlike
-// recordFailure, there is no cause error — the completion call and judging
-// both succeeded; what's worth capturing is the actual texts and judge
-// scores involved (see FailureRecord's doc comment), which the other two
-// failure reasons don't have and so aren't in recordFailure's signature.
-func recordLowAccuracy(failures *FailureRecorder, model, reasoningEffort, task string, record TranscriptRecord, input, correctedText string, judgeScores map[string]float64, request, response string) {
-	err := failures.Record(FailureRecord{
-		Model:           model,
-		ReasoningEffort: reasoningEffort,
-		Task:            task,
-		Bucket:          record.Bucket,
-		RecordID:        record.ID,
-		Reason:          FailureLowAccuracy,
-		Request:         request,
-		Response:        response,
-		OriginalText:    record.Text,
-		InputText:       input,
-		CorrectedText:   correctedText,
-		JudgeScores:     judgeScores,
-	})
-
-	if err != nil {
-		log.Printf("model %s task %s record %s: recording low-accuracy failure: %v", model, task, record.ID, err)
 	}
 }
 

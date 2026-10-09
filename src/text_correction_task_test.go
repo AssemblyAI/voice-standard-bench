@@ -21,28 +21,20 @@ import (
 func newTestTextCorrectionTask(t *testing.T, gw *Gateway) *TextCorrectionTask {
 	t.Helper()
 
-	task, err := NewTextCorrectionTask(gw, false)
+	task, err := NewTextCorrectionTask(gw)
 	require.NoError(t, err)
 
 	return task
 }
 
-// textCorrectionJudgeReply is what a judge sends back for a text_correction
-// judge call. There are two: the reference-free one (faithfulness, improvement)
-// and the reference-based meaning comparison, recognizable by the REFERENCE:
-// section of its user message (meaning_similarity). A fake gateway answers
-// whichever it was asked, so a test never has to care which order RunJudge
-// makes them in.
-func textCorrectionJudgeReply(requestBody string, faithfulness, improvement, meaning int) string {
-	if strings.Contains(requestBody, "REFERENCE:") {
-		return fmt.Sprintf(`{"meaning_similarity": %d, "notes": "the meaning note"}`, meaning)
-	}
-
+// textCorrectionJudgeReply is what the judge sends back for a text_correction
+// judge call: faithfulness and improvement.
+func textCorrectionJudgeReply(faithfulness, improvement int) string {
 	return fmt.Sprintf(`{"faithfulness": %d, "improvement": %d, "notes": "ok"}`, faithfulness, improvement)
 }
 
 func TestNewTextCorrectionTaskResolvesSpecAndName(t *testing.T) {
-	task, err := NewTextCorrectionTask(nil, false)
+	task, err := NewTextCorrectionTask(nil)
 	require.NoError(t, err)
 	assert.Equal(t, prompts.TextCorrection, task.Name())
 }
@@ -57,7 +49,7 @@ func TestTextCorrectionTaskLoadDataset(t *testing.T) {
 	writeFile(t, filepath.Join(normalizedRoot, "text_correction", "aai_transcripts.jsonl"),
 		recordLineWithMissedText("r1", "30s", "the true text", "the corrupted text"))
 
-	task, err := NewTextCorrectionTask(nil, false)
+	task, err := NewTextCorrectionTask(nil)
 	require.NoError(t, err)
 
 	records, err := task.LoadDataset()
@@ -76,7 +68,7 @@ func TestTextCorrectionTaskLoadDatasetOnlyReturnsTextCorrectionRecords(t *testin
 	// A sibling task folder must never leak in, same as SummarizationTask.
 	writeFile(t, filepath.Join(normalizedRoot, "summarization", "aai_transcripts.jsonl"), recordLine("s1", "30s", "summarization transcript"))
 
-	task, err := NewTextCorrectionTask(nil, false)
+	task, err := NewTextCorrectionTask(nil)
 	require.NoError(t, err)
 
 	records, err := task.LoadDataset()
@@ -89,7 +81,7 @@ func TestTextCorrectionTaskLoadDatasetOnlyReturnsTextCorrectionRecords(t *testin
 func TestTextCorrectionTaskLoadDatasetPropagatesGlobError(t *testing.T) {
 	t.Chdir(t.TempDir()) // empty -- normalized/text_correction/aai_transcripts.jsonl matches nothing
 
-	task, err := NewTextCorrectionTask(nil, false)
+	task, err := NewTextCorrectionTask(nil)
 	require.NoError(t, err)
 
 	_, err = task.LoadDataset()
@@ -155,29 +147,26 @@ func TestTextCorrectionTaskMaxCompletionTokensMatchesOriginalTaskMaxTokens(t *te
 // RunRecord / RunJudge
 // ---------------------------------------------------------------------------
 
-// TestTextCorrectionTaskKeepsTheAnswerKeyFromTheModelAndTheReferenceFreeJudge:
-// record.Text is the hidden answer key and must never reach the candidate
-// model, nor the reference-free judge whose faithfulness and improvement scores
-// have to stay independent of it. It goes to exactly one place: the
-// reference-based meaning comparison, which exists to read it.
-func TestTextCorrectionTaskKeepsTheAnswerKeyFromTheModelAndTheReferenceFreeJudge(t *testing.T) {
+// The hidden original transcript (record.Text) is not used to score anything,
+// so it must reach neither the candidate model nor the judge: the model is shown
+// the corrupted transcript, and the judge grades the output against that same
+// corrupted input.
+func TestTextCorrectionTaskNeverSendsTheOriginalTranscriptAnywhere(t *testing.T) {
 	const trueText = "TRUE-TEXT-MUST-NOT-LEAK the meeting is at three"
 	const corrupted = "the meating is at three"
 	const modelOutput = "the meeting is at four" // a plausible but imperfect correction
 
-	var taskRequestBody, referenceFreeBody, meaningBody string
+	var taskRequestBody string
+
+	var judgeBodies []string
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body := readBody(t, r)
 
 		if strings.Contains(body, `"model":"the-judge"`) {
-			if strings.Contains(body, "REFERENCE:") {
-				meaningBody = body
-			} else {
-				referenceFreeBody = body
-			}
+			judgeBodies = append(judgeBodies, body)
 
-			writeChatCompletion(w, textCorrectionJudgeReply(body, 4, 4, 3), 20, 10)
+			writeChatCompletion(w, textCorrectionJudgeReply(4, 3), 20, 10)
 
 			return
 		}
@@ -200,33 +189,25 @@ func TestTextCorrectionTaskKeepsTheAnswerKeyFromTheModelAndTheReferenceFreeJudge
 	require.NoError(t, err)
 
 	require.NotEmpty(t, taskRequestBody, "the task call must have happened")
-	require.NotEmpty(t, referenceFreeBody, "the reference-free judge call must have happened")
-	require.NotEmpty(t, meaningBody, "the meaning comparison call must have happened")
+	require.Len(t, judgeBodies, 1, "text_correction is judged by exactly one call")
 
 	assert.Contains(t, taskRequestBody, corrupted, "the model must be given the corrupted transcript")
 	assert.NotContains(t, taskRequestBody, "TRUE-TEXT-MUST-NOT-LEAK", "the model must never see the true text")
 
-	assert.Contains(t, referenceFreeBody, corrupted, "the reference-free judge grades against what the model was shown")
-	assert.Contains(t, referenceFreeBody, modelOutput)
-	assert.NotContains(t, referenceFreeBody, "TRUE-TEXT-MUST-NOT-LEAK", "the reference-free judge must never see the true text")
-
-	assert.Contains(t, meaningBody, "TRUE-TEXT-MUST-NOT-LEAK", "the meaning comparison is the one call that is shown the true text")
-	assert.Contains(t, meaningBody, modelOutput, "next to the candidate's output")
-	assert.NotContains(t, meaningBody, corrupted, "and not the corrupted input, which it has no use for")
+	assert.Contains(t, judgeBodies[0], corrupted, "the judge grades against what the model was shown")
+	assert.Contains(t, judgeBodies[0], modelOutput)
+	assert.NotContains(t, judgeBodies[0], "TRUE-TEXT-MUST-NOT-LEAK", "the judge must never see the true text")
+	assert.NotContains(t, judgeBodies[0], "REFERENCE:", "there is no reference-based comparison")
 
 	assert.Equal(t, 4.0, judged.Judge["faithfulness"])
-	assert.Equal(t, 4.0, judged.Judge["improvement"])
-	assert.Equal(t, 3.0, judged.Judge["meaning_similarity"])
+	assert.Equal(t, 3.0, judged.Judge["improvement"])
 }
 
-// TestTextCorrectionTaskRunJudgeScoresMeaningAndRecordsWordLevelContext is the
-// end-to-end check of what a judged sample carries: the reference-free judge's
-// faithfulness and improvement, the meaning comparison's meaning_similarity
-// (the truth-based quality score), and -- as context only -- the word error
-// rates of the output and of the input against the truth.
-func TestTextCorrectionTaskRunJudgeScoresMeaningAndRecordsWordLevelContext(t *testing.T) {
+// A judged sample carries exactly the reference-free rubric -- nothing computed
+// from the original transcript, however far the output is from it.
+func TestTextCorrectionTaskRunJudgeRecordsOnlyTheReferenceFreeRubric(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		writeChatCompletion(w, textCorrectionJudgeReply(readBody(t, r), 4, 3, 5), 20, 10)
+		writeChatCompletion(w, textCorrectionJudgeReply(4, 3), 20, 10)
 	}))
 	defer server.Close()
 
@@ -235,80 +216,22 @@ func TestTextCorrectionTaskRunJudgeScoresMeaningAndRecordsWordLevelContext(t *te
 
 	record := TranscriptRecord{
 		ID: "rec-1", Bucket: "30s",
-		Text:       "we agreed to ship the budget review on friday",
-		MissedText: "we agreed to shop the budjet review on friday", // 2 wrong words of 9
+		Text:       "completely unrelated true text here",
+		MissedText: "we agreed to shop the budjet review on friday",
 	}
-	result := CompletionResult{Text: "We agreed to ship the budjet review on Friday."} // fixes one, re-punctuates
+	result := CompletionResult{Text: "We agreed to ship the budget review on Friday."}
 
 	judged, err := task.RunJudge(context.Background(), ModelInfo{ID: "candidate-model"}, record, "judge-model", result, nil)
 
 	require.NoError(t, err)
-	assert.Equal(t, 4.0, judged.Judge["faithfulness"])
-	assert.Equal(t, 3.0, judged.Judge["improvement"])
-	assert.Equal(t, 5.0, judged.Judge["meaning_similarity"], "the judge's verdict, taken as given")
-	assert.InDelta(t, 100.0/9, judged.Judge[scoreTruthWER], 1e-9, "one wrong word of nine left; casing and punctuation are not words")
-	assert.InDelta(t, 200.0/9, judged.Judge[scoreInputWER], 1e-9, "the do-nothing baseline: two wrong words of nine")
-
-	for _, retired := range []string{"accuracy", "edit_ratio", "error_reduction"} {
-		assert.NotContains(t, judged.Judge, retired, "%s is no longer recorded", retired)
-	}
+	assert.Equal(t, map[string]float64{"faithfulness": 4, "improvement": 3}, judged.Judge)
 }
 
-// TestTextCorrectionTaskRunJudgeSendsTheMeaningJudgeTheTruthAndTheOutput pins
-// the shape of the reference-based call: a REFERENCE section holding the
-// truth, a CANDIDATE section holding the output, and the Compare system prompt
-// -- not the reference-free one.
-func TestTextCorrectionTaskRunJudgeSendsTheMeaningJudgeTheTruthAndTheOutput(t *testing.T) {
-	var meaning []byte
-
+// A judge call that fails leaves the sample unjudged and records the failure,
+// with the judge's request and response so it can be replayed.
+func TestTextCorrectionTaskRunJudgeFailureCarriesTheJudgesRequestAndResponse(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		body := readBody(t, r)
-		if strings.Contains(body, "REFERENCE:") {
-			meaning = []byte(body)
-		}
-
-		writeChatCompletion(w, textCorrectionJudgeReply(body, 5, 5, 5), 20, 10)
-	}))
-	defer server.Close()
-
-	gw := NewGateway(server.URL, "test-key", 5*time.Second)
-	task := newTestTextCorrectionTask(t, gw)
-
-	record := TranscriptRecord{ID: "rec-1", Bucket: "30s", Text: "the real truth", MissedText: "the corrupted input"}
-
-	_, err := task.RunJudge(context.Background(), ModelInfo{ID: "candidate-model"}, record, "judge-model", CompletionResult{Text: "the model output"}, nil)
-	require.NoError(t, err)
-	require.NotEmpty(t, meaning)
-
-	var request struct {
-		Messages []struct {
-			Role    string `json:"role"`
-			Content string `json:"content"`
-		} `json:"messages"`
-	}
-
-	require.NoError(t, json.Unmarshal(meaning, &request))
-	require.Len(t, request.Messages, 2)
-
-	assert.Equal(t, "system", request.Messages[0].Role)
-	assert.Equal(t, task.spec.Compare, request.Messages[0].Content, "the Compare prompt, not the reference-free one")
-	assert.Equal(t, "user", request.Messages[1].Role)
-	assert.Equal(t, "REFERENCE:\nthe real truth\n\nCANDIDATE:\nthe model output", request.Messages[1].Content)
-}
-
-// A sample is judged by both calls or not at all: if the meaning comparison
-// fails the sample comes back unjudged, with the failure recorded, rather than
-// carrying a half-filled rubric.
-func TestTextCorrectionTaskRunJudgeFailsTheSampleWhenTheMeaningComparisonFails(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		body := readBody(t, r)
-		if strings.Contains(body, "REFERENCE:") {
-			writeChatCompletion(w, "I would rather not compare these.", 20, 10)
-
-			return
-		}
-
-		writeChatCompletion(w, textCorrectionJudgeReply(body, 4, 4, 4), 20, 10)
+		writeChatCompletion(w, "I would rather not grade these.", 20, 10)
 	}))
 	defer server.Close()
 
@@ -331,30 +254,8 @@ func TestTextCorrectionTaskRunJudgeFailsTheSampleWhenTheMeaningComparisonFails(t
 	assert.Equal(t, FailureJudgeError, meta[0].Reason)
 
 	output := readFailureOutput(t, failures.RunDir(), meta[0].OutputFile)
-	assert.Contains(t, string(output.Request), "REFERENCE:", "the saved request is the meaning comparison's, so the failure can be replayed")
-	assert.Contains(t, string(output.Response), "I would rather not compare these.")
-}
-
-// The word-level numbers are context: a do-nothing candidate sits exactly as
-// far from the truth as its input, however the judge scored it.
-func TestTextCorrectionTaskRunJudgeRecordsADoNothingCandidateAtTheInputsDistance(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		writeChatCompletion(w, textCorrectionJudgeReply(readBody(t, r), 5, 1, 4), 20, 10)
-	}))
-	defer server.Close()
-
-	gw := NewGateway(server.URL, "test-key", 5*time.Second)
-	task := newTestTextCorrectionTask(t, gw)
-
-	truth := strings.Repeat("the quarterly numbers look strong across every region ", 20)
-	corrupted := strings.Replace(truth, "strong", "strung", 3)
-	record := TranscriptRecord{ID: "rec-1", Bucket: "120s", Text: truth, MissedText: corrupted}
-
-	judged, err := task.RunJudge(context.Background(), ModelInfo{ID: "candidate-model"}, record, "judge-model", CompletionResult{Text: corrupted}, nil)
-
-	require.NoError(t, err)
-	assert.InDelta(t, judged.Judge[scoreInputWER], judged.Judge[scoreTruthWER], 1e-9)
-	assert.Greater(t, 100-judged.Judge[scoreTruthWER], 95.0, "a do-nothing candidate is 'nearly perfect' word for word, which is why the word-level numbers are not the score")
+	assert.Contains(t, string(output.Request), "the meating is at three", "the saved request is the judge's, so the failure can be replayed")
+	assert.Contains(t, string(output.Response), "I would rather not grade these.")
 }
 
 // TestTextCorrectionTaskRunRecordNoMissedTextIsAFailedSample: a record the
@@ -449,119 +350,6 @@ func TestTextCorrectionTaskRunJudgeRecordsJudgeErrorFailure(t *testing.T) {
 	assert.Equal(t, prompts.TextCorrection, meta[0].Task)
 	assert.Equal(t, "rec-1", meta[0].RecordID)
 	assert.Equal(t, FailureJudgeError, meta[0].Reason)
-}
-
-// TestTextCorrectionTaskRunJudgeRecordsLowAccuracyFailure confirms a word
-// accuracy against the truth below lowAccuracyThreshold is recorded as
-// FailureLowAccuracy (via recordLowAccuracy).
-func TestTextCorrectionTaskRunJudgeRecordsLowAccuracyFailure(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		writeChatCompletion(w, textCorrectionJudgeReply(readBody(t, r), 3, 3, 1), 20, 10)
-	}))
-	defer server.Close()
-
-	gw := NewGateway(server.URL, "test-key", 5*time.Second)
-	failures, err := NewFailureRecorder(filepath.Join(t.TempDir(), "errors"))
-	require.NoError(t, err)
-
-	task := newTestTextCorrectionTask(t, gw)
-	record := TranscriptRecord{ID: "rec-1", Bucket: "30s", Text: "completely unrelated true text here", MissedText: "corrupted input"}
-	// Shares no words with record.Text -> every word wrong, WER 100%, word
-	// accuracy 0, well below the floor.
-	result := CompletionResult{Text: "a totally different sentence entirely"}
-
-	judged, err := task.RunJudge(context.Background(), ModelInfo{ID: "candidate-model"}, record, "judge-model", result, failures)
-
-	require.NoError(t, err)
-	assert.Equal(t, 100.0, judged.Judge[scoreTruthWER])
-	assert.Less(t, 1-judged.Judge[scoreTruthWER]/100, lowAccuracyThreshold)
-	require.Equal(t, 1, failures.Count())
-
-	meta := readFailureMeta(t, failures.RunDir())
-	require.Len(t, meta, 1)
-	assert.Equal(t, FailureLowAccuracy, meta[0].Reason)
-	require.NotNil(t, meta[0].TruthWER, "meta.json must surface the truth WER for a low_accuracy entry")
-	assert.InDelta(t, judged.Judge[scoreTruthWER], *meta[0].TruthWER, 1e-9)
-}
-
-// TestTextCorrectionTaskRunJudgeRecordsRunawayGeneration covers the failure
-// the old word-overlap accuracy was added to catch and the kimi-k3 runs
-// actually hit: output many times longer than the truth. WER passes 100% (more
-// errors than the truth has words), so word accuracy goes negative and trips
-// the floor.
-func TestTextCorrectionTaskRunJudgeRecordsRunawayGeneration(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		writeChatCompletion(w, textCorrectionJudgeReply(readBody(t, r), 1, 1, 1), 20, 10)
-	}))
-	defer server.Close()
-
-	gw := NewGateway(server.URL, "test-key", 5*time.Second)
-	failures, err := NewFailureRecorder(filepath.Join(t.TempDir(), "errors"))
-	require.NoError(t, err)
-
-	task := newTestTextCorrectionTask(t, gw)
-	truth := "the meeting is at three"
-	record := TranscriptRecord{ID: "rec-1", Bucket: "30s", Text: truth, MissedText: "the meating is at three"}
-	result := CompletionResult{Text: truth + strings.Repeat(" and then the meeting is at three", 40)}
-
-	judged, err := task.RunJudge(context.Background(), ModelInfo{ID: "candidate-model"}, record, "judge-model", result, failures)
-
-	require.NoError(t, err)
-	assert.Greater(t, judged.Judge[scoreTruthWER], 100.0, "more wrong words than the truth has words")
-	assert.Equal(t, 1.0, judged.Judge["meaning_similarity"], "and the meaning judge scored it the worst there is")
-	assert.Equal(t, 1, failures.Count())
-}
-
-// TestTextCorrectionTaskRunJudgeDoesNotRecordAMereRegression: a candidate
-// that is worse than its input but still mostly right is a lower score, not a
-// grossly-wrong output worth a transcript-sized file in errors/ -- the failure
-// capture stays reserved for the latter.
-func TestTextCorrectionTaskRunJudgeDoesNotRecordAMereRegression(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		writeChatCompletion(w, textCorrectionJudgeReply(readBody(t, r), 3, 2, 3), 20, 10)
-	}))
-	defer server.Close()
-
-	gw := NewGateway(server.URL, "test-key", 5*time.Second)
-	failures, err := NewFailureRecorder(filepath.Join(t.TempDir(), "errors"))
-	require.NoError(t, err)
-
-	task := newTestTextCorrectionTask(t, gw)
-	// Ten words; the input has one wrong, the candidate three.
-	record := TranscriptRecord{
-		ID: "rec-1", Bucket: "30s",
-		Text:       "one two three four five six seven eight nine ten",
-		MissedText: "one two three four five six seven eight nine tin",
-	}
-	result := CompletionResult{Text: "one two three four five six seven ait nin tin"}
-
-	judged, err := task.RunJudge(context.Background(), ModelInfo{ID: "candidate-model"}, record, "judge-model", result, failures)
-
-	require.NoError(t, err)
-	assert.Greater(t, judged.Judge[scoreTruthWER], judged.Judge[scoreInputWER], "it did get worse than its input")
-	assert.Equal(t, 0, failures.Count(), "but 70% word accuracy is nowhere near a gross failure")
-}
-
-func TestTextCorrectionTaskRunJudgeSkipsLowAccuracyRecordingAboveThreshold(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		writeChatCompletion(w, textCorrectionJudgeReply(readBody(t, r), 5, 5, 5), 20, 10)
-	}))
-	defer server.Close()
-
-	gw := NewGateway(server.URL, "test-key", 5*time.Second)
-	failures, err := NewFailureRecorder(filepath.Join(t.TempDir(), "errors"))
-	require.NoError(t, err)
-
-	task := newTestTextCorrectionTask(t, gw)
-	record := TranscriptRecord{ID: "rec-1", Bucket: "30s", Text: "the meeting is at three", MissedText: "the meating is at three"}
-	result := CompletionResult{Text: "the meeting is at three"}
-
-	judged, err := task.RunJudge(context.Background(), ModelInfo{ID: "candidate-model"}, record, "judge-model", result, failures)
-
-	require.NoError(t, err)
-	assert.Equal(t, 0.0, judged.Judge[scoreTruthWER])
-	assert.GreaterOrEqual(t, 1-judged.Judge[scoreTruthWER]/100, lowAccuracyThreshold)
-	assert.Equal(t, 0, failures.Count())
 }
 
 // ---------------------------------------------------------------------------
@@ -669,22 +457,21 @@ func TestTextCorrectionTaskDimensionRanges(t *testing.T) {
 	require.True(t, ok)
 
 	ranges := task.DimensionRanges()
-	require.Len(t, ranges, len(spec.Rubric)+len(spec.CompareRubric), "the reference-free rubric plus the meaning comparison's")
+	require.Len(t, ranges, len(spec.Rubric), "the reference-free rubric and nothing else")
 
-	for _, dim := range append(append([]string{}, spec.Rubric...), spec.CompareRubric...) {
+	for _, dim := range spec.Rubric {
 		got, ok := ranges[dim]
 		require.True(t, ok, "missing DimensionRanges entry for %q", dim)
 		assert.Equal(t, scale{lo: 1, hi: 5}, got, "%q is an LLM judge's 1-5 score", dim)
 	}
 
-	assert.Contains(t, ranges, "meaning_similarity")
-
-	// The informational WERs and the retired scores are not quality
-	// dimensions, so they must not appear -- and must agree with summary.go's
-	// dimensionRange, which is what actually decides what reaches quality_score.
-	for _, notQuality := range []string{scoreTruthWER, scoreInputWER, "accuracy", "edit_ratio", "error_reduction"} {
-		assert.NotContains(t, ranges, notQuality)
-		assert.NotContains(t, dimensionRange, notQuality)
+	// Scores older reports carry from comparing against the original transcript
+	// are not quality dimensions, so they must not appear -- and must agree with
+	// summary.go's dimensionRange, which is what actually decides what reaches
+	// quality_score.
+	for _, retired := range []string{"meaning_similarity", "truth_wer", "input_wer", "accuracy", "edit_ratio", "error_reduction"} {
+		assert.NotContains(t, ranges, retired)
+		assert.NotContains(t, dimensionRange, retired)
 	}
 
 	for dim, got := range ranges {
