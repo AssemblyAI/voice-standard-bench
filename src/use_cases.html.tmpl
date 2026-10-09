@@ -1,0 +1,702 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Model Recommendations — voice_bench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f6f7fb;
+    --surface: #ffffff;
+    --surface-2: #eef0f7;
+    --border: #e2e5ef;
+    --text: #1a1d29;
+    --text-muted: #5b6072;
+    --text-faint: #8890a3;
+    --accent: #4f46e5;
+    --accent-soft: #eef0ff;
+    --good: #16a34a;
+    --good-bg: #dcfce7;
+    --mid: #b45309;
+    --mid-bg: #fef3c7;
+    --low: #dc2626;
+    --low-bg: #fee2e2;
+    --gold: #eab308;
+    --gold-text: #3a2c00;
+    --silver: #a8b0c0;
+    --silver-text: #1c2230;
+    --bronze: #c2703d;
+    --bronze-text: #341a02;
+    --shadow: 0 1px 2px rgba(20, 22, 35, 0.04), 0 10px 30px -14px rgba(20, 22, 35, 0.16);
+    --radius: 14px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d0e13;
+      --surface: #171922;
+      --surface-2: #1f212c;
+      --border: #2b2e3b;
+      --text: #edeef5;
+      --text-muted: #a7acc0;
+      --text-faint: #767c92;
+      --accent: #8583f5;
+      --accent-soft: rgba(133, 131, 245, 0.14);
+      --good: #4ade80;
+      --good-bg: rgba(74, 222, 128, 0.14);
+      --mid: #fbbf24;
+      --mid-bg: rgba(251, 191, 36, 0.14);
+      --low: #f87171;
+      --low-bg: rgba(248, 113, 113, 0.14);
+      --gold: #eec744;
+      --gold-text: #3a2c00;
+      --silver: #b7bfd1;
+      --silver-text: #1c2230;
+      --bronze: #d98955;
+      --bronze-text: #341a02;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 14px 34px -16px rgba(0, 0, 0, 0.7);
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 1360px;
+    margin: 0 auto;
+    padding: 0 1.75rem;
+  }
+
+  a { color: var(--accent); }
+
+  code, .mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+  }
+
+  /* ---------- header ---------- */
+
+  header.page-header {
+    border-bottom: 1px solid var(--border);
+    padding: 2.25rem 0 1.75rem;
+  }
+
+  .header-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.5rem;
+  }
+
+  h1 {
+    margin: 0 0 0.35rem;
+    font-size: 1.85rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  .subtitle {
+    margin: 0;
+    max-width: 46rem;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  .header-stats {
+    display: flex;
+    gap: 1.75rem;
+  }
+
+  .stat { text-align: right; }
+
+  .stat-value {
+    display: block;
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1.1;
+  }
+
+  .stat-label {
+    display: block;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-faint);
+    margin-top: 0.15rem;
+  }
+
+  /* ---------- toolbar ---------- */
+
+  .toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: color-mix(in srgb, var(--bg) 92%, transparent);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 0;
+  }
+
+  .toolbar-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  #search {
+    flex: 1 1 220px;
+    max-width: 320px;
+    padding: 0.55rem 0.9rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 0.88rem;
+  }
+
+  #search:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .pills, .tag-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+
+  .pill, .tag-chip, .link-button {
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.4rem 0.8rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+    white-space: nowrap;
+  }
+
+  .pill:hover, .tag-chip:hover { border-color: var(--accent); color: var(--text); }
+
+  .pill.active, .tag-chip.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  .tag-chip .tag-count {
+    opacity: 0.65;
+    font-weight: 500;
+    margin-left: 0.15rem;
+  }
+
+  .toolbar-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    margin-top: 0.75rem;
+    font-size: 0.8rem;
+    color: var(--text-faint);
+  }
+
+  .link-button {
+    border: none;
+    background: none;
+    padding: 0;
+    color: var(--accent);
+    text-decoration: underline;
+  }
+
+  /* ---------- legend ---------- */
+
+  details.legend {
+    padding: 0.85rem 0;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.82rem;
+  }
+
+  details.legend summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text);
+    list-style: none;
+  }
+
+  details.legend summary::-webkit-details-marker { display: none; }
+
+  details.legend summary::before {
+    content: '▸';
+    display: inline-block;
+    margin-right: 0.4rem;
+    transition: transform 0.12s ease;
+  }
+
+  details.legend[open] summary::before { transform: rotate(90deg); }
+
+  .legend-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 0.5rem 1.5rem;
+    margin-top: 0.75rem;
+  }
+
+  .dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 0.4rem;
+  }
+
+  .dot.q-high { background: var(--good); }
+  .dot.q-mid { background: var(--mid); }
+  .dot.q-low { background: var(--low); }
+
+  /* ---------- bucket sections ---------- */
+
+  main { padding: 1.75rem 0 3rem; }
+
+  .bucket-section { margin-bottom: 2.5rem; }
+
+  .bucket-heading {
+    display: flex;
+    align-items: baseline;
+    gap: 0.65rem;
+    margin-bottom: 1rem;
+  }
+
+  .bucket-heading h2 {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+  }
+
+  .bucket-raw {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-faint);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+
+  .bucket-kind {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+  }
+
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 1rem;
+  }
+
+  /* ---------- card ---------- */
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.15rem 1.25rem 1.3rem;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .card[hidden] { display: none; }
+
+  .card h3 {
+    margin: 0 0 0.35rem;
+    font-size: 1.02rem;
+    font-weight: 700;
+  }
+
+  .card-desc {
+    margin: 0 0 0.75rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+
+  .chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-bottom: 0.9rem;
+  }
+
+  .chip {
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-faint);
+    background: var(--surface-2);
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+  }
+
+  .model-list {
+    list-style: none;
+    margin: 0;
+    padding: 0.75rem 0 0;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+  }
+
+  .model-row {
+    display: flex;
+    gap: 0.65rem;
+  }
+
+  .rank-badge {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    font-size: 0.72rem;
+    font-weight: 700;
+    background: var(--surface-2);
+    color: var(--text-muted);
+    margin-top: 0.1rem;
+  }
+
+  .rank-badge.mini { width: 18px; height: 18px; font-size: 0.62rem; margin-top: 0; }
+
+  .rank-badge.rank-1 { background: var(--gold); color: var(--gold-text); }
+  .rank-badge.rank-2 { background: var(--silver); color: var(--silver-text); }
+  .rank-badge.rank-3 { background: var(--bronze); color: var(--bronze-text); }
+
+  .model-main { flex: 1; min-width: 0; }
+
+  .model-name {
+    display: block;
+    font-size: 0.83rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    word-break: break-word;
+  }
+
+  .metric-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+    gap: 0.6rem 0.9rem;
+  }
+
+  .metric-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-faint);
+    margin-bottom: 0.3rem;
+    cursor: help;
+  }
+
+  .metric-value {
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+
+  .metric-value.plain { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  .bar {
+    position: relative;
+    height: 5px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    overflow: hidden;
+    margin-bottom: 0.3rem;
+  }
+
+  .bar-fill {
+    position: absolute;
+    inset: 0;
+    width: 0;
+    border-radius: 999px;
+  }
+
+  .bar-fill.q-high { background: var(--good); }
+  .bar-fill.q-mid { background: var(--mid); }
+  .bar-fill.q-low { background: var(--low); }
+
+  /* ---------- empty state / footer ---------- */
+
+  .empty-state {
+    text-align: center;
+    color: var(--text-faint);
+    padding: 3rem 0;
+    font-size: 0.9rem;
+  }
+
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 1.5rem 0 2.5rem;
+    color: var(--text-faint);
+    font-size: 0.8rem;
+  }
+
+  @media (max-width: 560px) {
+    .header-stats { gap: 1.1rem; }
+    .stat { text-align: left; }
+    #search { max-width: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="page-header">
+  <div class="wrap header-inner">
+    <div>
+      <h1>Model Recommendations</h1>
+      <p class="subtitle">Best-fit models per use case — dictation, summarization, extraction, text correction, and voice-agent turns — ranked by quality, cost per quality, and p50 latency from voice_bench benchmark results.</p>
+    </div>
+    <div class="header-stats">
+      <div class="stat">
+        <span class="stat-value">{{.TotalUseCases}}</span>
+        <span class="stat-label">use cases</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value">{{.TotalModels}}</span>
+        <span class="stat-label">models</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value">{{len .Buckets}}</span>
+        <span class="stat-label">audio lengths</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="wrap">
+    <div class="toolbar-inner">
+      <input type="search" id="search" placeholder="Search models, titles, tags…" autocomplete="off" aria-label="Search use cases">
+      <div class="pills" id="bucket-pills">
+        <button type="button" class="pill active" data-bucket="all" aria-pressed="true">All lengths</button>
+        {{range .Buckets}}<button type="button" class="pill" data-bucket="{{.Bucket}}" aria-pressed="false">{{.Label}}</button>
+        {{end}}
+      </div>
+    </div>
+    <div class="pills tag-filter" id="tag-filter">
+      {{range .Tags}}<button type="button" class="tag-chip" data-tag="{{.Tag}}" aria-pressed="false">{{.Tag}} <span class="tag-count">{{.Count}}</span></button>
+      {{end}}
+    </div>
+    <div class="toolbar-meta">
+      <span id="result-count" aria-live="polite"></span>
+      <button type="button" id="clear-filters" class="link-button" hidden>Clear filters</button>
+    </div>
+  </div>
+</div>
+
+<details class="legend">
+  <summary class="wrap">How to read this</summary>
+  <div class="wrap legend-grid">
+    <div><span class="dot q-high"></span>Quality ≥ 90 — premium tier, best regardless of cost</div>
+    <div><span class="dot q-mid"></span>Quality 70–89 — acceptable tier, where cost/latency start deciding</div>
+    <div><span class="rank-badge mini rank-1">1</span> Rank badges show best fit first for that specific use case, not a global leaderboard</div>
+    <div><strong>Cost / quality</strong> — cents spent per 1–100 quality point earned; lower is more cost-efficient</div>
+    <div><strong>Task quality</strong> — score on just this use case's own task, alongside the model's combined score across every task</div>
+    <div>Tag filters match <strong>any</strong> selected tag; search matches title, description, tags, and model names</div>
+  </div>
+</details>
+
+<main id="content" class="wrap">
+  {{range .Buckets}}
+  <section class="bucket-section" data-bucket="{{.Bucket}}">
+    <div class="bucket-heading">
+      <h2>{{.Label}}</h2>
+      <span class="bucket-raw">{{.Bucket}}</span>
+      {{if .Kind}}<span class="bucket-kind">{{.Kind}}</span>{{end}}
+    </div>
+    <div class="card-grid">
+      {{range .UseCases}}
+      <article class="card" data-bucket="{{.Bucket}}" data-tags="{{.TagsAttr}}">
+        <h3>{{.Title}}</h3>
+        <p class="card-desc">{{.Description}}</p>
+        <div class="chip-row">
+          {{range .Tags}}<span class="chip">{{.}}</span>{{end}}
+        </div>
+        <ol class="model-list">
+          {{range .Models}}
+          <li class="model-row">
+            <span class="rank-badge rank-{{.Rank}}">{{.Rank}}</span>
+            <div class="model-main">
+              <code class="model-name">{{.Model}}</code>
+              <div class="metric-row">
+                <div class="metric">
+                  <div class="metric-label" title="1-100 combined score across every task, judged reference-free (mechanically for dictation)">Quality</div>
+                  <div class="bar"><div class="bar-fill {{.QualityClass}}" style="width:{{.QualityScore}}%"></div></div>
+                  <div class="metric-value">{{.QualityScore}}</div>
+                </div>
+                {{if .HasTaskQuality}}
+                <div class="metric">
+                  <div class="metric-label" title="1-100 score on just this use case's own task">Task quality</div>
+                  <div class="bar"><div class="bar-fill {{.TaskQualityClass}}" style="width:{{.TaskQualityScore}}%"></div></div>
+                  <div class="metric-value">{{.TaskQualityScore}}</div>
+                </div>
+                {{end}}
+                <div class="metric">
+                  <div class="metric-label" title="Mean cents per judged call, per 1-100 quality point earned">Cost / quality</div>
+                  <div class="metric-value plain">{{.CostLabel}}</div>
+                </div>
+                <div class="metric">
+                  <div class="metric-label" title="Median end-to-end response latency">Latency p50</div>
+                  <div class="metric-value plain">{{.LatencyLabel}}</div>
+                </div>
+                <div class="metric">
+                  <div class="metric-label" title="Reasoning effort requested for this model, or &quot;default&quot; when -reasoning-effort wasn't set or this model doesn't support it">Reasoning effort</div>
+                  <div class="metric-value plain">{{.ReasoningEffortLabel}}</div>
+                </div>
+              </div>
+            </div>
+          </li>
+          {{end}}
+        </ol>
+      </article>
+      {{end}}
+    </div>
+  </section>
+  {{end}}
+</main>
+
+<p class="empty-state wrap" id="empty-state" hidden>No use cases match the current filters.</p>
+
+<footer>
+  <div class="wrap">
+    Generated {{.GeneratedAt}} from <a href="use_cases.json"><code>use_cases.json</code></a> — voice_bench benchmark (regenerate with <code>-refresh-canonical-summary</code>)
+  </div>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  var sections = Array.prototype.slice.call(document.querySelectorAll('.bucket-section'));
+  var searchInput = document.getElementById('search');
+  var bucketPills = Array.prototype.slice.call(document.querySelectorAll('#bucket-pills .pill'));
+  var tagChips = Array.prototype.slice.call(document.querySelectorAll('#tag-filter .tag-chip'));
+  var resultCount = document.getElementById('result-count');
+  var emptyState = document.getElementById('empty-state');
+  var clearButton = document.getElementById('clear-filters');
+
+  var state = { bucket: 'all', tags: {}, tagCount: 0, query: '' };
+
+  function matches(card) {
+    if (state.bucket !== 'all' && card.dataset.bucket !== state.bucket) return false;
+
+    if (state.tagCount > 0) {
+      var cardTags = card.dataset.tags.split(' ');
+      var any = false;
+      for (var i = 0; i < cardTags.length; i++) {
+        if (state.tags[cardTags[i]]) { any = true; break; }
+      }
+      if (!any) return false;
+    }
+
+    if (state.query && card.textContent.toLowerCase().indexOf(state.query) === -1) return false;
+
+    return true;
+  }
+
+  function apply() {
+    var visible = 0;
+
+    cards.forEach(function (card) {
+      var show = matches(card);
+      card.hidden = !show;
+      if (show) visible++;
+    });
+
+    sections.forEach(function (section) {
+      section.hidden = !section.querySelector('.card:not([hidden])');
+    });
+
+    resultCount.textContent = visible + ' of ' + cards.length + ' use cases';
+    emptyState.hidden = visible !== 0;
+    clearButton.hidden = state.bucket === 'all' && state.tagCount === 0 && state.query === '';
+  }
+
+  searchInput.addEventListener('input', function (e) {
+    state.query = e.target.value.trim().toLowerCase();
+    apply();
+  });
+
+  bucketPills.forEach(function (pill) {
+    pill.addEventListener('click', function () {
+      state.bucket = pill.dataset.bucket;
+      bucketPills.forEach(function (p) {
+        var active = p === pill;
+        p.classList.toggle('active', active);
+        p.setAttribute('aria-pressed', String(active));
+      });
+      apply();
+    });
+  });
+
+  tagChips.forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      var tag = chip.dataset.tag;
+      if (state.tags[tag]) {
+        delete state.tags[tag];
+        state.tagCount--;
+        chip.classList.remove('active');
+        chip.setAttribute('aria-pressed', 'false');
+      } else {
+        state.tags[tag] = true;
+        state.tagCount++;
+        chip.classList.add('active');
+        chip.setAttribute('aria-pressed', 'true');
+      }
+      apply();
+    });
+  });
+
+  clearButton.addEventListener('click', function () {
+    state = { bucket: 'all', tags: {}, tagCount: 0, query: '' };
+    searchInput.value = '';
+    bucketPills.forEach(function (p) {
+      var active = p.dataset.bucket === 'all';
+      p.classList.toggle('active', active);
+      p.setAttribute('aria-pressed', String(active));
+    });
+    tagChips.forEach(function (c) {
+      c.classList.remove('active');
+      c.setAttribute('aria-pressed', 'false');
+    });
+    apply();
+  });
+
+  apply();
+})();
+</script>
+
+</body>
+</html>

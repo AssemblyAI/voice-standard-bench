@@ -1,0 +1,3169 @@
+{
+  "generated_at": "2026-10-09T01:51:34.121768853Z",
+  "use_cases": [
+    {
+      "bucket": "30s",
+      "title": "Dictation Specialist",
+      "description": "Highest-accuracy models for Dictation on 30s audio, regardless of cost — pick these when correctness matters more than price.",
+      "tags": [
+        "dictation",
+        "premium",
+        "high-accuracy"
+      ],
+      "models": [
+        {
+          "model": "claude-sonnet-4-5-20250929",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 93,
+          "cost_per_quality": 0.002403,
+          "latency_p50_s": 2.263,
+          "task_quality_score": 100
+        },
+        {
+          "model": "claude-sonnet-5",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 90,
+          "cost_per_quality": 0.004438,
+          "latency_p50_s": 2.554,
+          "task_quality_score": 100
+        },
+        {
+          "model": "claude-opus-4-5-20251101",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 92,
+          "cost_per_quality": 0.003998,
+          "latency_p50_s": 2.163,
+          "task_quality_score": 100
+        },
+        {
+          "model": "claude-opus-4-6",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 94,
+          "cost_per_quality": 0.003966,
+          "latency_p50_s": 2.25,
+          "task_quality_score": 100
+        },
+        {
+          "model": "claude-opus-4-7",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 91,
+          "cost_per_quality": 0.005607,
+          "latency_p50_s": 1.782,
+          "task_quality_score": 100
+        }
+      ]
+    },
+    {
+      "bucket": "30s",
+      "title": "Budget Dictation",
+      "description": "Cheapest Dictation options on 30s audio per quality point earned, at solid-not-flashy accuracy — pick these for high-volume runs.",
+      "tags": [
+        "dictation",
+        "cost-efficient",
+        "high-volume"
+      ],
+      "models": [
+        {
+          "model": "gemini-2.5-flash-lite",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 88,
+          "cost_per_quality": 0.0000685,
+          "latency_p50_s": 0.699,
+          "task_quality_score": 97
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "none",
+          "rank": 2,
+          "quality_score": 94,
+          "cost_per_quality": 0.00006988,
+          "latency_p50_s": 0.87,
+          "task_quality_score": 98
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "none",
+          "rank": 3,
+          "quality_score": 90,
+          "cost_per_quality": 0.00008649,
+          "latency_p50_s": 0.898,
+          "task_quality_score": 99
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 93,
+          "cost_per_quality": 0.00008451,
+          "latency_p50_s": 0.882,
+          "task_quality_score": 98
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 95,
+          "cost_per_quality": 0.0001281,
+          "latency_p50_s": 1.694,
+          "task_quality_score": 97
+        }
+      ]
+    },
+    {
+      "bucket": "30s",
+      "title": "Real-Time Dictation",
+      "description": "Fastest p50 response time on 30s audio while still handling Dictation well — pick these for live, interactive workflows.",
+      "tags": [
+        "dictation",
+        "real-time",
+        "low-latency"
+      ],
+      "models": [
+        {
+          "model": "qwen3.5-4b-32k-fast",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 74,
+          "cost_per_quality": 0.00009289,
+          "latency_p50_s": 0.28,
+          "task_quality_score": 81
+        },
+        {
+          "model": "qwen3-32B",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 82,
+          "cost_per_quality": 0.0001136,
+          "latency_p50_s": 0.506,
+          "task_quality_score": 86
+        },
+        {
+          "model": "gemini-2.5-flash-lite",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 88,
+          "cost_per_quality": 0.0000685,
+          "latency_p50_s": 0.699,
+          "task_quality_score": 97
+        },
+        {
+          "model": "gemini-3.5-flash-lite",
+          "reasoning_effort": "low",
+          "rank": 4,
+          "quality_score": 92,
+          "cost_per_quality": 0.000306,
+          "latency_p50_s": 0.831,
+          "task_quality_score": 98
+        },
+        {
+          "model": "gpt-4.1",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 91,
+          "cost_per_quality": 0.001279,
+          "latency_p50_s": 0.854,
+          "task_quality_score": 96
+        }
+      ]
+    },
+    {
+      "bucket": "30s",
+      "title": "Near-Real-Time Dictation",
+      "description": "Best Dictation quality on 30s audio within a small step up from the fastest p50 response time — trades a little latency for noticeably better results in interactive workflows.",
+      "tags": [
+        "dictation",
+        "near-real-time",
+        "balanced"
+      ],
+      "models": [
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "none",
+          "rank": 1,
+          "quality_score": 90,
+          "cost_per_quality": 0.00008649,
+          "latency_p50_s": 0.898,
+          "task_quality_score": 99
+        },
+        {
+          "model": "gemini-3.5-flash-lite",
+          "reasoning_effort": "low",
+          "rank": 2,
+          "quality_score": 92,
+          "cost_per_quality": 0.000306,
+          "latency_p50_s": 0.831,
+          "task_quality_score": 98
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "none",
+          "rank": 3,
+          "quality_score": 94,
+          "cost_per_quality": 0.00006988,
+          "latency_p50_s": 0.87,
+          "task_quality_score": 98
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 93,
+          "cost_per_quality": 0.00008451,
+          "latency_p50_s": 0.882,
+          "task_quality_score": 98
+        },
+        {
+          "model": "claude-haiku-4-5-20251001",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 90,
+          "cost_per_quality": 0.0008263,
+          "latency_p50_s": 0.991,
+          "task_quality_score": 98
+        }
+      ]
+    },
+    {
+      "bucket": "30s",
+      "title": "Information Extraction Specialist",
+      "description": "Highest-accuracy models for Information Extraction on 30s audio, regardless of cost — pick these when correctness matters more than price.",
+      "tags": [
+        "information_extraction",
+        "premium",
+        "high-accuracy"
+      ],
+      "models": [
+        {
+          "model": "gpt-5.6-sol",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 95,
+          "cost_per_quality": 0.003634,
+          "latency_p50_s": 1.936,
+          "task_quality_score": 94
+        },
+        {
+          "model": "claude-sonnet-5-5",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 93,
+          "cost_per_quality": 0.003114,
+          "latency_p50_s": 1.444,
+          "task_quality_score": 93
+        },
+        {
+          "model": "claude-haiku-5-5",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 92,
+          "cost_per_quality": 0.0001958,
+          "latency_p50_s": 1.698,
+          "task_quality_score": 92
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 94,
+          "cost_per_quality": 0.0002396,
+          "latency_p50_s": 1.338,
+          "task_quality_score": 91
+        },
+        {
+          "model": "gemini-3.8-flash",
+          "reasoning_effort": "low",
+          "rank": 5,
+          "quality_score": 96,
+          "cost_per_quality": 0.000756,
+          "latency_p50_s": 1.833,
+          "task_quality_score": 91
+        }
+      ]
+    },
+    {
+      "bucket": "30s",
+      "title": "Budget Information Extraction",
+      "description": "Cheapest Information Extraction options on 30s audio per quality point earned, at solid-not-flashy accuracy — pick these for high-volume runs.",
+      "tags": [
+        "information_extraction",
+        "cost-efficient",
+        "high-volume"
+      ],
+      "models": [
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "none",
+          "rank": 1,
+          "quality_score": 94,
+          "cost_per_quality": 0.00006988,
+          "latency_p50_s": 0.87,
+          "task_quality_score": 88
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 93,
+          "cost_per_quality": 0.00008451,
+          "latency_p50_s": 0.882,
+          "task_quality_score": 88
+        },
+        {
+          "model": "glm-5.3-flash",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 91,
+          "cost_per_quality": 0.000205,
+          "latency_p50_s": 3.233,
+          "task_quality_score": 84
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 95,
+          "cost_per_quality": 0.0001281,
+          "latency_p50_s": 1.694,
+          "task_quality_score": 88
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "high",
+          "rank": 5,
+          "quality_score": 96,
+          "cost_per_quality": 0.0001657,
+          "latency_p50_s": 2.487,
+          "task_quality_score": 90
+        }
+      ]
+    },
+    {
+      "bucket": "30s",
+      "title": "Real-Time Information Extraction",
+      "description": "Fastest p50 response time on 30s audio while still handling Information Extraction well — pick these for live, interactive workflows.",
+      "tags": [
+        "information_extraction",
+        "real-time",
+        "low-latency"
+      ],
+      "models": [
+        {
+          "model": "qwen3.5-4b-32k-fast",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 74,
+          "cost_per_quality": 0.00009289,
+          "latency_p50_s": 0.28,
+          "task_quality_score": 80
+        },
+        {
+          "model": "qwen3-32B",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 82,
+          "cost_per_quality": 0.0001136,
+          "latency_p50_s": 0.506,
+          "task_quality_score": 71
+        },
+        {
+          "model": "gemini-2.5-flash-lite",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 88,
+          "cost_per_quality": 0.0000685,
+          "latency_p50_s": 0.699,
+          "task_quality_score": 74
+        },
+        {
+          "model": "gemini-3.5-flash-lite",
+          "reasoning_effort": "low",
+          "rank": 4,
+          "quality_score": 92,
+          "cost_per_quality": 0.000306,
+          "latency_p50_s": 0.831,
+          "task_quality_score": 81
+        },
+        {
+          "model": "gpt-4.1",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 91,
+          "cost_per_quality": 0.001279,
+          "latency_p50_s": 0.854,
+          "task_quality_score": 86
+        }
+      ]
+    },
+    {
+      "bucket": "30s",
+      "title": "Near-Real-Time Information Extraction",
+      "description": "Best Information Extraction quality on 30s audio within a small step up from the fastest p50 response time — trades a little latency for noticeably better results in interactive workflows.",
+      "tags": [
+        "information_extraction",
+        "near-real-time",
+        "balanced"
+      ],
+      "models": [
+        {
+          "model": "claude-sonnet-5-5",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 93,
+          "cost_per_quality": 0.003114,
+          "latency_p50_s": 1.444,
+          "task_quality_score": 93
+        },
+        {
+          "model": "claude-haiku-5-5",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 92,
+          "cost_per_quality": 0.0001958,
+          "latency_p50_s": 1.698,
+          "task_quality_score": 92
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 94,
+          "cost_per_quality": 0.0002396,
+          "latency_p50_s": 1.338,
+          "task_quality_score": 91
+        },
+        {
+          "model": "gpt-6-sol",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 95,
+          "cost_per_quality": 0.001972,
+          "latency_p50_s": 1.524,
+          "task_quality_score": 89
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "none",
+          "rank": 5,
+          "quality_score": 94,
+          "cost_per_quality": 0.00006988,
+          "latency_p50_s": 0.87,
+          "task_quality_score": 88
+        }
+      ]
+    },
+    {
+      "bucket": "30s",
+      "title": "Summarization Specialist",
+      "description": "Highest-accuracy models for Summarization on 30s audio, regardless of cost — pick these when correctness matters more than price.",
+      "tags": [
+        "summarization",
+        "premium",
+        "high-accuracy"
+      ],
+      "models": [
+        {
+          "model": "gpt-5.6-terra",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 94,
+          "cost_per_quality": 0.001776,
+          "latency_p50_s": 1.426,
+          "task_quality_score": 100
+        },
+        {
+          "model": "gemini-3.8-flash",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 95,
+          "cost_per_quality": 0.003679,
+          "latency_p50_s": 4.128,
+          "task_quality_score": 99
+        },
+        {
+          "model": "gpt-6-astra",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 96,
+          "cost_per_quality": 0.007915,
+          "latency_p50_s": 2.46,
+          "task_quality_score": 99
+        },
+        {
+          "model": "kimi-k3",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 94,
+          "cost_per_quality": 0.009548,
+          "latency_p50_s": 13.703,
+          "task_quality_score": 99
+        },
+        {
+          "model": "claude-opus-5-5",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 95,
+          "cost_per_quality": 0.006032,
+          "latency_p50_s": 3.47,
+          "task_quality_score": 99
+        }
+      ]
+    },
+    {
+      "bucket": "30s",
+      "title": "Budget Summarization",
+      "description": "Cheapest Summarization options on 30s audio per quality point earned, at solid-not-flashy accuracy — pick these for high-volume runs.",
+      "tags": [
+        "summarization",
+        "cost-efficient",
+        "high-volume"
+      ],
+      "models": [
+        {
+          "model": "gemini-2.5-flash-lite",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 88,
+          "cost_per_quality": 0.0000685,
+          "latency_p50_s": 0.699,
+          "task_quality_score": 93
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "none",
+          "rank": 2,
+          "quality_score": 94,
+          "cost_per_quality": 0.00006988,
+          "latency_p50_s": 0.87,
+          "task_quality_score": 98
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "none",
+          "rank": 3,
+          "quality_score": 90,
+          "cost_per_quality": 0.00008649,
+          "latency_p50_s": 0.898,
+          "task_quality_score": 97
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 93,
+          "cost_per_quality": 0.00008451,
+          "latency_p50_s": 0.882,
+          "task_quality_score": 94
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "low",
+          "rank": 5,
+          "quality_score": 86,
+          "cost_per_quality": 0.00009647,
+          "latency_p50_s": 1.03,
+          "task_quality_score": 93
+        }
+      ]
+    },
+    {
+      "bucket": "30s",
+      "title": "Real-Time Summarization",
+      "description": "Fastest p50 response time on 30s audio while still handling Summarization well — pick these for live, interactive workflows.",
+      "tags": [
+        "summarization",
+        "real-time",
+        "low-latency"
+      ],
+      "models": [
+        {
+          "model": "qwen3.5-4b-32k-fast",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 74,
+          "cost_per_quality": 0.00009289,
+          "latency_p50_s": 0.28,
+          "task_quality_score": 76
+        },
+        {
+          "model": "qwen3-32B",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 82,
+          "cost_per_quality": 0.0001136,
+          "latency_p50_s": 0.506,
+          "task_quality_score": 88
+        },
+        {
+          "model": "gemini-2.5-flash-lite",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 88,
+          "cost_per_quality": 0.0000685,
+          "latency_p50_s": 0.699,
+          "task_quality_score": 93
+        },
+        {
+          "model": "gemini-3.5-flash-lite",
+          "reasoning_effort": "low",
+          "rank": 4,
+          "quality_score": 92,
+          "cost_per_quality": 0.000306,
+          "latency_p50_s": 0.831,
+          "task_quality_score": 96
+        },
+        {
+          "model": "gpt-4.1",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 91,
+          "cost_per_quality": 0.001279,
+          "latency_p50_s": 0.854,
+          "task_quality_score": 92
+        }
+      ]
+    },
+    {
+      "bucket": "30s",
+      "title": "Near-Real-Time Summarization",
+      "description": "Best Summarization quality on 30s audio within a small step up from the fastest p50 response time — trades a little latency for noticeably better results in interactive workflows.",
+      "tags": [
+        "summarization",
+        "near-real-time",
+        "balanced"
+      ],
+      "models": [
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "none",
+          "rank": 1,
+          "quality_score": 94,
+          "cost_per_quality": 0.00006988,
+          "latency_p50_s": 0.87,
+          "task_quality_score": 98
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "none",
+          "rank": 2,
+          "quality_score": 90,
+          "cost_per_quality": 0.00008649,
+          "latency_p50_s": 0.898,
+          "task_quality_score": 97
+        },
+        {
+          "model": "gemini-3.5-flash-lite",
+          "reasoning_effort": "low",
+          "rank": 3,
+          "quality_score": 92,
+          "cost_per_quality": 0.000306,
+          "latency_p50_s": 0.831,
+          "task_quality_score": 96
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 93,
+          "cost_per_quality": 0.00008451,
+          "latency_p50_s": 0.882,
+          "task_quality_score": 94
+        },
+        {
+          "model": "gemini-2.5-flash-lite",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 88,
+          "cost_per_quality": 0.0000685,
+          "latency_p50_s": 0.699,
+          "task_quality_score": 93
+        }
+      ]
+    },
+    {
+      "bucket": "30s",
+      "title": "Text Correction Specialist",
+      "description": "Highest-accuracy models for Text Correction on 30s audio, regardless of cost — pick these when correctness matters more than price.",
+      "tags": [
+        "text_correction",
+        "premium",
+        "high-accuracy"
+      ],
+      "models": [
+        {
+          "model": "gpt-5.6-sol",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 95,
+          "cost_per_quality": 0.003634,
+          "latency_p50_s": 1.936,
+          "task_quality_score": 98
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 95,
+          "cost_per_quality": 0.0001281,
+          "latency_p50_s": 1.694,
+          "task_quality_score": 96
+        },
+        {
+          "model": "gemini-3.8-flash",
+          "reasoning_effort": "low",
+          "rank": 3,
+          "quality_score": 96,
+          "cost_per_quality": 0.000756,
+          "latency_p50_s": 1.833,
+          "task_quality_score": 96
+        },
+        {
+          "model": "deepseek-v4.1-flash",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 95,
+          "cost_per_quality": 0.0008921,
+          "latency_p50_s": 6.243,
+          "task_quality_score": 96
+        },
+        {
+          "model": "glm-5.3",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 93,
+          "cost_per_quality": 0.002402,
+          "latency_p50_s": 1.877,
+          "task_quality_score": 96
+        }
+      ]
+    },
+    {
+      "bucket": "30s",
+      "title": "Budget Text Correction",
+      "description": "Cheapest Text Correction options on 30s audio per quality point earned, at solid-not-flashy accuracy — pick these for high-volume runs.",
+      "tags": [
+        "text_correction",
+        "cost-efficient",
+        "high-volume"
+      ],
+      "models": [
+        {
+          "model": "gemini-2.5-flash-lite",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 88,
+          "cost_per_quality": 0.0000685,
+          "latency_p50_s": 0.699,
+          "task_quality_score": 87
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "none",
+          "rank": 2,
+          "quality_score": 94,
+          "cost_per_quality": 0.00006988,
+          "latency_p50_s": 0.87,
+          "task_quality_score": 94
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 93,
+          "cost_per_quality": 0.00008451,
+          "latency_p50_s": 0.882,
+          "task_quality_score": 93
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "low",
+          "rank": 4,
+          "quality_score": 86,
+          "cost_per_quality": 0.00009647,
+          "latency_p50_s": 1.03,
+          "task_quality_score": 90
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "none",
+          "rank": 5,
+          "quality_score": 90,
+          "cost_per_quality": 0.00008649,
+          "latency_p50_s": 0.898,
+          "task_quality_score": 90
+        }
+      ]
+    },
+    {
+      "bucket": "30s",
+      "title": "Real-Time Text Correction",
+      "description": "Fastest p50 response time on 30s audio while still handling Text Correction well — pick these for live, interactive workflows.",
+      "tags": [
+        "text_correction",
+        "real-time",
+        "low-latency"
+      ],
+      "models": [
+        {
+          "model": "qwen3-32B",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 82,
+          "cost_per_quality": 0.0001136,
+          "latency_p50_s": 0.506,
+          "task_quality_score": 81
+        },
+        {
+          "model": "gemini-2.5-flash-lite",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 88,
+          "cost_per_quality": 0.0000685,
+          "latency_p50_s": 0.699,
+          "task_quality_score": 87
+        },
+        {
+          "model": "gemini-3.5-flash-lite",
+          "reasoning_effort": "low",
+          "rank": 3,
+          "quality_score": 92,
+          "cost_per_quality": 0.000306,
+          "latency_p50_s": 0.831,
+          "task_quality_score": 93
+        },
+        {
+          "model": "gpt-4.1",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 91,
+          "cost_per_quality": 0.001279,
+          "latency_p50_s": 0.854,
+          "task_quality_score": 89
+        },
+        {
+          "model": "gemini-3.5-flash-lite",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 90,
+          "cost_per_quality": 0.0002886,
+          "latency_p50_s": 0.858,
+          "task_quality_score": 89
+        }
+      ]
+    },
+    {
+      "bucket": "30s",
+      "title": "Near-Real-Time Text Correction",
+      "description": "Best Text Correction quality on 30s audio within a small step up from the fastest p50 response time — trades a little latency for noticeably better results in interactive workflows.",
+      "tags": [
+        "text_correction",
+        "near-real-time",
+        "balanced"
+      ],
+      "models": [
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "none",
+          "rank": 1,
+          "quality_score": 94,
+          "cost_per_quality": 0.00006988,
+          "latency_p50_s": 0.87,
+          "task_quality_score": 94
+        },
+        {
+          "model": "gemini-3.1-flash-lite",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 90,
+          "cost_per_quality": 0.0001983,
+          "latency_p50_s": 0.894,
+          "task_quality_score": 94
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 94,
+          "cost_per_quality": 0.0002396,
+          "latency_p50_s": 1.338,
+          "task_quality_score": 94
+        },
+        {
+          "model": "gemini-3.5-flash-lite",
+          "reasoning_effort": "low",
+          "rank": 4,
+          "quality_score": 92,
+          "cost_per_quality": 0.000306,
+          "latency_p50_s": 0.831,
+          "task_quality_score": 93
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 93,
+          "cost_per_quality": 0.00008451,
+          "latency_p50_s": 0.882,
+          "task_quality_score": 93
+        }
+      ]
+    },
+    {
+      "bucket": "30s",
+      "title": "Top Overall Performer",
+      "description": "Best combined quality_score across every task on 30s audio — the safe default when the task mix isn't known ahead of time.",
+      "tags": [
+        "overall",
+        "premium",
+        "high-accuracy"
+      ],
+      "models": [
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "high",
+          "rank": 1,
+          "quality_score": 96,
+          "cost_per_quality": 0.0001657,
+          "latency_p50_s": 2.487
+        },
+        {
+          "model": "gemini-3.8-flash",
+          "reasoning_effort": "low",
+          "rank": 2,
+          "quality_score": 96,
+          "cost_per_quality": 0.000756,
+          "latency_p50_s": 1.833
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 96,
+          "cost_per_quality": 0.001751,
+          "latency_p50_s": 3.233
+        },
+        {
+          "model": "gpt-6-astra",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 96,
+          "cost_per_quality": 0.007915,
+          "latency_p50_s": 2.46
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 95,
+          "cost_per_quality": 0.0001281,
+          "latency_p50_s": 1.694
+        }
+      ]
+    },
+    {
+      "bucket": "30s",
+      "title": "Best Value",
+      "description": "Lowest cost_per_quality on 30s audio among models that still clear a decent quality bar — the cheapest defensible choice.",
+      "tags": [
+        "overall",
+        "cost-efficient",
+        "value"
+      ],
+      "models": [
+        {
+          "model": "gemini-2.5-flash-lite",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 88,
+          "cost_per_quality": 0.0000685,
+          "latency_p50_s": 0.699
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "none",
+          "rank": 2,
+          "quality_score": 94,
+          "cost_per_quality": 0.00006988,
+          "latency_p50_s": 0.87
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 93,
+          "cost_per_quality": 0.00008451,
+          "latency_p50_s": 0.882
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "none",
+          "rank": 4,
+          "quality_score": 90,
+          "cost_per_quality": 0.00008649,
+          "latency_p50_s": 0.898
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "low",
+          "rank": 5,
+          "quality_score": 86,
+          "cost_per_quality": 0.00009647,
+          "latency_p50_s": 1.03
+        }
+      ]
+    },
+    {
+      "bucket": "30s",
+      "title": "Real-Time Voice Agent",
+      "description": "Fastest p50 latency on 30s audio at acceptable quality across every task — for live voice-agent turns where response time is the binding constraint.",
+      "tags": [
+        "real-time",
+        "voice-agent",
+        "low-latency"
+      ],
+      "models": [
+        {
+          "model": "qwen3.5-4b-32k-fast",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 74,
+          "cost_per_quality": 0.00009289,
+          "latency_p50_s": 0.28
+        },
+        {
+          "model": "qwen3-32B",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 82,
+          "cost_per_quality": 0.0001136,
+          "latency_p50_s": 0.506
+        },
+        {
+          "model": "gemini-2.5-flash-lite",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 88,
+          "cost_per_quality": 0.0000685,
+          "latency_p50_s": 0.699
+        },
+        {
+          "model": "gemini-3.5-flash-lite",
+          "reasoning_effort": "low",
+          "rank": 4,
+          "quality_score": 92,
+          "cost_per_quality": 0.000306,
+          "latency_p50_s": 0.831
+        },
+        {
+          "model": "gpt-4.1",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 91,
+          "cost_per_quality": 0.001279,
+          "latency_p50_s": 0.854
+        }
+      ]
+    },
+    {
+      "bucket": "30s",
+      "title": "Near-Real-Time Voice Agent",
+      "description": "Best overall quality on 30s audio within a small step up from the fastest p50 latency — trades a little response time for noticeably better results in voice-agent turns.",
+      "tags": [
+        "near-real-time",
+        "voice-agent",
+        "balanced"
+      ],
+      "models": [
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "none",
+          "rank": 1,
+          "quality_score": 94,
+          "cost_per_quality": 0.00006988,
+          "latency_p50_s": 0.87
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 94,
+          "cost_per_quality": 0.0002396,
+          "latency_p50_s": 1.338
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 93,
+          "cost_per_quality": 0.00008451,
+          "latency_p50_s": 0.882
+        },
+        {
+          "model": "gpt-5.2",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 93,
+          "cost_per_quality": 0.001637,
+          "latency_p50_s": 1.363
+        },
+        {
+          "model": "gemini-3.5-flash-lite",
+          "reasoning_effort": "low",
+          "rank": 5,
+          "quality_score": 92,
+          "cost_per_quality": 0.000306,
+          "latency_p50_s": 0.831
+        }
+      ]
+    },
+    {
+      "bucket": "120s",
+      "title": "Dictation Specialist",
+      "description": "Highest-accuracy models for Dictation on 120s audio, regardless of cost — pick these when correctness matters more than price.",
+      "tags": [
+        "dictation",
+        "premium",
+        "high-accuracy"
+      ],
+      "models": [
+        {
+          "model": "gemini-3.5-flash",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 92,
+          "cost_per_quality": 0.01875,
+          "latency_p50_s": 7.957,
+          "task_quality_score": 98
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "high",
+          "rank": 2,
+          "quality_score": 93,
+          "cost_per_quality": 0.0004221,
+          "latency_p50_s": 5.268,
+          "task_quality_score": 97
+        },
+        {
+          "model": "deepseek-v4.1-flash",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 92,
+          "cost_per_quality": 0.002661,
+          "latency_p50_s": 19.724,
+          "task_quality_score": 97
+        },
+        {
+          "model": "claude-opus-4-6",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 91,
+          "cost_per_quality": 0.009281,
+          "latency_p50_s": 3.13,
+          "task_quality_score": 97
+        },
+        {
+          "model": "gemini-3.6-flash",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 91,
+          "cost_per_quality": 0.01557,
+          "latency_p50_s": 10.309,
+          "task_quality_score": 97
+        }
+      ]
+    },
+    {
+      "bucket": "120s",
+      "title": "Budget Dictation",
+      "description": "Cheapest Dictation options on 120s audio per quality point earned, at solid-not-flashy accuracy — pick these for high-volume runs.",
+      "tags": [
+        "dictation",
+        "cost-efficient",
+        "high-volume"
+      ],
+      "models": [
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "none",
+          "rank": 1,
+          "quality_score": 89,
+          "cost_per_quality": 0.0001686,
+          "latency_p50_s": 1.222,
+          "task_quality_score": 96
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 89,
+          "cost_per_quality": 0.0001773,
+          "latency_p50_s": 1.508,
+          "task_quality_score": 96
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "none",
+          "rank": 3,
+          "quality_score": 91,
+          "cost_per_quality": 0.0001729,
+          "latency_p50_s": 1.674,
+          "task_quality_score": 96
+        },
+        {
+          "model": "glm-5.3-flash",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 90,
+          "cost_per_quality": 0.0008623,
+          "latency_p50_s": 5.647,
+          "task_quality_score": 95
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 92,
+          "cost_per_quality": 0.0002752,
+          "latency_p50_s": 2.368,
+          "task_quality_score": 95
+        }
+      ]
+    },
+    {
+      "bucket": "120s",
+      "title": "Real-Time Dictation",
+      "description": "Fastest p50 response time on 120s audio while still handling Dictation well — pick these for live, interactive workflows.",
+      "tags": [
+        "dictation",
+        "real-time",
+        "low-latency"
+      ],
+      "models": [
+        {
+          "model": "gemini-2.5-flash-lite",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 79,
+          "cost_per_quality": 0.000166,
+          "latency_p50_s": 0.972,
+          "task_quality_score": 82
+        },
+        {
+          "model": "qwen3-32B",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 74,
+          "cost_per_quality": 0.0002682,
+          "latency_p50_s": 1.02,
+          "task_quality_score": 81
+        },
+        {
+          "model": "gemini-3.5-flash-lite",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 86,
+          "cost_per_quality": 0.0007354,
+          "latency_p50_s": 1.063,
+          "task_quality_score": 87
+        },
+        {
+          "model": "gemini-3.1-flash-lite",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 83,
+          "cost_per_quality": 0.000503,
+          "latency_p50_s": 1.118,
+          "task_quality_score": 84
+        },
+        {
+          "model": "gemini-3.5-flash-lite",
+          "reasoning_effort": "low",
+          "rank": 5,
+          "quality_score": 87,
+          "cost_per_quality": 0.0007613,
+          "latency_p50_s": 1.119,
+          "task_quality_score": 88
+        }
+      ]
+    },
+    {
+      "bucket": "120s",
+      "title": "Near-Real-Time Dictation",
+      "description": "Best Dictation quality on 120s audio within a small step up from the fastest p50 response time — trades a little latency for noticeably better results in interactive workflows.",
+      "tags": [
+        "dictation",
+        "near-real-time",
+        "balanced"
+      ],
+      "models": [
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "none",
+          "rank": 1,
+          "quality_score": 89,
+          "cost_per_quality": 0.0001686,
+          "latency_p50_s": 1.222,
+          "task_quality_score": 96
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 89,
+          "cost_per_quality": 0.0001773,
+          "latency_p50_s": 1.508,
+          "task_quality_score": 96
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "none",
+          "rank": 3,
+          "quality_score": 91,
+          "cost_per_quality": 0.0001729,
+          "latency_p50_s": 1.674,
+          "task_quality_score": 96
+        },
+        {
+          "model": "gpt-5.1",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 89,
+          "cost_per_quality": 0.003112,
+          "latency_p50_s": 1.927,
+          "task_quality_score": 95
+        },
+        {
+          "model": "gpt-5.2",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 89,
+          "cost_per_quality": 0.004185,
+          "latency_p50_s": 2.103,
+          "task_quality_score": 94
+        }
+      ]
+    },
+    {
+      "bucket": "120s",
+      "title": "Information Extraction Specialist",
+      "description": "Highest-accuracy models for Information Extraction on 120s audio, regardless of cost — pick these when correctness matters more than price.",
+      "tags": [
+        "information_extraction",
+        "premium",
+        "high-accuracy"
+      ],
+      "models": [
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "high",
+          "rank": 1,
+          "quality_score": 93,
+          "cost_per_quality": 0.0004221,
+          "latency_p50_s": 5.268,
+          "task_quality_score": 93
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 92,
+          "cost_per_quality": 0.000532,
+          "latency_p50_s": 2.199,
+          "task_quality_score": 91
+        },
+        {
+          "model": "gpt-6-sol",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 91,
+          "cost_per_quality": 0.004819,
+          "latency_p50_s": 2.488,
+          "task_quality_score": 91
+        },
+        {
+          "model": "gpt-5.5",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 92,
+          "cost_per_quality": 0.01412,
+          "latency_p50_s": 3.154,
+          "task_quality_score": 91
+        },
+        {
+          "model": "gpt-6-astra",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 94,
+          "cost_per_quality": 0.01789,
+          "latency_p50_s": 3.757,
+          "task_quality_score": 91
+        }
+      ]
+    },
+    {
+      "bucket": "120s",
+      "title": "Budget Information Extraction",
+      "description": "Cheapest Information Extraction options on 120s audio per quality point earned, at solid-not-flashy accuracy — pick these for high-volume runs.",
+      "tags": [
+        "information_extraction",
+        "cost-efficient",
+        "high-volume"
+      ],
+      "models": [
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "none",
+          "rank": 1,
+          "quality_score": 89,
+          "cost_per_quality": 0.0001686,
+          "latency_p50_s": 1.222,
+          "task_quality_score": 85
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "none",
+          "rank": 2,
+          "quality_score": 91,
+          "cost_per_quality": 0.0001729,
+          "latency_p50_s": 1.674,
+          "task_quality_score": 89
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "low",
+          "rank": 3,
+          "quality_score": 84,
+          "cost_per_quality": 0.0002087,
+          "latency_p50_s": 1.629,
+          "task_quality_score": 83
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 89,
+          "cost_per_quality": 0.0001773,
+          "latency_p50_s": 1.508,
+          "task_quality_score": 83
+        },
+        {
+          "model": "glm-5.3-flash",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 90,
+          "cost_per_quality": 0.0008623,
+          "latency_p50_s": 5.647,
+          "task_quality_score": 81
+        }
+      ]
+    },
+    {
+      "bucket": "120s",
+      "title": "Real-Time Information Extraction",
+      "description": "Fastest p50 response time on 120s audio while still handling Information Extraction well — pick these for live, interactive workflows.",
+      "tags": [
+        "information_extraction",
+        "real-time",
+        "low-latency"
+      ],
+      "models": [
+        {
+          "model": "gemini-2.5-flash-lite",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 79,
+          "cost_per_quality": 0.000166,
+          "latency_p50_s": 0.972,
+          "task_quality_score": 73
+        },
+        {
+          "model": "qwen3-32B",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 74,
+          "cost_per_quality": 0.0002682,
+          "latency_p50_s": 1.02,
+          "task_quality_score": 70
+        },
+        {
+          "model": "gemini-3.5-flash-lite",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 86,
+          "cost_per_quality": 0.0007354,
+          "latency_p50_s": 1.063,
+          "task_quality_score": 80
+        },
+        {
+          "model": "gemini-3.1-flash-lite",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 83,
+          "cost_per_quality": 0.000503,
+          "latency_p50_s": 1.118,
+          "task_quality_score": 83
+        },
+        {
+          "model": "gemini-3.5-flash-lite",
+          "reasoning_effort": "low",
+          "rank": 5,
+          "quality_score": 87,
+          "cost_per_quality": 0.0007613,
+          "latency_p50_s": 1.119,
+          "task_quality_score": 85
+        }
+      ]
+    },
+    {
+      "bucket": "120s",
+      "title": "Near-Real-Time Information Extraction",
+      "description": "Best Information Extraction quality on 120s audio within a small step up from the fastest p50 response time — trades a little latency for noticeably better results in interactive workflows.",
+      "tags": [
+        "information_extraction",
+        "near-real-time",
+        "balanced"
+      ],
+      "models": [
+        {
+          "model": "gpt-5.6-luna",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 92,
+          "cost_per_quality": 0.000532,
+          "latency_p50_s": 2.199,
+          "task_quality_score": 91
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "none",
+          "rank": 2,
+          "quality_score": 91,
+          "cost_per_quality": 0.0001729,
+          "latency_p50_s": 1.674,
+          "task_quality_score": 89
+        },
+        {
+          "model": "gemini-3.5-flash-lite",
+          "reasoning_effort": "low",
+          "rank": 3,
+          "quality_score": 87,
+          "cost_per_quality": 0.0007613,
+          "latency_p50_s": 1.119,
+          "task_quality_score": 85
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "none",
+          "rank": 4,
+          "quality_score": 89,
+          "cost_per_quality": 0.0001686,
+          "latency_p50_s": 1.222,
+          "task_quality_score": 85
+        }
+      ]
+    },
+    {
+      "bucket": "120s",
+      "title": "Summarization Specialist",
+      "description": "Highest-accuracy models for Summarization on 120s audio, regardless of cost — pick these when correctness matters more than price.",
+      "tags": [
+        "summarization",
+        "premium",
+        "high-accuracy"
+      ],
+      "models": [
+        {
+          "model": "claude-opus-5-5",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 93,
+          "cost_per_quality": 0.01413,
+          "latency_p50_s": 5.383,
+          "task_quality_score": 99
+        },
+        {
+          "model": "gpt-6-astra",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 94,
+          "cost_per_quality": 0.01789,
+          "latency_p50_s": 3.757,
+          "task_quality_score": 98
+        },
+        {
+          "model": "gemini-3.8-flash",
+          "reasoning_effort": "low",
+          "rank": 3,
+          "quality_score": 91,
+          "cost_per_quality": 0.001235,
+          "latency_p50_s": 2.296,
+          "task_quality_score": 97
+        },
+        {
+          "model": "deepseek-v4.1-flash",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 92,
+          "cost_per_quality": 0.002661,
+          "latency_p50_s": 19.724,
+          "task_quality_score": 97
+        },
+        {
+          "model": "glm-5.3",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 91,
+          "cost_per_quality": 0.007437,
+          "latency_p50_s": 4.159,
+          "task_quality_score": 96
+        }
+      ]
+    },
+    {
+      "bucket": "120s",
+      "title": "Budget Summarization",
+      "description": "Cheapest Summarization options on 120s audio per quality point earned, at solid-not-flashy accuracy — pick these for high-volume runs.",
+      "tags": [
+        "summarization",
+        "cost-efficient",
+        "high-volume"
+      ],
+      "models": [
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "none",
+          "rank": 1,
+          "quality_score": 89,
+          "cost_per_quality": 0.0001686,
+          "latency_p50_s": 1.222,
+          "task_quality_score": 92
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "none",
+          "rank": 2,
+          "quality_score": 91,
+          "cost_per_quality": 0.0001729,
+          "latency_p50_s": 1.674,
+          "task_quality_score": 90
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 89,
+          "cost_per_quality": 0.0001773,
+          "latency_p50_s": 1.508,
+          "task_quality_score": 88
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "low",
+          "rank": 4,
+          "quality_score": 84,
+          "cost_per_quality": 0.0002087,
+          "latency_p50_s": 1.629,
+          "task_quality_score": 86
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 92,
+          "cost_per_quality": 0.0002752,
+          "latency_p50_s": 2.368,
+          "task_quality_score": 95
+        }
+      ]
+    },
+    {
+      "bucket": "120s",
+      "title": "Real-Time Summarization",
+      "description": "Fastest p50 response time on 120s audio while still handling Summarization well — pick these for live, interactive workflows.",
+      "tags": [
+        "summarization",
+        "real-time",
+        "low-latency"
+      ],
+      "models": [
+        {
+          "model": "gemini-2.5-flash-lite",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 79,
+          "cost_per_quality": 0.000166,
+          "latency_p50_s": 0.972,
+          "task_quality_score": 89
+        },
+        {
+          "model": "qwen3-32B",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 74,
+          "cost_per_quality": 0.0002682,
+          "latency_p50_s": 1.02,
+          "task_quality_score": 78
+        },
+        {
+          "model": "gemini-3.5-flash-lite",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 86,
+          "cost_per_quality": 0.0007354,
+          "latency_p50_s": 1.063,
+          "task_quality_score": 92
+        },
+        {
+          "model": "gemini-3.1-flash-lite",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 83,
+          "cost_per_quality": 0.000503,
+          "latency_p50_s": 1.118,
+          "task_quality_score": 88
+        },
+        {
+          "model": "gemini-3.5-flash-lite",
+          "reasoning_effort": "low",
+          "rank": 5,
+          "quality_score": 87,
+          "cost_per_quality": 0.0007613,
+          "latency_p50_s": 1.119,
+          "task_quality_score": 93
+        }
+      ]
+    },
+    {
+      "bucket": "120s",
+      "title": "Near-Real-Time Summarization",
+      "description": "Best Summarization quality on 120s audio within a small step up from the fastest p50 response time — trades a little latency for noticeably better results in interactive workflows.",
+      "tags": [
+        "summarization",
+        "near-real-time",
+        "balanced"
+      ],
+      "models": [
+        {
+          "model": "gemini-3.5-flash-lite",
+          "reasoning_effort": "low",
+          "rank": 1,
+          "quality_score": 87,
+          "cost_per_quality": 0.0007613,
+          "latency_p50_s": 1.119,
+          "task_quality_score": 93
+        },
+        {
+          "model": "gpt-5.1",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 89,
+          "cost_per_quality": 0.003112,
+          "latency_p50_s": 1.927,
+          "task_quality_score": 93
+        },
+        {
+          "model": "gemini-3.5-flash-lite",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 86,
+          "cost_per_quality": 0.0007354,
+          "latency_p50_s": 1.063,
+          "task_quality_score": 92
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "none",
+          "rank": 4,
+          "quality_score": 89,
+          "cost_per_quality": 0.0001686,
+          "latency_p50_s": 1.222,
+          "task_quality_score": 92
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "none",
+          "rank": 5,
+          "quality_score": 91,
+          "cost_per_quality": 0.0001729,
+          "latency_p50_s": 1.674,
+          "task_quality_score": 90
+        }
+      ]
+    },
+    {
+      "bucket": "120s",
+      "title": "Text Correction Specialist",
+      "description": "Highest-accuracy models for Text Correction on 120s audio, regardless of cost — pick these when correctness matters more than price.",
+      "tags": [
+        "text_correction",
+        "premium",
+        "high-accuracy"
+      ],
+      "models": [
+        {
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 93,
+          "cost_per_quality": 0.004256,
+          "latency_p50_s": 6.761,
+          "task_quality_score": 94
+        },
+        {
+          "model": "claude-opus-5-5",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 93,
+          "cost_per_quality": 0.01413,
+          "latency_p50_s": 5.383,
+          "task_quality_score": 93
+        },
+        {
+          "model": "gpt-6-astra",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 94,
+          "cost_per_quality": 0.01789,
+          "latency_p50_s": 3.757,
+          "task_quality_score": 93
+        },
+        {
+          "model": "claude-opus-5",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 93,
+          "cost_per_quality": 0.01573,
+          "latency_p50_s": 5.02,
+          "task_quality_score": 92
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 92,
+          "cost_per_quality": 0.000532,
+          "latency_p50_s": 2.199,
+          "task_quality_score": 91
+        }
+      ]
+    },
+    {
+      "bucket": "120s",
+      "title": "Budget Text Correction",
+      "description": "Cheapest Text Correction options on 120s audio per quality point earned, at solid-not-flashy accuracy — pick these for high-volume runs.",
+      "tags": [
+        "text_correction",
+        "cost-efficient",
+        "high-volume"
+      ],
+      "models": [
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 89,
+          "cost_per_quality": 0.0001773,
+          "latency_p50_s": 1.508,
+          "task_quality_score": 89
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "none",
+          "rank": 2,
+          "quality_score": 91,
+          "cost_per_quality": 0.0001729,
+          "latency_p50_s": 1.674,
+          "task_quality_score": 88
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "none",
+          "rank": 3,
+          "quality_score": 89,
+          "cost_per_quality": 0.0001686,
+          "latency_p50_s": 1.222,
+          "task_quality_score": 85
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "low",
+          "rank": 4,
+          "quality_score": 84,
+          "cost_per_quality": 0.0002087,
+          "latency_p50_s": 1.629,
+          "task_quality_score": 83
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 92,
+          "cost_per_quality": 0.0002752,
+          "latency_p50_s": 2.368,
+          "task_quality_score": 87
+        }
+      ]
+    },
+    {
+      "bucket": "120s",
+      "title": "Real-Time Text Correction",
+      "description": "Fastest p50 response time on 120s audio while still handling Text Correction well — pick these for live, interactive workflows.",
+      "tags": [
+        "text_correction",
+        "real-time",
+        "low-latency"
+      ],
+      "models": [
+        {
+          "model": "gemini-2.5-flash-lite",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 79,
+          "cost_per_quality": 0.000166,
+          "latency_p50_s": 0.972,
+          "task_quality_score": 73
+        },
+        {
+          "model": "gemini-3.5-flash-lite",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 86,
+          "cost_per_quality": 0.0007354,
+          "latency_p50_s": 1.063,
+          "task_quality_score": 83
+        },
+        {
+          "model": "gemini-3.1-flash-lite",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 83,
+          "cost_per_quality": 0.000503,
+          "latency_p50_s": 1.118,
+          "task_quality_score": 78
+        },
+        {
+          "model": "gemini-3.5-flash-lite",
+          "reasoning_effort": "low",
+          "rank": 4,
+          "quality_score": 87,
+          "cost_per_quality": 0.0007613,
+          "latency_p50_s": 1.119,
+          "task_quality_score": 83
+        },
+        {
+          "model": "gpt-4.1",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 87,
+          "cost_per_quality": 0.002928,
+          "latency_p50_s": 1.156,
+          "task_quality_score": 87
+        }
+      ]
+    },
+    {
+      "bucket": "120s",
+      "title": "Near-Real-Time Text Correction",
+      "description": "Best Text Correction quality on 120s audio within a small step up from the fastest p50 response time — trades a little latency for noticeably better results in interactive workflows.",
+      "tags": [
+        "text_correction",
+        "near-real-time",
+        "balanced"
+      ],
+      "models": [
+        {
+          "model": "gpt-5.6-luna",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 92,
+          "cost_per_quality": 0.000532,
+          "latency_p50_s": 2.199,
+          "task_quality_score": 91
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 89,
+          "cost_per_quality": 0.0001773,
+          "latency_p50_s": 1.508,
+          "task_quality_score": 89
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "none",
+          "rank": 3,
+          "quality_score": 91,
+          "cost_per_quality": 0.0001729,
+          "latency_p50_s": 1.674,
+          "task_quality_score": 88
+        },
+        {
+          "model": "gpt-5.1",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 89,
+          "cost_per_quality": 0.003112,
+          "latency_p50_s": 1.927,
+          "task_quality_score": 88
+        },
+        {
+          "model": "gpt-4.1",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 87,
+          "cost_per_quality": 0.002928,
+          "latency_p50_s": 1.156,
+          "task_quality_score": 87
+        }
+      ]
+    },
+    {
+      "bucket": "120s",
+      "title": "Top Overall Performer",
+      "description": "Best combined quality_score across every task on 120s audio — the safe default when the task mix isn't known ahead of time.",
+      "tags": [
+        "overall",
+        "premium",
+        "high-accuracy"
+      ],
+      "models": [
+        {
+          "model": "gpt-6-astra",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 94,
+          "cost_per_quality": 0.01789,
+          "latency_p50_s": 3.757
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "high",
+          "rank": 2,
+          "quality_score": 93,
+          "cost_per_quality": 0.0004221,
+          "latency_p50_s": 5.268
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 93,
+          "cost_per_quality": 0.004256,
+          "latency_p50_s": 6.761
+        },
+        {
+          "model": "claude-opus-5-5",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 93,
+          "cost_per_quality": 0.01413,
+          "latency_p50_s": 5.383
+        },
+        {
+          "model": "claude-opus-5",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 93,
+          "cost_per_quality": 0.01573,
+          "latency_p50_s": 5.02
+        }
+      ]
+    },
+    {
+      "bucket": "120s",
+      "title": "Best Value",
+      "description": "Lowest cost_per_quality on 120s audio among models that still clear a decent quality bar — the cheapest defensible choice.",
+      "tags": [
+        "overall",
+        "cost-efficient",
+        "value"
+      ],
+      "models": [
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "none",
+          "rank": 1,
+          "quality_score": 89,
+          "cost_per_quality": 0.0001686,
+          "latency_p50_s": 1.222
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "none",
+          "rank": 2,
+          "quality_score": 91,
+          "cost_per_quality": 0.0001729,
+          "latency_p50_s": 1.674
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 89,
+          "cost_per_quality": 0.0001773,
+          "latency_p50_s": 1.508
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "low",
+          "rank": 4,
+          "quality_score": 84,
+          "cost_per_quality": 0.0002087,
+          "latency_p50_s": 1.629
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 92,
+          "cost_per_quality": 0.0002752,
+          "latency_p50_s": 2.368
+        }
+      ]
+    },
+    {
+      "bucket": "120s",
+      "title": "Real-Time Voice Agent",
+      "description": "Fastest p50 latency on 120s audio at acceptable quality across every task — for live voice-agent turns where response time is the binding constraint.",
+      "tags": [
+        "real-time",
+        "voice-agent",
+        "low-latency"
+      ],
+      "models": [
+        {
+          "model": "gemini-2.5-flash-lite",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 79,
+          "cost_per_quality": 0.000166,
+          "latency_p50_s": 0.972
+        },
+        {
+          "model": "qwen3-32B",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 74,
+          "cost_per_quality": 0.0002682,
+          "latency_p50_s": 1.02
+        },
+        {
+          "model": "gemini-3.5-flash-lite",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 86,
+          "cost_per_quality": 0.0007354,
+          "latency_p50_s": 1.063
+        },
+        {
+          "model": "gemini-3.1-flash-lite",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 83,
+          "cost_per_quality": 0.000503,
+          "latency_p50_s": 1.118
+        },
+        {
+          "model": "gemini-3.5-flash-lite",
+          "reasoning_effort": "low",
+          "rank": 5,
+          "quality_score": 87,
+          "cost_per_quality": 0.0007613,
+          "latency_p50_s": 1.119
+        }
+      ]
+    },
+    {
+      "bucket": "120s",
+      "title": "Near-Real-Time Voice Agent",
+      "description": "Best overall quality on 120s audio within a small step up from the fastest p50 latency — trades a little response time for noticeably better results in voice-agent turns.",
+      "tags": [
+        "near-real-time",
+        "voice-agent",
+        "balanced"
+      ],
+      "models": [
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "none",
+          "rank": 1,
+          "quality_score": 91,
+          "cost_per_quality": 0.0001729,
+          "latency_p50_s": 1.674
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "none",
+          "rank": 2,
+          "quality_score": 89,
+          "cost_per_quality": 0.0001686,
+          "latency_p50_s": 1.222
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 89,
+          "cost_per_quality": 0.0001773,
+          "latency_p50_s": 1.508
+        },
+        {
+          "model": "gpt-5.1",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 89,
+          "cost_per_quality": 0.003112,
+          "latency_p50_s": 1.927
+        },
+        {
+          "model": "gpt-5.2",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 89,
+          "cost_per_quality": 0.004185,
+          "latency_p50_s": 2.103
+        }
+      ]
+    },
+    {
+      "bucket": "900s",
+      "title": "Information Extraction Specialist",
+      "description": "Highest-accuracy models for Information Extraction on 900s audio, regardless of cost — pick these when correctness matters more than price.",
+      "tags": [
+        "information_extraction",
+        "premium",
+        "high-accuracy"
+      ],
+      "models": [
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "high",
+          "rank": 1,
+          "quality_score": 88,
+          "cost_per_quality": 0.002526,
+          "latency_p50_s": 28.874,
+          "task_quality_score": 86
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 87,
+          "cost_per_quality": 0.001483,
+          "latency_p50_s": 15.461,
+          "task_quality_score": 85
+        }
+      ]
+    },
+    {
+      "bucket": "900s",
+      "title": "Budget Information Extraction",
+      "description": "Cheapest Information Extraction options on 900s audio per quality point earned, at solid-not-flashy accuracy — pick these for high-volume runs.",
+      "tags": [
+        "information_extraction",
+        "cost-efficient",
+        "high-volume"
+      ],
+      "models": [
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 87,
+          "cost_per_quality": 0.001483,
+          "latency_p50_s": 15.461,
+          "task_quality_score": 85
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "high",
+          "rank": 2,
+          "quality_score": 88,
+          "cost_per_quality": 0.002526,
+          "latency_p50_s": 28.874,
+          "task_quality_score": 86
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 87,
+          "cost_per_quality": 0.00281,
+          "latency_p50_s": 8.644,
+          "task_quality_score": 84
+        },
+        {
+          "model": "deepseek-v4.1-flash",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 83,
+          "cost_per_quality": 0.01405,
+          "latency_p50_s": 92.667,
+          "task_quality_score": 81
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 88,
+          "cost_per_quality": 0.0247,
+          "latency_p50_s": 24.557,
+          "task_quality_score": 83
+        }
+      ]
+    },
+    {
+      "bucket": "900s",
+      "title": "Summarization Specialist",
+      "description": "Highest-accuracy models for Summarization on 900s audio, regardless of cost — pick these when correctness matters more than price.",
+      "tags": [
+        "summarization",
+        "premium",
+        "high-accuracy"
+      ],
+      "models": [
+        {
+          "model": "claude-opus-5-5",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 88,
+          "cost_per_quality": 0.07297,
+          "latency_p50_s": 17.712,
+          "task_quality_score": 97
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "none",
+          "rank": 2,
+          "quality_score": 84,
+          "cost_per_quality": 0.0009954,
+          "latency_p50_s": 3.613,
+          "task_quality_score": 94
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 87,
+          "cost_per_quality": 0.001483,
+          "latency_p50_s": 15.461,
+          "task_quality_score": 94
+        },
+        {
+          "model": "gpt-6-astra",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 88,
+          "cost_per_quality": 0.1002,
+          "latency_p50_s": 13.102,
+          "task_quality_score": 94
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "high",
+          "rank": 5,
+          "quality_score": 88,
+          "cost_per_quality": 0.002526,
+          "latency_p50_s": 28.874,
+          "task_quality_score": 93
+        }
+      ]
+    },
+    {
+      "bucket": "900s",
+      "title": "Budget Summarization",
+      "description": "Cheapest Summarization options on 900s audio per quality point earned, at solid-not-flashy accuracy — pick these for high-volume runs.",
+      "tags": [
+        "summarization",
+        "cost-efficient",
+        "high-volume"
+      ],
+      "models": [
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "none",
+          "rank": 1,
+          "quality_score": 84,
+          "cost_per_quality": 0.0009954,
+          "latency_p50_s": 3.613,
+          "task_quality_score": 94
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 87,
+          "cost_per_quality": 0.001483,
+          "latency_p50_s": 15.461,
+          "task_quality_score": 94
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "high",
+          "rank": 3,
+          "quality_score": 88,
+          "cost_per_quality": 0.002526,
+          "latency_p50_s": 28.874,
+          "task_quality_score": 93
+        },
+        {
+          "model": "claude-haiku-5-5",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 81,
+          "cost_per_quality": 0.001939,
+          "latency_p50_s": 8.493,
+          "task_quality_score": 83
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 87,
+          "cost_per_quality": 0.00281,
+          "latency_p50_s": 8.644,
+          "task_quality_score": 88
+        }
+      ]
+    },
+    {
+      "bucket": "900s",
+      "title": "Text Correction Specialist",
+      "description": "Highest-accuracy models for Text Correction on 900s audio, regardless of cost — pick these when correctness matters more than price.",
+      "tags": [
+        "text_correction",
+        "premium",
+        "high-accuracy"
+      ],
+      "models": [
+        {
+          "model": "claude-opus-5",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 89,
+          "cost_per_quality": 0.07927,
+          "latency_p50_s": 14.862,
+          "task_quality_score": 91
+        },
+        {
+          "model": "gpt-6-astra",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 88,
+          "cost_per_quality": 0.1002,
+          "latency_p50_s": 13.102,
+          "task_quality_score": 91
+        },
+        {
+          "model": "gpt-6-sol",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 87,
+          "cost_per_quality": 0.02426,
+          "latency_p50_s": 9.823,
+          "task_quality_score": 90
+        },
+        {
+          "model": "gpt-5.6-sol",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 87,
+          "cost_per_quality": 0.05171,
+          "latency_p50_s": 15.848,
+          "task_quality_score": 90
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 87,
+          "cost_per_quality": 0.00281,
+          "latency_p50_s": 8.644,
+          "task_quality_score": 89
+        }
+      ]
+    },
+    {
+      "bucket": "900s",
+      "title": "Budget Text Correction",
+      "description": "Cheapest Text Correction options on 900s audio per quality point earned, at solid-not-flashy accuracy — pick these for high-volume runs.",
+      "tags": [
+        "text_correction",
+        "cost-efficient",
+        "high-volume"
+      ],
+      "models": [
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "none",
+          "rank": 1,
+          "quality_score": 84,
+          "cost_per_quality": 0.0009954,
+          "latency_p50_s": 3.613,
+          "task_quality_score": 83
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 87,
+          "cost_per_quality": 0.001483,
+          "latency_p50_s": 15.461,
+          "task_quality_score": 83
+        },
+        {
+          "model": "claude-haiku-5-5",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 81,
+          "cost_per_quality": 0.001939,
+          "latency_p50_s": 8.493,
+          "task_quality_score": 80
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "high",
+          "rank": 4,
+          "quality_score": 88,
+          "cost_per_quality": 0.002526,
+          "latency_p50_s": 28.874,
+          "task_quality_score": 85
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 87,
+          "cost_per_quality": 0.00281,
+          "latency_p50_s": 8.644,
+          "task_quality_score": 89
+        }
+      ]
+    },
+    {
+      "bucket": "900s",
+      "title": "Top Overall Performer",
+      "description": "Best combined quality_score across every task on 900s audio — the safe default when the task mix isn't known ahead of time.",
+      "tags": [
+        "overall",
+        "premium",
+        "high-accuracy"
+      ],
+      "models": [
+        {
+          "model": "claude-opus-5",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 89,
+          "cost_per_quality": 0.07927,
+          "latency_p50_s": 14.862
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "high",
+          "rank": 2,
+          "quality_score": 88,
+          "cost_per_quality": 0.002526,
+          "latency_p50_s": 28.874
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 88,
+          "cost_per_quality": 0.0247,
+          "latency_p50_s": 24.557
+        },
+        {
+          "model": "claude-opus-5-5",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 88,
+          "cost_per_quality": 0.07297,
+          "latency_p50_s": 17.712
+        },
+        {
+          "model": "gpt-6-astra",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 88,
+          "cost_per_quality": 0.1002,
+          "latency_p50_s": 13.102
+        }
+      ]
+    },
+    {
+      "bucket": "900s",
+      "title": "Best Value",
+      "description": "Lowest cost_per_quality on 900s audio among models that still clear a decent quality bar — the cheapest defensible choice.",
+      "tags": [
+        "overall",
+        "cost-efficient",
+        "value"
+      ],
+      "models": [
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "none",
+          "rank": 1,
+          "quality_score": 84,
+          "cost_per_quality": 0.0009954,
+          "latency_p50_s": 3.613
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 87,
+          "cost_per_quality": 0.001483,
+          "latency_p50_s": 15.461
+        },
+        {
+          "model": "claude-haiku-5-5",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 81,
+          "cost_per_quality": 0.001939,
+          "latency_p50_s": 8.493
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "high",
+          "rank": 4,
+          "quality_score": 88,
+          "cost_per_quality": 0.002526,
+          "latency_p50_s": 28.874
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 87,
+          "cost_per_quality": 0.00281,
+          "latency_p50_s": 8.644
+        }
+      ]
+    },
+    {
+      "bucket": "900s",
+      "title": "Long-Form Call Analysis",
+      "description": "Best quality on 900s calls, where wall-clock latency matters less than getting long, dense transcripts right — suited to async/batch processing.",
+      "tags": [
+        "batch",
+        "long-form",
+        "async"
+      ],
+      "models": [
+        {
+          "model": "claude-opus-5",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 89,
+          "cost_per_quality": 0.07927,
+          "latency_p50_s": 14.862
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "high",
+          "rank": 2,
+          "quality_score": 88,
+          "cost_per_quality": 0.002526,
+          "latency_p50_s": 28.874
+        },
+        {
+          "model": "claude-opus-5-5",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 88,
+          "cost_per_quality": 0.07297,
+          "latency_p50_s": 17.712
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 88,
+          "cost_per_quality": 0.0247,
+          "latency_p50_s": 24.557
+        },
+        {
+          "model": "gpt-6-astra",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 88,
+          "cost_per_quality": 0.1002,
+          "latency_p50_s": 13.102
+        }
+      ]
+    },
+    {
+      "bucket": "3600s",
+      "title": "Information Extraction Specialist",
+      "description": "Highest-accuracy models for Information Extraction on 3600s audio, regardless of cost — pick these when correctness matters more than price.",
+      "tags": [
+        "information_extraction",
+        "premium",
+        "high-accuracy"
+      ],
+      "models": [
+        {
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 87,
+          "cost_per_quality": 0.1034,
+          "latency_p50_s": 23.508,
+          "task_quality_score": 85
+        }
+      ]
+    },
+    {
+      "bucket": "3600s",
+      "title": "Budget Information Extraction",
+      "description": "Cheapest Information Extraction options on 3600s audio per quality point earned, at solid-not-flashy accuracy — pick these for high-volume runs.",
+      "tags": [
+        "information_extraction",
+        "cost-efficient",
+        "high-volume"
+      ],
+      "models": [
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 85,
+          "cost_per_quality": 0.004616,
+          "latency_p50_s": 18.96,
+          "task_quality_score": 82
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "high",
+          "rank": 2,
+          "quality_score": 85,
+          "cost_per_quality": 0.005496,
+          "latency_p50_s": 37.574,
+          "task_quality_score": 81
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 87,
+          "cost_per_quality": 0.1034,
+          "latency_p50_s": 23.508,
+          "task_quality_score": 85
+        },
+        {
+          "model": "gpt-6-sol",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 85,
+          "cost_per_quality": 0.09234,
+          "latency_p50_s": 12.047,
+          "task_quality_score": 81
+        },
+        {
+          "model": "claude-sonnet-5-5",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 85,
+          "cost_per_quality": 0.1738,
+          "latency_p50_s": 20.985,
+          "task_quality_score": 83
+        }
+      ]
+    },
+    {
+      "bucket": "3600s",
+      "title": "Summarization Specialist",
+      "description": "Highest-accuracy models for Summarization on 3600s audio, regardless of cost — pick these when correctness matters more than price.",
+      "tags": [
+        "summarization",
+        "premium",
+        "high-accuracy"
+      ],
+      "models": [
+        {
+          "model": "deepseek-v4.1-flash",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 83,
+          "cost_per_quality": 0.01414,
+          "latency_p50_s": 73.266,
+          "task_quality_score": 96
+        },
+        {
+          "model": "claude-opus-5-5",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 87,
+          "cost_per_quality": 0.2757,
+          "latency_p50_s": 31.503,
+          "task_quality_score": 95
+        },
+        {
+          "model": "gpt-6-astra",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 88,
+          "cost_per_quality": 0.4016,
+          "latency_p50_s": 24.054,
+          "task_quality_score": 95
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "high",
+          "rank": 4,
+          "quality_score": 85,
+          "cost_per_quality": 0.005496,
+          "latency_p50_s": 37.574,
+          "task_quality_score": 92
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 85,
+          "cost_per_quality": 0.004616,
+          "latency_p50_s": 18.96,
+          "task_quality_score": 91
+        }
+      ]
+    },
+    {
+      "bucket": "3600s",
+      "title": "Budget Summarization",
+      "description": "Cheapest Summarization options on 3600s audio per quality point earned, at solid-not-flashy accuracy — pick these for high-volume runs.",
+      "tags": [
+        "summarization",
+        "cost-efficient",
+        "high-volume"
+      ],
+      "models": [
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "none",
+          "rank": 1,
+          "quality_score": 82,
+          "cost_per_quality": 0.004129,
+          "latency_p50_s": 5.094,
+          "task_quality_score": 90
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 85,
+          "cost_per_quality": 0.004616,
+          "latency_p50_s": 18.96,
+          "task_quality_score": 91
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "high",
+          "rank": 3,
+          "quality_score": 85,
+          "cost_per_quality": 0.005496,
+          "latency_p50_s": 37.574,
+          "task_quality_score": 92
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 83,
+          "cost_per_quality": 0.009696,
+          "latency_p50_s": 13.73,
+          "task_quality_score": 90
+        },
+        {
+          "model": "deepseek-v4.1-flash",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 83,
+          "cost_per_quality": 0.01414,
+          "latency_p50_s": 73.266,
+          "task_quality_score": 96
+        }
+      ]
+    },
+    {
+      "bucket": "3600s",
+      "title": "Text Correction Specialist",
+      "description": "Highest-accuracy models for Text Correction on 3600s audio, regardless of cost — pick these when correctness matters more than price.",
+      "tags": [
+        "text_correction",
+        "premium",
+        "high-accuracy"
+      ],
+      "models": [
+        {
+          "model": "glm-5.3",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 84,
+          "cost_per_quality": 0.01972,
+          "latency_p50_s": 14.734,
+          "task_quality_score": 88
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 87,
+          "cost_per_quality": 0.1034,
+          "latency_p50_s": 23.508,
+          "task_quality_score": 86
+        },
+        {
+          "model": "gpt-6-astra",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 88,
+          "cost_per_quality": 0.4016,
+          "latency_p50_s": 24.054,
+          "task_quality_score": 86
+        },
+        {
+          "model": "gpt-5.6-sol",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 85,
+          "cost_per_quality": 0.1745,
+          "latency_p50_s": 30.668,
+          "task_quality_score": 85
+        },
+        {
+          "model": "gpt-5.5",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 84,
+          "cost_per_quality": 0.2638,
+          "latency_p50_s": 29.842,
+          "task_quality_score": 85
+        }
+      ]
+    },
+    {
+      "bucket": "3600s",
+      "title": "Budget Text Correction",
+      "description": "Cheapest Text Correction options on 3600s audio per quality point earned, at solid-not-flashy accuracy — pick these for high-volume runs.",
+      "tags": [
+        "text_correction",
+        "cost-efficient",
+        "high-volume"
+      ],
+      "models": [
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "none",
+          "rank": 1,
+          "quality_score": 82,
+          "cost_per_quality": 0.004129,
+          "latency_p50_s": 5.094,
+          "task_quality_score": 80
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 85,
+          "cost_per_quality": 0.004616,
+          "latency_p50_s": 18.96,
+          "task_quality_score": 82
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "high",
+          "rank": 3,
+          "quality_score": 85,
+          "cost_per_quality": 0.005496,
+          "latency_p50_s": 37.574,
+          "task_quality_score": 81
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 83,
+          "cost_per_quality": 0.009696,
+          "latency_p50_s": 13.73,
+          "task_quality_score": 80
+        },
+        {
+          "model": "glm-5.3",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 84,
+          "cost_per_quality": 0.01972,
+          "latency_p50_s": 14.734,
+          "task_quality_score": 88
+        }
+      ]
+    },
+    {
+      "bucket": "3600s",
+      "title": "Top Overall Performer",
+      "description": "Best combined quality_score across every task on 3600s audio — the safe default when the task mix isn't known ahead of time.",
+      "tags": [
+        "overall",
+        "premium",
+        "high-accuracy"
+      ],
+      "models": [
+        {
+          "model": "gpt-6-astra",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 88,
+          "cost_per_quality": 0.4016,
+          "latency_p50_s": 24.054
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 87,
+          "cost_per_quality": 0.1034,
+          "latency_p50_s": 23.508
+        },
+        {
+          "model": "claude-opus-5-5",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 87,
+          "cost_per_quality": 0.2757,
+          "latency_p50_s": 31.503
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 85,
+          "cost_per_quality": 0.004616,
+          "latency_p50_s": 18.96
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "high",
+          "rank": 5,
+          "quality_score": 85,
+          "cost_per_quality": 0.005496,
+          "latency_p50_s": 37.574
+        }
+      ]
+    },
+    {
+      "bucket": "3600s",
+      "title": "Best Value",
+      "description": "Lowest cost_per_quality on 3600s audio among models that still clear a decent quality bar — the cheapest defensible choice.",
+      "tags": [
+        "overall",
+        "cost-efficient",
+        "value"
+      ],
+      "models": [
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "none",
+          "rank": 1,
+          "quality_score": 82,
+          "cost_per_quality": 0.004129,
+          "latency_p50_s": 5.094
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 85,
+          "cost_per_quality": 0.004616,
+          "latency_p50_s": 18.96
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "high",
+          "rank": 3,
+          "quality_score": 85,
+          "cost_per_quality": 0.005496,
+          "latency_p50_s": 37.574
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 83,
+          "cost_per_quality": 0.009696,
+          "latency_p50_s": 13.73
+        },
+        {
+          "model": "deepseek-v4.1-flash",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 83,
+          "cost_per_quality": 0.01414,
+          "latency_p50_s": 73.266
+        }
+      ]
+    },
+    {
+      "bucket": "3600s",
+      "title": "Long-Form Call Analysis",
+      "description": "Best quality on 3600s calls, where wall-clock latency matters less than getting long, dense transcripts right — suited to async/batch processing.",
+      "tags": [
+        "batch",
+        "long-form",
+        "async"
+      ],
+      "models": [
+        {
+          "model": "gpt-6-astra",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 88,
+          "cost_per_quality": 0.4016,
+          "latency_p50_s": 24.054
+        },
+        {
+          "model": "claude-opus-5-5",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 87,
+          "cost_per_quality": 0.2757,
+          "latency_p50_s": 31.503
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 87,
+          "cost_per_quality": 0.1034,
+          "latency_p50_s": 23.508
+        },
+        {
+          "model": "claude-sonnet-5-5",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 85,
+          "cost_per_quality": 0.1738,
+          "latency_p50_s": 20.985
+        },
+        {
+          "model": "gpt-6-sol",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 85,
+          "cost_per_quality": 0.09234,
+          "latency_p50_s": 12.047
+        }
+      ]
+    }
+  ]
+}
