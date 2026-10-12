@@ -78,7 +78,10 @@ type useCaseModel struct {
 	Rank            int     `json:"rank"`
 	QualityScore    int     `json:"quality_score,omitempty"`
 	CostPerQuality  float64 `json:"cost_per_quality,omitempty"`
-	LatencyP50S     float64 `json:"latency_p50_s,omitempty"`
+	// CostPerHourUSD mirrors summaryEntry.CostPerHourUSD: the row's cost of one
+	// hour of audio, shown under CostPerQuality.
+	CostPerHourUSD float64 `json:"cost_per_hour_usd,omitempty"`
+	LatencyP50S    float64 `json:"latency_p50_s,omitempty"`
 	// TaskQualityScore is set only for a per-task use case -- see
 	// toUseCaseModels.
 	TaskQualityScore int `json:"task_quality_score,omitempty"`
@@ -174,6 +177,7 @@ func toUseCaseModels(rows []summaryEntry, task string) []useCaseModel {
 			Rank:            i + 1,
 			QualityScore:    e.QualityScore,
 			CostPerQuality:  e.CostPerQuality,
+			CostPerHourUSD:  e.CostPerHourUSD,
 			LatencyP50S:     e.Latency.P50,
 		}
 

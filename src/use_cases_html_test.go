@@ -53,6 +53,12 @@ func TestFormatCostPerQuality(t *testing.T) {
 	}
 }
 
+func TestFormatCostPerHour(t *testing.T) {
+	assert.Equal(t, "n/a", formatCostPerHour(0))
+	assert.Equal(t, "$0.2399", formatCostPerHour(0.2399))
+	assert.Equal(t, "$5", formatCostPerHour(5))
+}
+
 func TestFormatLatencyP50(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -123,7 +129,7 @@ func TestBuildUseCasesPageView(t *testing.T) {
 				Bucket: "30s", Title: "Dictation Specialist", Description: "d2",
 				Tags: []string{"dictation", "premium"},
 				Models: []useCaseModel{
-					{Model: "model-a", ReasoningEffort: "low", Rank: 1, QualityScore: 96, TaskQualityScore: 100, CostPerQuality: 0.001, LatencyP50S: 0.5},
+					{Model: "model-a", ReasoningEffort: "low", Rank: 1, QualityScore: 96, TaskQualityScore: 100, CostPerQuality: 0.001, CostPerHourUSD: 0.2399, LatencyP50S: 0.5},
 					{Model: "model-b", ReasoningEffort: "default", Rank: 2, QualityScore: 90, TaskQualityScore: 95, CostPerQuality: 0.002, LatencyP50S: 0.6},
 				},
 			},
@@ -157,6 +163,8 @@ func TestBuildUseCasesPageView(t *testing.T) {
 	assert.True(t, firstModel.HasTaskQuality)
 	assert.Equal(t, "q-high", firstModel.QualityClass, "96 clears the premium floor")
 	assert.Equal(t, "0.001¢", firstModel.CostLabel)
+	assert.Equal(t, "$0.2399", firstModel.CostPerHourLabel)
+	assert.Equal(t, "n/a", dictationSpecialist.Models[1].CostPerHourLabel, "no cost per hour data")
 	assert.Equal(t, "500 ms", firstModel.LatencyLabel)
 	assert.Equal(t, "low", firstModel.ReasoningEffortLabel)
 
