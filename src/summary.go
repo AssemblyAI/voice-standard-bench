@@ -35,6 +35,14 @@
 // task_cost_usd/task_cost_per_quality mirror task_quality: the same
 // breakdown restricted to one task's own samples (its own mean, its own
 // score).
+//
+// cost_per_hour_usd puts every row's cost on the same footing, one hour of
+// audio: the model's hourly token volume (mean prompt and completion tokens
+// of its 3600s-bucket samples, reported as hourly_prompt_tokens/
+// hourly_completion_tokens) priced at the row's own blended cost per token
+// (its cost over its tokens), so a 30s row answers "what would an hour cost if
+// it looked like these calls". task_cost_per_hour_usd is the same restricted to
+// one task's samples. See hourlyTokensByModel and costPerHour.
 package main
 
 import (
@@ -79,9 +87,14 @@ type sourceSample struct {
 	// -- tokens actually used times the candidate's global per-token pricing,
 	// captured when the model list was pulled). Averaged into CostPerQuality
 	// below over the same population QualityScore itself pools.
-	CostUSD float64            `json:"cost_usd"`
-	Judge   map[string]float64 `json:"judge"`
-	Error   string             `json:"error"`
+	CostUSD float64 `json:"cost_usd"`
+	// PromptTokens/CompletionTokens are the tokens behind CostUSD (report.go's
+	// jsonSample). summarize uses them to scale a group's cost to the hourly
+	// token volume of its model -- see hourlyTokensByModel.
+	PromptTokens     int                `json:"prompt_tokens"`
+	CompletionTokens int                `json:"completion_tokens"`
+	Judge            map[string]float64 `json:"judge"`
+	Error            string             `json:"error"`
 }
 
 type scale struct{ lo, hi float64 }
@@ -258,6 +271,16 @@ type summaryEntry struct {
 	// on that same normalized scale. Rounded to costPerQualityDigits
 	// significant digits, not decimal places -- see there.
 	CostPerQuality float64 `json:"cost_per_quality,omitempty"`
+	// HourlyPromptTokens/HourlyCompletionTokens are the model's mean tokens
+	// per 3600s-bucket call (see hourlyTokensByModel): the same on every row
+	// of one (model, reasoning effort), shown so CostPerHourUSD's basis is
+	// visible. Zero, omitted, for a model with no 3600s samples.
+	HourlyPromptTokens     int `json:"hourly_prompt_tokens,omitempty"`
+	HourlyCompletionTokens int `json:"hourly_completion_tokens,omitempty"`
+	// CostPerHourUSD is this row's blended USD per token times the model's
+	// hourly tokens (prompt + completion) -- see costPerHour. Omitted when
+	// the model has no hourly basis or the row's cost is zero.
+	CostPerHourUSD float64 `json:"cost_per_hour_usd,omitempty"`
 	Latency        stats   `json:"latency"`
 	// ErrorCount is how many samples in this (model, reasoning effort,
 	// bucket) group carried a non-empty Error -- the same population
@@ -292,6 +315,64 @@ type summaryEntry struct {
 	// TaskQuality (a task absent from TaskQuality is absent from these too).
 	TaskCostUSD        map[string]float64 `json:"task_cost_usd,omitempty"`
 	TaskCostPerQuality map[string]float64 `json:"task_cost_per_quality,omitempty"`
+	// TaskCostPerHourUSD mirrors CostPerHourUSD per task: that task's own
+	// blended cost per token times the model's hourly tokens. Keyed like
+	// TaskQuality, minus tasks with no hourly basis or zero cost.
+	TaskCostPerHourUSD map[string]float64 `json:"task_cost_per_hour_usd,omitempty"`
+}
+
+// hourBucket is the audio-length bucket whose token usage defines "an hour".
+const hourBucket = "3600s"
+
+// hourlyTokens is one model's mean prompt/completion tokens per hourBucket call.
+type hourlyTokens struct{ prompt, completion float64 }
+
+func (h hourlyTokens) total() float64 { return h.prompt + h.completion }
+
+// hourlyTokensByModel averages PromptTokens and CompletionTokens over every
+// non-errored hourBucket sample, per (model, reasoning effort), pooled across
+// tasks: that mean is the model's token volume for one hour of audio. A model
+// with no such samples is absent, and so has no cost per hour. Reasoning effort
+// is part of the key because it changes completion tokens.
+func hourlyTokensByModel(samples []sourceSample) map[[2]string]hourlyTokens {
+	type acc struct {
+		prompt, completion float64
+		n                  int
+	}
+
+	sums := map[[2]string]*acc{}
+
+	for _, s := range samples {
+		if s.Bucket != hourBucket || s.Error != "" || s.PromptTokens+s.CompletionTokens <= 0 {
+			continue
+		}
+
+		k := [2]string{s.Model, s.ReasoningEffort}
+		if sums[k] == nil {
+			sums[k] = &acc{}
+		}
+
+		sums[k].prompt += float64(s.PromptTokens)
+		sums[k].completion += float64(s.CompletionTokens)
+		sums[k].n++
+	}
+
+	hourly := make(map[[2]string]hourlyTokens, len(sums))
+	for k, a := range sums {
+		hourly[k] = hourlyTokens{prompt: a.prompt / float64(a.n), completion: a.completion / float64(a.n)}
+	}
+
+	return hourly
+}
+
+// costPerHour is costSum over tokens -- a group's blended USD per token -- times
+// hourly's total tokens. ok is false with no tokens or no hourly basis.
+func costPerHour(costSum float64, tokens int, hourly hourlyTokens) (usd float64, ok bool) {
+	if tokens <= 0 || hourly.total() <= 0 {
+		return 0, false
+	}
+
+	return roundSignificant(costSum/float64(tokens)*hourly.total(), costPerQualityDigits), true
 }
 
 // summarize groups samples by (model, reasoning effort, bucket) — across
@@ -340,6 +421,7 @@ func summarize(samples []sourceSample) []summaryEntry {
 		groups[k] = append(groups[k], s)
 	}
 
+	hourlyByModel := hourlyTokensByModel(samples)
 	entries := make([]summaryEntry, 0, len(groups))
 
 	for k, group := range groups {
@@ -349,11 +431,12 @@ func summarize(samples []sourceSample) []summaryEntry {
 
 		var throughputSum, costSum float64
 
-		var throughputN, qualityN, errorCount int
+		var throughputN, qualityN, errorCount, tokenSum int
 
 		taskQualitySum := map[string]float64{}
 		taskQualityN := map[string]int{}
 		taskCostSum := map[string]float64{}
+		taskTokenSum := map[string]int{}
 
 		for _, s := range group {
 			if s.Error == "" {
@@ -367,7 +450,9 @@ func summarize(samples []sourceSample) []summaryEntry {
 			if q, ok := sampleQuality(s.Judge); ok {
 				qualityN++
 				costSum += s.CostUSD
+				tokenSum += s.PromptTokens + s.CompletionTokens
 
+				taskTokenSum[s.Task] += s.PromptTokens + s.CompletionTokens
 				taskQualitySum[s.Task] += q
 				taskQualityN[s.Task]++
 				taskCostSum[s.Task] += s.CostUSD
@@ -379,6 +464,12 @@ func summarize(samples []sourceSample) []summaryEntry {
 
 		if throughputN > 0 {
 			entry.TokensPerSecond = roundFloat(throughputSum/float64(throughputN), 3)
+		}
+
+		hourly, hasHourly := hourlyByModel[[2]string{k.model, k.reasoningEffort}]
+		if hasHourly {
+			entry.HourlyPromptTokens = int(math.Round(hourly.prompt))
+			entry.HourlyCompletionTokens = int(math.Round(hourly.completion))
 		}
 
 		if qualityN > 0 {
@@ -394,6 +485,10 @@ func summarize(samples []sourceSample) []summaryEntry {
 			entry.QualityScore = int(math.Round(1 + (taskMeanSum/float64(len(taskQualityN)))*99))
 			entry.TotalCostUSD = roundFloat(costSum, 6)
 			entry.CostPerQuality = roundSignificant(meanPerQualityPoint(costSum, qualityN, entry.QualityScore), costPerQualityDigits)
+
+			if usd, ok := costPerHour(costSum, tokenSum, hourly); ok {
+				entry.CostPerHourUSD = usd
+			}
 		}
 
 		if len(taskQualityN) > 0 {
@@ -406,6 +501,14 @@ func summarize(samples []sourceSample) []summaryEntry {
 				entry.TaskQuality[task] = taskScore
 				entry.TaskCostUSD[task] = roundFloat(taskCostSum[task], 6)
 				entry.TaskCostPerQuality[task] = roundSignificant(meanPerQualityPoint(taskCostSum[task], n, taskScore), costPerQualityDigits)
+
+				if usd, ok := costPerHour(taskCostSum[task], taskTokenSum[task], hourly); ok {
+					if entry.TaskCostPerHourUSD == nil {
+						entry.TaskCostPerHourUSD = map[string]float64{}
+					}
+
+					entry.TaskCostPerHourUSD[task] = usd
+				}
 			}
 		}
 
@@ -680,12 +783,12 @@ func printTable(w io.Writer, out summaryReport) {
 }
 
 func printEntries(w io.Writer, entries []summaryEntry) {
-	fmt.Fprintf(w, "%-28s %-10s %-8s %7s  %10s  %-52s  %8s  %-52s  %s  %s\n",
-		"MODEL", "EFFORT", "BUCKET", "QUALITY", "¢/QUALITY", "LATENCY s", "TOK/S", "TTFT s", "TASK QUALITY", "TASK ¢/QUALITY")
+	fmt.Fprintf(w, "%-28s %-10s %-8s %7s  %10s  %10s  %-52s  %8s  %-52s  %s  %s  %s\n",
+		"MODEL", "EFFORT", "BUCKET", "QUALITY", "¢/QUALITY", "$/HOUR", "LATENCY s", "TOK/S", "TTFT s", "TASK QUALITY", "TASK ¢/QUALITY", "TASK $/HOUR")
 
 	for _, e := range entries {
-		fmt.Fprintf(w, "%-28s %-10s %-8s %7s  %10s  %-52s  %8s  %-52s  %s  %s\n",
-			e.Model, e.ReasoningEffort, e.Bucket, qualityString(e), costPerQualityString(e), latencyString(e.Latency), throughputString(e), latencyString(e.TTFT), taskQualityString(e), taskCostPerQualityString(e))
+		fmt.Fprintf(w, "%-28s %-10s %-8s %7s  %10s  %10s  %-52s  %8s  %-52s  %s  %s  %s\n",
+			e.Model, e.ReasoningEffort, e.Bucket, qualityString(e), costPerQualityString(e), costPerHourString(e.CostPerHourUSD), latencyString(e.Latency), throughputString(e), latencyString(e.TTFT), taskQualityString(e), taskCostPerQualityString(e), taskCostPerHourString(e))
 	}
 }
 
@@ -752,6 +855,37 @@ func taskCostPerQualityString(e summaryEntry) string {
 	return strings.Join(parts, " ")
 }
 
+// costPerHourString renders a USD-per-hour figure, "n/a" when absent (no 3600s
+// basis for the model, or a zero cost).
+func costPerHourString(usd float64) string {
+	if usd == 0 {
+		return "n/a"
+	}
+
+	return "$" + strconv.FormatFloat(usd, 'g', costPerQualityDigits, 64)
+}
+
+// taskCostPerHourString mirrors taskCostPerQualityString for e.TaskCostPerHourUSD.
+func taskCostPerHourString(e summaryEntry) string {
+	if len(e.TaskCostPerHourUSD) == 0 {
+		return "n/a"
+	}
+
+	tasks := make([]string, 0, len(e.TaskCostPerHourUSD))
+	for task := range e.TaskCostPerHourUSD {
+		tasks = append(tasks, task)
+	}
+
+	sort.Strings(tasks)
+
+	parts := make([]string, 0, len(tasks))
+	for _, task := range tasks {
+		parts = append(parts, fmt.Sprintf("%s=%s", task, costPerHourString(e.TaskCostPerHourUSD[task])))
+	}
+
+	return strings.Join(parts, " ")
+}
+
 func throughputString(e summaryEntry) string {
 	if e.TokensPerSecond == 0 {
 		return "n/a"
@@ -775,6 +909,10 @@ func latencyString(s stats) string {
 // ahead of time.
 var csvHeader = []string{
 	"judge", "model", "reasoning_effort", "bucket", "quality_score", "total_cost_usd", "cost_per_quality",
+	// hourly_* are the model's mean tokens per 3600s call and cost_per_hour_usd
+	// the row's blended cost per token times them (see costPerHour); blank
+	// when the model has no 3600s samples.
+	"hourly_prompt_tokens", "hourly_completion_tokens", "cost_per_hour_usd",
 	// error_count sits right after latency_n -- how many of that same
 	// group's samples carried a non-empty Error, excluded from every stat
 	// alongside it (see summaryEntry.ErrorCount). Unlike the blank-for-zero
@@ -878,6 +1016,7 @@ func writeCSV(path string, out summaryReport) error {
 	header := append(append([]string{}, csvHeader...), taskQualityHeaders(tasks)...)
 	header = append(header, taskCostHeaders("cost_usd", tasks)...)
 	header = append(header, taskCostHeaders("cost_per_quality", tasks)...)
+	header = append(header, taskCostHeaders("cost_per_hour_usd", tasks)...)
 
 	if err := w.Write(header); err != nil {
 		return err
@@ -903,7 +1042,8 @@ func writeCSV(path string, out summaryReport) error {
 }
 
 func csvRow(judge string, e summaryEntry, tasks []string) []string {
-	row := []string{judge, e.Model, e.ReasoningEffort, e.Bucket, csvInt(e.QualityScore), csvFloat(e.TotalCostUSD), csvFloat(e.CostPerQuality)}
+	row := []string{judge, e.Model, e.ReasoningEffort, e.Bucket, csvInt(e.QualityScore), csvFloat(e.TotalCostUSD), csvFloat(e.CostPerQuality),
+		csvInt(e.HourlyPromptTokens), csvInt(e.HourlyCompletionTokens), csvFloat(e.CostPerHourUSD)}
 
 	latencyCells := statsCSVCells(e.Latency)
 	// error_count, unlike every csvInt/statsCSVCells cell around it, is never
@@ -933,6 +1073,10 @@ func csvRow(judge string, e summaryEntry, tasks []string) []string {
 
 	for _, task := range tasks {
 		row = append(row, csvTaskCost(e.TaskQuality, e.TaskCostPerQuality, task))
+	}
+
+	for _, task := range tasks {
+		row = append(row, csvTaskCost(e.TaskQuality, e.TaskCostPerHourUSD, task))
 	}
 
 	return row

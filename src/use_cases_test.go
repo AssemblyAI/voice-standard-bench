@@ -85,14 +85,14 @@ func TestTopModels_noneEligible(t *testing.T) {
 
 func TestToUseCaseModels(t *testing.T) {
 	rows := []summaryEntry{{
-		Model: "a", ReasoningEffort: "low", QualityScore: 90, CostPerQuality: 0.001,
+		Model: "a", ReasoningEffort: "low", QualityScore: 90, CostPerQuality: 0.001, CostPerHourUSD: 0.25,
 		Latency:     stats{P50: 1.5},
 		TaskQuality: map[string]int{"summarization": 88},
 	}}
 
 	global := toUseCaseModels(rows, "")
 	require.Len(t, global, 1)
-	assert.Equal(t, useCaseModel{Model: "a", ReasoningEffort: "low", Rank: 1, QualityScore: 90, CostPerQuality: 0.001, LatencyP50S: 1.5}, global[0])
+	assert.Equal(t, useCaseModel{Model: "a", ReasoningEffort: "low", Rank: 1, QualityScore: 90, CostPerQuality: 0.001, CostPerHourUSD: 0.25, LatencyP50S: 1.5}, global[0])
 
 	perTask := toUseCaseModels(rows, "summarization")
 	assert.Equal(t, 88, perTask[0].TaskQualityScore)
