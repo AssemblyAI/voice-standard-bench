@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-09T01:51:34.121768853Z",
+  "generated_at": "2026-10-14T22:53:39.815702438Z",
   "use_cases": [
     {
       "bucket": "30s",
@@ -12,48 +12,53 @@
       ],
       "models": [
         {
-          "model": "claude-sonnet-4-5-20250929",
+          "model": "gemini-4-argon",
           "reasoning_effort": "default",
           "rank": 1,
+          "quality_score": 94,
+          "cost_per_quality": 0.001569,
+          "cost_per_hour_usd": 0.05926,
+          "latency_p50_s": 2.001,
+          "task_quality_score": 100
+        },
+        {
+          "model": "claude-sonnet-4-5-20250929",
+          "reasoning_effort": "default",
+          "rank": 2,
           "quality_score": 93,
           "cost_per_quality": 0.002403,
+          "cost_per_hour_usd": 0.08916,
           "latency_p50_s": 2.263,
           "task_quality_score": 100
         },
         {
           "model": "claude-sonnet-5",
           "reasoning_effort": "default",
-          "rank": 2,
+          "rank": 3,
           "quality_score": 90,
           "cost_per_quality": 0.004438,
+          "cost_per_hour_usd": 0.1577,
           "latency_p50_s": 2.554,
           "task_quality_score": 100
         },
         {
           "model": "claude-opus-4-5-20251101",
           "reasoning_effort": "default",
-          "rank": 3,
+          "rank": 4,
           "quality_score": 92,
           "cost_per_quality": 0.003998,
+          "cost_per_hour_usd": 0.1497,
           "latency_p50_s": 2.163,
           "task_quality_score": 100
         },
         {
           "model": "claude-opus-4-6",
           "reasoning_effort": "default",
-          "rank": 4,
+          "rank": 5,
           "quality_score": 94,
           "cost_per_quality": 0.003966,
+          "cost_per_hour_usd": 0.1519,
           "latency_p50_s": 2.25,
-          "task_quality_score": 100
-        },
-        {
-          "model": "claude-opus-4-7",
-          "reasoning_effort": "default",
-          "rank": 5,
-          "quality_score": 91,
-          "cost_per_quality": 0.005607,
-          "latency_p50_s": 1.782,
           "task_quality_score": 100
         }
       ]
@@ -74,6 +79,7 @@
           "rank": 1,
           "quality_score": 88,
           "cost_per_quality": 0.0000685,
+          "cost_per_hour_usd": 0.002647,
           "latency_p50_s": 0.699,
           "task_quality_score": 97
         },
@@ -83,6 +89,7 @@
           "rank": 2,
           "quality_score": 94,
           "cost_per_quality": 0.00006988,
+          "cost_per_hour_usd": 0.002813,
           "latency_p50_s": 0.87,
           "task_quality_score": 98
         },
@@ -92,6 +99,7 @@
           "rank": 3,
           "quality_score": 90,
           "cost_per_quality": 0.00008649,
+          "cost_per_hour_usd": 0.003188,
           "latency_p50_s": 0.898,
           "task_quality_score": 99
         },
@@ -101,6 +109,7 @@
           "rank": 4,
           "quality_score": 93,
           "cost_per_quality": 0.00008451,
+          "cost_per_hour_usd": 0.003166,
           "latency_p50_s": 0.882,
           "task_quality_score": 98
         },
@@ -110,6 +119,7 @@
           "rank": 5,
           "quality_score": 95,
           "cost_per_quality": 0.0001281,
+          "cost_per_hour_usd": 0.00427,
           "latency_p50_s": 1.694,
           "task_quality_score": 97
         }
@@ -131,6 +141,7 @@
           "rank": 1,
           "quality_score": 74,
           "cost_per_quality": 0.00009289,
+          "cost_per_hour_usd": 0.00262,
           "latency_p50_s": 0.28,
           "task_quality_score": 81
         },
@@ -140,6 +151,7 @@
           "rank": 2,
           "quality_score": 82,
           "cost_per_quality": 0.0001136,
+          "cost_per_hour_usd": 0.003042,
           "latency_p50_s": 0.506,
           "task_quality_score": 86
         },
@@ -149,6 +161,7 @@
           "rank": 3,
           "quality_score": 88,
           "cost_per_quality": 0.0000685,
+          "cost_per_hour_usd": 0.002647,
           "latency_p50_s": 0.699,
           "task_quality_score": 97
         },
@@ -158,6 +171,7 @@
           "rank": 4,
           "quality_score": 92,
           "cost_per_quality": 0.000306,
+          "cost_per_hour_usd": 0.01201,
           "latency_p50_s": 0.831,
           "task_quality_score": 98
         },
@@ -167,6 +181,7 @@
           "rank": 5,
           "quality_score": 91,
           "cost_per_quality": 0.001279,
+          "cost_per_hour_usd": 0.04944,
           "latency_p50_s": 0.854,
           "task_quality_score": 96
         }
@@ -188,6 +203,7 @@
           "rank": 1,
           "quality_score": 90,
           "cost_per_quality": 0.00008649,
+          "cost_per_hour_usd": 0.003188,
           "latency_p50_s": 0.898,
           "task_quality_score": 99
         },
@@ -197,6 +213,7 @@
           "rank": 2,
           "quality_score": 92,
           "cost_per_quality": 0.000306,
+          "cost_per_hour_usd": 0.01201,
           "latency_p50_s": 0.831,
           "task_quality_score": 98
         },
@@ -206,6 +223,7 @@
           "rank": 3,
           "quality_score": 94,
           "cost_per_quality": 0.00006988,
+          "cost_per_hour_usd": 0.002813,
           "latency_p50_s": 0.87,
           "task_quality_score": 98
         },
@@ -215,6 +233,7 @@
           "rank": 4,
           "quality_score": 93,
           "cost_per_quality": 0.00008451,
+          "cost_per_hour_usd": 0.003166,
           "latency_p50_s": 0.882,
           "task_quality_score": 98
         },
@@ -224,6 +243,7 @@
           "rank": 5,
           "quality_score": 90,
           "cost_per_quality": 0.0008263,
+          "cost_per_hour_usd": 0.03054,
           "latency_p50_s": 0.991,
           "task_quality_score": 98
         }
@@ -245,6 +265,7 @@
           "rank": 1,
           "quality_score": 95,
           "cost_per_quality": 0.003634,
+          "cost_per_hour_usd": 0.1365,
           "latency_p50_s": 1.936,
           "task_quality_score": 94
         },
@@ -254,6 +275,7 @@
           "rank": 2,
           "quality_score": 93,
           "cost_per_quality": 0.003114,
+          "cost_per_hour_usd": 0.1302,
           "latency_p50_s": 1.444,
           "task_quality_score": 93
         },
@@ -263,6 +285,7 @@
           "rank": 3,
           "quality_score": 92,
           "cost_per_quality": 0.0001958,
+          "cost_per_hour_usd": 0.005924,
           "latency_p50_s": 1.698,
           "task_quality_score": 92
         },
@@ -272,6 +295,7 @@
           "rank": 4,
           "quality_score": 94,
           "cost_per_quality": 0.0002396,
+          "cost_per_hour_usd": 0.008183,
           "latency_p50_s": 1.338,
           "task_quality_score": 91
         },
@@ -281,6 +305,7 @@
           "rank": 5,
           "quality_score": 96,
           "cost_per_quality": 0.000756,
+          "cost_per_hour_usd": 0.02756,
           "latency_p50_s": 1.833,
           "task_quality_score": 91
         }
@@ -302,6 +327,7 @@
           "rank": 1,
           "quality_score": 94,
           "cost_per_quality": 0.00006988,
+          "cost_per_hour_usd": 0.002813,
           "latency_p50_s": 0.87,
           "task_quality_score": 88
         },
@@ -311,6 +337,7 @@
           "rank": 2,
           "quality_score": 93,
           "cost_per_quality": 0.00008451,
+          "cost_per_hour_usd": 0.003166,
           "latency_p50_s": 0.882,
           "task_quality_score": 88
         },
@@ -320,6 +347,7 @@
           "rank": 3,
           "quality_score": 91,
           "cost_per_quality": 0.000205,
+          "cost_per_hour_usd": 0.004276,
           "latency_p50_s": 3.233,
           "task_quality_score": 84
         },
@@ -329,6 +357,7 @@
           "rank": 4,
           "quality_score": 95,
           "cost_per_quality": 0.0001281,
+          "cost_per_hour_usd": 0.00427,
           "latency_p50_s": 1.694,
           "task_quality_score": 88
         },
@@ -338,6 +367,7 @@
           "rank": 5,
           "quality_score": 96,
           "cost_per_quality": 0.0001657,
+          "cost_per_hour_usd": 0.005361,
           "latency_p50_s": 2.487,
           "task_quality_score": 90
         }
@@ -359,6 +389,7 @@
           "rank": 1,
           "quality_score": 74,
           "cost_per_quality": 0.00009289,
+          "cost_per_hour_usd": 0.00262,
           "latency_p50_s": 0.28,
           "task_quality_score": 80
         },
@@ -368,6 +399,7 @@
           "rank": 2,
           "quality_score": 82,
           "cost_per_quality": 0.0001136,
+          "cost_per_hour_usd": 0.003042,
           "latency_p50_s": 0.506,
           "task_quality_score": 71
         },
@@ -377,6 +409,7 @@
           "rank": 3,
           "quality_score": 88,
           "cost_per_quality": 0.0000685,
+          "cost_per_hour_usd": 0.002647,
           "latency_p50_s": 0.699,
           "task_quality_score": 74
         },
@@ -386,6 +419,7 @@
           "rank": 4,
           "quality_score": 92,
           "cost_per_quality": 0.000306,
+          "cost_per_hour_usd": 0.01201,
           "latency_p50_s": 0.831,
           "task_quality_score": 81
         },
@@ -395,6 +429,7 @@
           "rank": 5,
           "quality_score": 91,
           "cost_per_quality": 0.001279,
+          "cost_per_hour_usd": 0.04944,
           "latency_p50_s": 0.854,
           "task_quality_score": 86
         }
@@ -416,6 +451,7 @@
           "rank": 1,
           "quality_score": 93,
           "cost_per_quality": 0.003114,
+          "cost_per_hour_usd": 0.1302,
           "latency_p50_s": 1.444,
           "task_quality_score": 93
         },
@@ -425,6 +461,7 @@
           "rank": 2,
           "quality_score": 92,
           "cost_per_quality": 0.0001958,
+          "cost_per_hour_usd": 0.005924,
           "latency_p50_s": 1.698,
           "task_quality_score": 92
         },
@@ -434,6 +471,7 @@
           "rank": 3,
           "quality_score": 94,
           "cost_per_quality": 0.0002396,
+          "cost_per_hour_usd": 0.008183,
           "latency_p50_s": 1.338,
           "task_quality_score": 91
         },
@@ -443,6 +481,7 @@
           "rank": 4,
           "quality_score": 95,
           "cost_per_quality": 0.001972,
+          "cost_per_hour_usd": 0.07265,
           "latency_p50_s": 1.524,
           "task_quality_score": 89
         },
@@ -452,6 +491,7 @@
           "rank": 5,
           "quality_score": 94,
           "cost_per_quality": 0.00006988,
+          "cost_per_hour_usd": 0.002813,
           "latency_p50_s": 0.87,
           "task_quality_score": 88
         }
@@ -473,6 +513,7 @@
           "rank": 1,
           "quality_score": 94,
           "cost_per_quality": 0.001776,
+          "cost_per_hour_usd": 0.06821,
           "latency_p50_s": 1.426,
           "task_quality_score": 100
         },
@@ -482,6 +523,7 @@
           "rank": 2,
           "quality_score": 95,
           "cost_per_quality": 0.003679,
+          "cost_per_hour_usd": 0.06251,
           "latency_p50_s": 4.128,
           "task_quality_score": 99
         },
@@ -491,6 +533,7 @@
           "rank": 3,
           "quality_score": 96,
           "cost_per_quality": 0.007915,
+          "cost_per_hour_usd": 0.3085,
           "latency_p50_s": 2.46,
           "task_quality_score": 99
         },
@@ -500,6 +543,7 @@
           "rank": 4,
           "quality_score": 94,
           "cost_per_quality": 0.009548,
+          "cost_per_hour_usd": 0.2502,
           "latency_p50_s": 13.703,
           "task_quality_score": 99
         },
@@ -509,6 +553,7 @@
           "rank": 5,
           "quality_score": 95,
           "cost_per_quality": 0.006032,
+          "cost_per_hour_usd": 0.2182,
           "latency_p50_s": 3.47,
           "task_quality_score": 99
         }
@@ -530,6 +575,7 @@
           "rank": 1,
           "quality_score": 88,
           "cost_per_quality": 0.0000685,
+          "cost_per_hour_usd": 0.002647,
           "latency_p50_s": 0.699,
           "task_quality_score": 93
         },
@@ -539,6 +585,7 @@
           "rank": 2,
           "quality_score": 94,
           "cost_per_quality": 0.00006988,
+          "cost_per_hour_usd": 0.002813,
           "latency_p50_s": 0.87,
           "task_quality_score": 98
         },
@@ -548,6 +595,7 @@
           "rank": 3,
           "quality_score": 90,
           "cost_per_quality": 0.00008649,
+          "cost_per_hour_usd": 0.003188,
           "latency_p50_s": 0.898,
           "task_quality_score": 97
         },
@@ -557,6 +605,7 @@
           "rank": 4,
           "quality_score": 93,
           "cost_per_quality": 0.00008451,
+          "cost_per_hour_usd": 0.003166,
           "latency_p50_s": 0.882,
           "task_quality_score": 94
         },
@@ -566,6 +615,7 @@
           "rank": 5,
           "quality_score": 86,
           "cost_per_quality": 0.00009647,
+          "cost_per_hour_usd": 0.003389,
           "latency_p50_s": 1.03,
           "task_quality_score": 93
         }
@@ -587,6 +637,7 @@
           "rank": 1,
           "quality_score": 74,
           "cost_per_quality": 0.00009289,
+          "cost_per_hour_usd": 0.00262,
           "latency_p50_s": 0.28,
           "task_quality_score": 76
         },
@@ -596,6 +647,7 @@
           "rank": 2,
           "quality_score": 82,
           "cost_per_quality": 0.0001136,
+          "cost_per_hour_usd": 0.003042,
           "latency_p50_s": 0.506,
           "task_quality_score": 88
         },
@@ -605,6 +657,7 @@
           "rank": 3,
           "quality_score": 88,
           "cost_per_quality": 0.0000685,
+          "cost_per_hour_usd": 0.002647,
           "latency_p50_s": 0.699,
           "task_quality_score": 93
         },
@@ -614,6 +667,7 @@
           "rank": 4,
           "quality_score": 92,
           "cost_per_quality": 0.000306,
+          "cost_per_hour_usd": 0.01201,
           "latency_p50_s": 0.831,
           "task_quality_score": 96
         },
@@ -623,6 +677,7 @@
           "rank": 5,
           "quality_score": 91,
           "cost_per_quality": 0.001279,
+          "cost_per_hour_usd": 0.04944,
           "latency_p50_s": 0.854,
           "task_quality_score": 92
         }
@@ -644,6 +699,7 @@
           "rank": 1,
           "quality_score": 94,
           "cost_per_quality": 0.00006988,
+          "cost_per_hour_usd": 0.002813,
           "latency_p50_s": 0.87,
           "task_quality_score": 98
         },
@@ -653,6 +709,7 @@
           "rank": 2,
           "quality_score": 90,
           "cost_per_quality": 0.00008649,
+          "cost_per_hour_usd": 0.003188,
           "latency_p50_s": 0.898,
           "task_quality_score": 97
         },
@@ -662,6 +719,7 @@
           "rank": 3,
           "quality_score": 92,
           "cost_per_quality": 0.000306,
+          "cost_per_hour_usd": 0.01201,
           "latency_p50_s": 0.831,
           "task_quality_score": 96
         },
@@ -671,6 +729,7 @@
           "rank": 4,
           "quality_score": 93,
           "cost_per_quality": 0.00008451,
+          "cost_per_hour_usd": 0.003166,
           "latency_p50_s": 0.882,
           "task_quality_score": 94
         },
@@ -680,6 +739,7 @@
           "rank": 5,
           "quality_score": 88,
           "cost_per_quality": 0.0000685,
+          "cost_per_hour_usd": 0.002647,
           "latency_p50_s": 0.699,
           "task_quality_score": 93
         }
@@ -701,6 +761,7 @@
           "rank": 1,
           "quality_score": 95,
           "cost_per_quality": 0.003634,
+          "cost_per_hour_usd": 0.1365,
           "latency_p50_s": 1.936,
           "task_quality_score": 98
         },
@@ -710,6 +771,7 @@
           "rank": 2,
           "quality_score": 95,
           "cost_per_quality": 0.0001281,
+          "cost_per_hour_usd": 0.00427,
           "latency_p50_s": 1.694,
           "task_quality_score": 96
         },
@@ -719,6 +781,7 @@
           "rank": 3,
           "quality_score": 96,
           "cost_per_quality": 0.000756,
+          "cost_per_hour_usd": 0.02756,
           "latency_p50_s": 1.833,
           "task_quality_score": 96
         },
@@ -728,6 +791,7 @@
           "rank": 4,
           "quality_score": 95,
           "cost_per_quality": 0.0008921,
+          "cost_per_hour_usd": 0.01687,
           "latency_p50_s": 6.243,
           "task_quality_score": 96
         },
@@ -737,6 +801,7 @@
           "rank": 5,
           "quality_score": 93,
           "cost_per_quality": 0.002402,
+          "cost_per_hour_usd": 0.03586,
           "latency_p50_s": 1.877,
           "task_quality_score": 96
         }
@@ -758,6 +823,7 @@
           "rank": 1,
           "quality_score": 88,
           "cost_per_quality": 0.0000685,
+          "cost_per_hour_usd": 0.002647,
           "latency_p50_s": 0.699,
           "task_quality_score": 87
         },
@@ -767,6 +833,7 @@
           "rank": 2,
           "quality_score": 94,
           "cost_per_quality": 0.00006988,
+          "cost_per_hour_usd": 0.002813,
           "latency_p50_s": 0.87,
           "task_quality_score": 94
         },
@@ -776,6 +843,7 @@
           "rank": 3,
           "quality_score": 93,
           "cost_per_quality": 0.00008451,
+          "cost_per_hour_usd": 0.003166,
           "latency_p50_s": 0.882,
           "task_quality_score": 93
         },
@@ -785,6 +853,7 @@
           "rank": 4,
           "quality_score": 86,
           "cost_per_quality": 0.00009647,
+          "cost_per_hour_usd": 0.003389,
           "latency_p50_s": 1.03,
           "task_quality_score": 90
         },
@@ -794,6 +863,7 @@
           "rank": 5,
           "quality_score": 90,
           "cost_per_quality": 0.00008649,
+          "cost_per_hour_usd": 0.003188,
           "latency_p50_s": 0.898,
           "task_quality_score": 90
         }
@@ -815,6 +885,7 @@
           "rank": 1,
           "quality_score": 82,
           "cost_per_quality": 0.0001136,
+          "cost_per_hour_usd": 0.003042,
           "latency_p50_s": 0.506,
           "task_quality_score": 81
         },
@@ -824,6 +895,7 @@
           "rank": 2,
           "quality_score": 88,
           "cost_per_quality": 0.0000685,
+          "cost_per_hour_usd": 0.002647,
           "latency_p50_s": 0.699,
           "task_quality_score": 87
         },
@@ -833,6 +905,7 @@
           "rank": 3,
           "quality_score": 92,
           "cost_per_quality": 0.000306,
+          "cost_per_hour_usd": 0.01201,
           "latency_p50_s": 0.831,
           "task_quality_score": 93
         },
@@ -842,6 +915,7 @@
           "rank": 4,
           "quality_score": 91,
           "cost_per_quality": 0.001279,
+          "cost_per_hour_usd": 0.04944,
           "latency_p50_s": 0.854,
           "task_quality_score": 89
         },
@@ -851,6 +925,7 @@
           "rank": 5,
           "quality_score": 90,
           "cost_per_quality": 0.0002886,
+          "cost_per_hour_usd": 0.0113,
           "latency_p50_s": 0.858,
           "task_quality_score": 89
         }
@@ -872,6 +947,7 @@
           "rank": 1,
           "quality_score": 94,
           "cost_per_quality": 0.00006988,
+          "cost_per_hour_usd": 0.002813,
           "latency_p50_s": 0.87,
           "task_quality_score": 94
         },
@@ -881,6 +957,7 @@
           "rank": 2,
           "quality_score": 90,
           "cost_per_quality": 0.0001983,
+          "cost_per_hour_usd": 0.007548,
           "latency_p50_s": 0.894,
           "task_quality_score": 94
         },
@@ -890,6 +967,7 @@
           "rank": 3,
           "quality_score": 94,
           "cost_per_quality": 0.0002396,
+          "cost_per_hour_usd": 0.008183,
           "latency_p50_s": 1.338,
           "task_quality_score": 94
         },
@@ -899,6 +977,7 @@
           "rank": 4,
           "quality_score": 92,
           "cost_per_quality": 0.000306,
+          "cost_per_hour_usd": 0.01201,
           "latency_p50_s": 0.831,
           "task_quality_score": 93
         },
@@ -908,6 +987,7 @@
           "rank": 5,
           "quality_score": 93,
           "cost_per_quality": 0.00008451,
+          "cost_per_hour_usd": 0.003166,
           "latency_p50_s": 0.882,
           "task_quality_score": 93
         }
@@ -929,6 +1009,7 @@
           "rank": 1,
           "quality_score": 96,
           "cost_per_quality": 0.0001657,
+          "cost_per_hour_usd": 0.005361,
           "latency_p50_s": 2.487
         },
         {
@@ -937,6 +1018,7 @@
           "rank": 2,
           "quality_score": 96,
           "cost_per_quality": 0.000756,
+          "cost_per_hour_usd": 0.02756,
           "latency_p50_s": 1.833
         },
         {
@@ -945,6 +1027,7 @@
           "rank": 3,
           "quality_score": 96,
           "cost_per_quality": 0.001751,
+          "cost_per_hour_usd": 0.07427,
           "latency_p50_s": 3.233
         },
         {
@@ -953,6 +1036,7 @@
           "rank": 4,
           "quality_score": 96,
           "cost_per_quality": 0.007915,
+          "cost_per_hour_usd": 0.3085,
           "latency_p50_s": 2.46
         },
         {
@@ -961,6 +1045,7 @@
           "rank": 5,
           "quality_score": 95,
           "cost_per_quality": 0.0001281,
+          "cost_per_hour_usd": 0.00427,
           "latency_p50_s": 1.694
         }
       ]
@@ -981,6 +1066,7 @@
           "rank": 1,
           "quality_score": 88,
           "cost_per_quality": 0.0000685,
+          "cost_per_hour_usd": 0.002647,
           "latency_p50_s": 0.699
         },
         {
@@ -989,6 +1075,7 @@
           "rank": 2,
           "quality_score": 94,
           "cost_per_quality": 0.00006988,
+          "cost_per_hour_usd": 0.002813,
           "latency_p50_s": 0.87
         },
         {
@@ -997,6 +1084,7 @@
           "rank": 3,
           "quality_score": 93,
           "cost_per_quality": 0.00008451,
+          "cost_per_hour_usd": 0.003166,
           "latency_p50_s": 0.882
         },
         {
@@ -1005,6 +1093,7 @@
           "rank": 4,
           "quality_score": 90,
           "cost_per_quality": 0.00008649,
+          "cost_per_hour_usd": 0.003188,
           "latency_p50_s": 0.898
         },
         {
@@ -1013,6 +1102,7 @@
           "rank": 5,
           "quality_score": 86,
           "cost_per_quality": 0.00009647,
+          "cost_per_hour_usd": 0.003389,
           "latency_p50_s": 1.03
         }
       ]
@@ -1033,6 +1123,7 @@
           "rank": 1,
           "quality_score": 74,
           "cost_per_quality": 0.00009289,
+          "cost_per_hour_usd": 0.00262,
           "latency_p50_s": 0.28
         },
         {
@@ -1041,6 +1132,7 @@
           "rank": 2,
           "quality_score": 82,
           "cost_per_quality": 0.0001136,
+          "cost_per_hour_usd": 0.003042,
           "latency_p50_s": 0.506
         },
         {
@@ -1049,6 +1141,7 @@
           "rank": 3,
           "quality_score": 88,
           "cost_per_quality": 0.0000685,
+          "cost_per_hour_usd": 0.002647,
           "latency_p50_s": 0.699
         },
         {
@@ -1057,6 +1150,7 @@
           "rank": 4,
           "quality_score": 92,
           "cost_per_quality": 0.000306,
+          "cost_per_hour_usd": 0.01201,
           "latency_p50_s": 0.831
         },
         {
@@ -1065,6 +1159,7 @@
           "rank": 5,
           "quality_score": 91,
           "cost_per_quality": 0.001279,
+          "cost_per_hour_usd": 0.04944,
           "latency_p50_s": 0.854
         }
       ]
@@ -1085,6 +1180,7 @@
           "rank": 1,
           "quality_score": 94,
           "cost_per_quality": 0.00006988,
+          "cost_per_hour_usd": 0.002813,
           "latency_p50_s": 0.87
         },
         {
@@ -1093,6 +1189,7 @@
           "rank": 2,
           "quality_score": 94,
           "cost_per_quality": 0.0002396,
+          "cost_per_hour_usd": 0.008183,
           "latency_p50_s": 1.338
         },
         {
@@ -1101,6 +1198,7 @@
           "rank": 3,
           "quality_score": 93,
           "cost_per_quality": 0.00008451,
+          "cost_per_hour_usd": 0.003166,
           "latency_p50_s": 0.882
         },
         {
@@ -1109,6 +1207,7 @@
           "rank": 4,
           "quality_score": 93,
           "cost_per_quality": 0.001637,
+          "cost_per_hour_usd": 0.06414,
           "latency_p50_s": 1.363
         },
         {
@@ -1117,6 +1216,7 @@
           "rank": 5,
           "quality_score": 92,
           "cost_per_quality": 0.000306,
+          "cost_per_hour_usd": 0.01201,
           "latency_p50_s": 0.831
         }
       ]
@@ -1132,48 +1232,53 @@
       ],
       "models": [
         {
-          "model": "gemini-3.5-flash",
+          "model": "gemini-4-argon",
           "reasoning_effort": "default",
           "rank": 1,
+          "quality_score": 94,
+          "cost_per_quality": 0.003433,
+          "cost_per_hour_usd": 0.07282,
+          "latency_p50_s": 2.614,
+          "task_quality_score": 99
+        },
+        {
+          "model": "gemini-3.5-flash",
+          "reasoning_effort": "default",
+          "rank": 2,
           "quality_score": 92,
           "cost_per_quality": 0.01875,
+          "cost_per_hour_usd": 0.1879,
           "latency_p50_s": 7.957,
           "task_quality_score": 98
         },
         {
           "model": "gpt-6-luna",
           "reasoning_effort": "high",
-          "rank": 2,
+          "rank": 3,
           "quality_score": 93,
           "cost_per_quality": 0.0004221,
+          "cost_per_hour_usd": 0.006239,
           "latency_p50_s": 5.268,
           "task_quality_score": 97
         },
         {
           "model": "deepseek-v4.1-flash",
           "reasoning_effort": "default",
-          "rank": 3,
+          "rank": 4,
           "quality_score": 92,
           "cost_per_quality": 0.002661,
+          "cost_per_hour_usd": 0.01939,
           "latency_p50_s": 19.724,
           "task_quality_score": 97
         },
         {
           "model": "claude-opus-4-6",
           "reasoning_effort": "default",
-          "rank": 4,
-          "quality_score": 91,
-          "cost_per_quality": 0.009281,
-          "latency_p50_s": 3.13,
-          "task_quality_score": 97
-        },
-        {
-          "model": "gemini-3.6-flash",
-          "reasoning_effort": "default",
           "rank": 5,
           "quality_score": 91,
-          "cost_per_quality": 0.01557,
-          "latency_p50_s": 10.309,
+          "cost_per_quality": 0.009281,
+          "cost_per_hour_usd": 0.1899,
+          "latency_p50_s": 3.13,
           "task_quality_score": 97
         }
       ]
@@ -1194,6 +1299,7 @@
           "rank": 1,
           "quality_score": 89,
           "cost_per_quality": 0.0001686,
+          "cost_per_hour_usd": 0.003378,
           "latency_p50_s": 1.222,
           "task_quality_score": 96
         },
@@ -1203,6 +1309,7 @@
           "rank": 2,
           "quality_score": 89,
           "cost_per_quality": 0.0001773,
+          "cost_per_hour_usd": 0.003596,
           "latency_p50_s": 1.508,
           "task_quality_score": 96
         },
@@ -1212,6 +1319,7 @@
           "rank": 3,
           "quality_score": 91,
           "cost_per_quality": 0.0001729,
+          "cost_per_hour_usd": 0.003634,
           "latency_p50_s": 1.674,
           "task_quality_score": 96
         },
@@ -1221,6 +1329,7 @@
           "rank": 4,
           "quality_score": 90,
           "cost_per_quality": 0.0008623,
+          "cost_per_hour_usd": 0.005672,
           "latency_p50_s": 5.647,
           "task_quality_score": 95
         },
@@ -1230,6 +1339,7 @@
           "rank": 5,
           "quality_score": 92,
           "cost_per_quality": 0.0002752,
+          "cost_per_hour_usd": 0.004851,
           "latency_p50_s": 2.368,
           "task_quality_score": 95
         }
@@ -1251,6 +1361,7 @@
           "rank": 1,
           "quality_score": 79,
           "cost_per_quality": 0.000166,
+          "cost_per_hour_usd": 0.003144,
           "latency_p50_s": 0.972,
           "task_quality_score": 82
         },
@@ -1260,6 +1371,7 @@
           "rank": 2,
           "quality_score": 74,
           "cost_per_quality": 0.0002682,
+          "cost_per_hour_usd": 0.003595,
           "latency_p50_s": 1.02,
           "task_quality_score": 81
         },
@@ -1269,6 +1381,7 @@
           "rank": 3,
           "quality_score": 86,
           "cost_per_quality": 0.0007354,
+          "cost_per_hour_usd": 0.01499,
           "latency_p50_s": 1.063,
           "task_quality_score": 87
         },
@@ -1278,6 +1391,7 @@
           "rank": 4,
           "quality_score": 83,
           "cost_per_quality": 0.000503,
+          "cost_per_hour_usd": 0.009605,
           "latency_p50_s": 1.118,
           "task_quality_score": 84
         },
@@ -1287,6 +1401,7 @@
           "rank": 5,
           "quality_score": 87,
           "cost_per_quality": 0.0007613,
+          "cost_per_hour_usd": 0.01548,
           "latency_p50_s": 1.119,
           "task_quality_score": 88
         }
@@ -1308,6 +1423,7 @@
           "rank": 1,
           "quality_score": 89,
           "cost_per_quality": 0.0001686,
+          "cost_per_hour_usd": 0.003378,
           "latency_p50_s": 1.222,
           "task_quality_score": 96
         },
@@ -1317,6 +1433,7 @@
           "rank": 2,
           "quality_score": 89,
           "cost_per_quality": 0.0001773,
+          "cost_per_hour_usd": 0.003596,
           "latency_p50_s": 1.508,
           "task_quality_score": 96
         },
@@ -1326,6 +1443,7 @@
           "rank": 3,
           "quality_score": 91,
           "cost_per_quality": 0.0001729,
+          "cost_per_hour_usd": 0.003634,
           "latency_p50_s": 1.674,
           "task_quality_score": 96
         },
@@ -1335,6 +1453,7 @@
           "rank": 4,
           "quality_score": 89,
           "cost_per_quality": 0.003112,
+          "cost_per_hour_usd": 0.06366,
           "latency_p50_s": 1.927,
           "task_quality_score": 95
         },
@@ -1344,6 +1463,7 @@
           "rank": 5,
           "quality_score": 89,
           "cost_per_quality": 0.004185,
+          "cost_per_hour_usd": 0.08558,
           "latency_p50_s": 2.103,
           "task_quality_score": 94
         }
@@ -1365,6 +1485,7 @@
           "rank": 1,
           "quality_score": 93,
           "cost_per_quality": 0.0004221,
+          "cost_per_hour_usd": 0.006239,
           "latency_p50_s": 5.268,
           "task_quality_score": 93
         },
@@ -1374,34 +1495,38 @@
           "rank": 2,
           "quality_score": 92,
           "cost_per_quality": 0.000532,
+          "cost_per_hour_usd": 0.009926,
           "latency_p50_s": 2.199,
+          "task_quality_score": 91
+        },
+        {
+          "model": "gemini-4-argon",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 94,
+          "cost_per_quality": 0.003433,
+          "cost_per_hour_usd": 0.07282,
+          "latency_p50_s": 2.614,
           "task_quality_score": 91
         },
         {
           "model": "gpt-6-sol",
           "reasoning_effort": "default",
-          "rank": 3,
+          "rank": 4,
           "quality_score": 91,
           "cost_per_quality": 0.004819,
+          "cost_per_hour_usd": 0.09048,
           "latency_p50_s": 2.488,
           "task_quality_score": 91
         },
         {
           "model": "gpt-5.5",
           "reasoning_effort": "default",
-          "rank": 4,
+          "rank": 5,
           "quality_score": 92,
           "cost_per_quality": 0.01412,
+          "cost_per_hour_usd": 0.2631,
           "latency_p50_s": 3.154,
-          "task_quality_score": 91
-        },
-        {
-          "model": "gpt-6-astra",
-          "reasoning_effort": "default",
-          "rank": 5,
-          "quality_score": 94,
-          "cost_per_quality": 0.01789,
-          "latency_p50_s": 3.757,
           "task_quality_score": 91
         }
       ]
@@ -1422,6 +1547,7 @@
           "rank": 1,
           "quality_score": 89,
           "cost_per_quality": 0.0001686,
+          "cost_per_hour_usd": 0.003378,
           "latency_p50_s": 1.222,
           "task_quality_score": 85
         },
@@ -1431,6 +1557,7 @@
           "rank": 2,
           "quality_score": 91,
           "cost_per_quality": 0.0001729,
+          "cost_per_hour_usd": 0.003634,
           "latency_p50_s": 1.674,
           "task_quality_score": 89
         },
@@ -1440,6 +1567,7 @@
           "rank": 3,
           "quality_score": 84,
           "cost_per_quality": 0.0002087,
+          "cost_per_hour_usd": 0.003653,
           "latency_p50_s": 1.629,
           "task_quality_score": 83
         },
@@ -1449,6 +1577,7 @@
           "rank": 4,
           "quality_score": 89,
           "cost_per_quality": 0.0001773,
+          "cost_per_hour_usd": 0.003596,
           "latency_p50_s": 1.508,
           "task_quality_score": 83
         },
@@ -1458,6 +1587,7 @@
           "rank": 5,
           "quality_score": 90,
           "cost_per_quality": 0.0008623,
+          "cost_per_hour_usd": 0.005672,
           "latency_p50_s": 5.647,
           "task_quality_score": 81
         }
@@ -1479,6 +1609,7 @@
           "rank": 1,
           "quality_score": 79,
           "cost_per_quality": 0.000166,
+          "cost_per_hour_usd": 0.003144,
           "latency_p50_s": 0.972,
           "task_quality_score": 73
         },
@@ -1488,6 +1619,7 @@
           "rank": 2,
           "quality_score": 74,
           "cost_per_quality": 0.0002682,
+          "cost_per_hour_usd": 0.003595,
           "latency_p50_s": 1.02,
           "task_quality_score": 70
         },
@@ -1497,6 +1629,7 @@
           "rank": 3,
           "quality_score": 86,
           "cost_per_quality": 0.0007354,
+          "cost_per_hour_usd": 0.01499,
           "latency_p50_s": 1.063,
           "task_quality_score": 80
         },
@@ -1506,6 +1639,7 @@
           "rank": 4,
           "quality_score": 83,
           "cost_per_quality": 0.000503,
+          "cost_per_hour_usd": 0.009605,
           "latency_p50_s": 1.118,
           "task_quality_score": 83
         },
@@ -1515,6 +1649,7 @@
           "rank": 5,
           "quality_score": 87,
           "cost_per_quality": 0.0007613,
+          "cost_per_hour_usd": 0.01548,
           "latency_p50_s": 1.119,
           "task_quality_score": 85
         }
@@ -1536,6 +1671,7 @@
           "rank": 1,
           "quality_score": 92,
           "cost_per_quality": 0.000532,
+          "cost_per_hour_usd": 0.009926,
           "latency_p50_s": 2.199,
           "task_quality_score": 91
         },
@@ -1545,6 +1681,7 @@
           "rank": 2,
           "quality_score": 91,
           "cost_per_quality": 0.0001729,
+          "cost_per_hour_usd": 0.003634,
           "latency_p50_s": 1.674,
           "task_quality_score": 89
         },
@@ -1554,6 +1691,7 @@
           "rank": 3,
           "quality_score": 87,
           "cost_per_quality": 0.0007613,
+          "cost_per_hour_usd": 0.01548,
           "latency_p50_s": 1.119,
           "task_quality_score": 85
         },
@@ -1563,6 +1701,7 @@
           "rank": 4,
           "quality_score": 89,
           "cost_per_quality": 0.0001686,
+          "cost_per_hour_usd": 0.003378,
           "latency_p50_s": 1.222,
           "task_quality_score": 85
         }
@@ -1584,6 +1723,7 @@
           "rank": 1,
           "quality_score": 93,
           "cost_per_quality": 0.01413,
+          "cost_per_hour_usd": 0.2669,
           "latency_p50_s": 5.383,
           "task_quality_score": 99
         },
@@ -1593,6 +1733,7 @@
           "rank": 2,
           "quality_score": 94,
           "cost_per_quality": 0.01789,
+          "cost_per_hour_usd": 0.374,
           "latency_p50_s": 3.757,
           "task_quality_score": 98
         },
@@ -1602,6 +1743,7 @@
           "rank": 3,
           "quality_score": 91,
           "cost_per_quality": 0.001235,
+          "cost_per_hour_usd": 0.02664,
           "latency_p50_s": 2.296,
           "task_quality_score": 97
         },
@@ -1611,6 +1753,7 @@
           "rank": 4,
           "quality_score": 92,
           "cost_per_quality": 0.002661,
+          "cost_per_hour_usd": 0.01939,
           "latency_p50_s": 19.724,
           "task_quality_score": 97
         },
@@ -1620,6 +1763,7 @@
           "rank": 5,
           "quality_score": 91,
           "cost_per_quality": 0.007437,
+          "cost_per_hour_usd": 0.04129,
           "latency_p50_s": 4.159,
           "task_quality_score": 96
         }
@@ -1641,6 +1785,7 @@
           "rank": 1,
           "quality_score": 89,
           "cost_per_quality": 0.0001686,
+          "cost_per_hour_usd": 0.003378,
           "latency_p50_s": 1.222,
           "task_quality_score": 92
         },
@@ -1650,6 +1795,7 @@
           "rank": 2,
           "quality_score": 91,
           "cost_per_quality": 0.0001729,
+          "cost_per_hour_usd": 0.003634,
           "latency_p50_s": 1.674,
           "task_quality_score": 90
         },
@@ -1659,6 +1805,7 @@
           "rank": 3,
           "quality_score": 89,
           "cost_per_quality": 0.0001773,
+          "cost_per_hour_usd": 0.003596,
           "latency_p50_s": 1.508,
           "task_quality_score": 88
         },
@@ -1668,6 +1815,7 @@
           "rank": 4,
           "quality_score": 84,
           "cost_per_quality": 0.0002087,
+          "cost_per_hour_usd": 0.003653,
           "latency_p50_s": 1.629,
           "task_quality_score": 86
         },
@@ -1677,6 +1825,7 @@
           "rank": 5,
           "quality_score": 92,
           "cost_per_quality": 0.0002752,
+          "cost_per_hour_usd": 0.004851,
           "latency_p50_s": 2.368,
           "task_quality_score": 95
         }
@@ -1698,6 +1847,7 @@
           "rank": 1,
           "quality_score": 79,
           "cost_per_quality": 0.000166,
+          "cost_per_hour_usd": 0.003144,
           "latency_p50_s": 0.972,
           "task_quality_score": 89
         },
@@ -1707,6 +1857,7 @@
           "rank": 2,
           "quality_score": 74,
           "cost_per_quality": 0.0002682,
+          "cost_per_hour_usd": 0.003595,
           "latency_p50_s": 1.02,
           "task_quality_score": 78
         },
@@ -1716,6 +1867,7 @@
           "rank": 3,
           "quality_score": 86,
           "cost_per_quality": 0.0007354,
+          "cost_per_hour_usd": 0.01499,
           "latency_p50_s": 1.063,
           "task_quality_score": 92
         },
@@ -1725,6 +1877,7 @@
           "rank": 4,
           "quality_score": 83,
           "cost_per_quality": 0.000503,
+          "cost_per_hour_usd": 0.009605,
           "latency_p50_s": 1.118,
           "task_quality_score": 88
         },
@@ -1734,6 +1887,7 @@
           "rank": 5,
           "quality_score": 87,
           "cost_per_quality": 0.0007613,
+          "cost_per_hour_usd": 0.01548,
           "latency_p50_s": 1.119,
           "task_quality_score": 93
         }
@@ -1755,6 +1909,7 @@
           "rank": 1,
           "quality_score": 87,
           "cost_per_quality": 0.0007613,
+          "cost_per_hour_usd": 0.01548,
           "latency_p50_s": 1.119,
           "task_quality_score": 93
         },
@@ -1764,6 +1919,7 @@
           "rank": 2,
           "quality_score": 89,
           "cost_per_quality": 0.003112,
+          "cost_per_hour_usd": 0.06366,
           "latency_p50_s": 1.927,
           "task_quality_score": 93
         },
@@ -1773,6 +1929,7 @@
           "rank": 3,
           "quality_score": 86,
           "cost_per_quality": 0.0007354,
+          "cost_per_hour_usd": 0.01499,
           "latency_p50_s": 1.063,
           "task_quality_score": 92
         },
@@ -1782,6 +1939,7 @@
           "rank": 4,
           "quality_score": 89,
           "cost_per_quality": 0.0001686,
+          "cost_per_hour_usd": 0.003378,
           "latency_p50_s": 1.222,
           "task_quality_score": 92
         },
@@ -1791,6 +1949,7 @@
           "rank": 5,
           "quality_score": 91,
           "cost_per_quality": 0.0001729,
+          "cost_per_hour_usd": 0.003634,
           "latency_p50_s": 1.674,
           "task_quality_score": 90
         }
@@ -1812,6 +1971,7 @@
           "rank": 1,
           "quality_score": 93,
           "cost_per_quality": 0.004256,
+          "cost_per_hour_usd": 0.09065,
           "latency_p50_s": 6.761,
           "task_quality_score": 94
         },
@@ -1821,6 +1981,7 @@
           "rank": 2,
           "quality_score": 93,
           "cost_per_quality": 0.01413,
+          "cost_per_hour_usd": 0.2669,
           "latency_p50_s": 5.383,
           "task_quality_score": 93
         },
@@ -1830,6 +1991,7 @@
           "rank": 3,
           "quality_score": 94,
           "cost_per_quality": 0.01789,
+          "cost_per_hour_usd": 0.374,
           "latency_p50_s": 3.757,
           "task_quality_score": 93
         },
@@ -1839,6 +2001,7 @@
           "rank": 4,
           "quality_score": 93,
           "cost_per_quality": 0.01573,
+          "cost_per_hour_usd": 0.3239,
           "latency_p50_s": 5.02,
           "task_quality_score": 92
         },
@@ -1848,6 +2011,7 @@
           "rank": 5,
           "quality_score": 92,
           "cost_per_quality": 0.000532,
+          "cost_per_hour_usd": 0.009926,
           "latency_p50_s": 2.199,
           "task_quality_score": 91
         }
@@ -1869,6 +2033,7 @@
           "rank": 1,
           "quality_score": 89,
           "cost_per_quality": 0.0001773,
+          "cost_per_hour_usd": 0.003596,
           "latency_p50_s": 1.508,
           "task_quality_score": 89
         },
@@ -1878,6 +2043,7 @@
           "rank": 2,
           "quality_score": 91,
           "cost_per_quality": 0.0001729,
+          "cost_per_hour_usd": 0.003634,
           "latency_p50_s": 1.674,
           "task_quality_score": 88
         },
@@ -1887,6 +2053,7 @@
           "rank": 3,
           "quality_score": 89,
           "cost_per_quality": 0.0001686,
+          "cost_per_hour_usd": 0.003378,
           "latency_p50_s": 1.222,
           "task_quality_score": 85
         },
@@ -1896,6 +2063,7 @@
           "rank": 4,
           "quality_score": 84,
           "cost_per_quality": 0.0002087,
+          "cost_per_hour_usd": 0.003653,
           "latency_p50_s": 1.629,
           "task_quality_score": 83
         },
@@ -1905,6 +2073,7 @@
           "rank": 5,
           "quality_score": 92,
           "cost_per_quality": 0.0002752,
+          "cost_per_hour_usd": 0.004851,
           "latency_p50_s": 2.368,
           "task_quality_score": 87
         }
@@ -1926,6 +2095,7 @@
           "rank": 1,
           "quality_score": 79,
           "cost_per_quality": 0.000166,
+          "cost_per_hour_usd": 0.003144,
           "latency_p50_s": 0.972,
           "task_quality_score": 73
         },
@@ -1935,6 +2105,7 @@
           "rank": 2,
           "quality_score": 86,
           "cost_per_quality": 0.0007354,
+          "cost_per_hour_usd": 0.01499,
           "latency_p50_s": 1.063,
           "task_quality_score": 83
         },
@@ -1944,6 +2115,7 @@
           "rank": 3,
           "quality_score": 83,
           "cost_per_quality": 0.000503,
+          "cost_per_hour_usd": 0.009605,
           "latency_p50_s": 1.118,
           "task_quality_score": 78
         },
@@ -1953,6 +2125,7 @@
           "rank": 4,
           "quality_score": 87,
           "cost_per_quality": 0.0007613,
+          "cost_per_hour_usd": 0.01548,
           "latency_p50_s": 1.119,
           "task_quality_score": 83
         },
@@ -1962,6 +2135,7 @@
           "rank": 5,
           "quality_score": 87,
           "cost_per_quality": 0.002928,
+          "cost_per_hour_usd": 0.05951,
           "latency_p50_s": 1.156,
           "task_quality_score": 87
         }
@@ -1983,6 +2157,7 @@
           "rank": 1,
           "quality_score": 92,
           "cost_per_quality": 0.000532,
+          "cost_per_hour_usd": 0.009926,
           "latency_p50_s": 2.199,
           "task_quality_score": 91
         },
@@ -1992,6 +2167,7 @@
           "rank": 2,
           "quality_score": 89,
           "cost_per_quality": 0.0001773,
+          "cost_per_hour_usd": 0.003596,
           "latency_p50_s": 1.508,
           "task_quality_score": 89
         },
@@ -2001,6 +2177,7 @@
           "rank": 3,
           "quality_score": 91,
           "cost_per_quality": 0.0001729,
+          "cost_per_hour_usd": 0.003634,
           "latency_p50_s": 1.674,
           "task_quality_score": 88
         },
@@ -2010,6 +2187,7 @@
           "rank": 4,
           "quality_score": 89,
           "cost_per_quality": 0.003112,
+          "cost_per_hour_usd": 0.06366,
           "latency_p50_s": 1.927,
           "task_quality_score": 88
         },
@@ -2019,6 +2197,7 @@
           "rank": 5,
           "quality_score": 87,
           "cost_per_quality": 0.002928,
+          "cost_per_hour_usd": 0.05951,
           "latency_p50_s": 1.156,
           "task_quality_score": 87
         }
@@ -2035,44 +2214,49 @@
       ],
       "models": [
         {
-          "model": "gpt-6-astra",
+          "model": "gemini-4-argon",
           "reasoning_effort": "default",
           "rank": 1,
           "quality_score": 94,
+          "cost_per_quality": 0.003433,
+          "cost_per_hour_usd": 0.07282,
+          "latency_p50_s": 2.614
+        },
+        {
+          "model": "gpt-6-astra",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 94,
           "cost_per_quality": 0.01789,
+          "cost_per_hour_usd": 0.374,
           "latency_p50_s": 3.757
         },
         {
           "model": "gpt-6-luna",
           "reasoning_effort": "high",
-          "rank": 2,
+          "rank": 3,
           "quality_score": 93,
           "cost_per_quality": 0.0004221,
+          "cost_per_hour_usd": 0.006239,
           "latency_p50_s": 5.268
         },
         {
           "model": "gpt-6.1-sol",
           "reasoning_effort": "default",
-          "rank": 3,
+          "rank": 4,
           "quality_score": 93,
           "cost_per_quality": 0.004256,
+          "cost_per_hour_usd": 0.09065,
           "latency_p50_s": 6.761
         },
         {
           "model": "claude-opus-5-5",
           "reasoning_effort": "default",
-          "rank": 4,
-          "quality_score": 93,
-          "cost_per_quality": 0.01413,
-          "latency_p50_s": 5.383
-        },
-        {
-          "model": "claude-opus-5",
-          "reasoning_effort": "default",
           "rank": 5,
           "quality_score": 93,
-          "cost_per_quality": 0.01573,
-          "latency_p50_s": 5.02
+          "cost_per_quality": 0.01413,
+          "cost_per_hour_usd": 0.2669,
+          "latency_p50_s": 5.383
         }
       ]
     },
@@ -2092,6 +2276,7 @@
           "rank": 1,
           "quality_score": 89,
           "cost_per_quality": 0.0001686,
+          "cost_per_hour_usd": 0.003378,
           "latency_p50_s": 1.222
         },
         {
@@ -2100,6 +2285,7 @@
           "rank": 2,
           "quality_score": 91,
           "cost_per_quality": 0.0001729,
+          "cost_per_hour_usd": 0.003634,
           "latency_p50_s": 1.674
         },
         {
@@ -2108,6 +2294,7 @@
           "rank": 3,
           "quality_score": 89,
           "cost_per_quality": 0.0001773,
+          "cost_per_hour_usd": 0.003596,
           "latency_p50_s": 1.508
         },
         {
@@ -2116,6 +2303,7 @@
           "rank": 4,
           "quality_score": 84,
           "cost_per_quality": 0.0002087,
+          "cost_per_hour_usd": 0.003653,
           "latency_p50_s": 1.629
         },
         {
@@ -2124,6 +2312,7 @@
           "rank": 5,
           "quality_score": 92,
           "cost_per_quality": 0.0002752,
+          "cost_per_hour_usd": 0.004851,
           "latency_p50_s": 2.368
         }
       ]
@@ -2144,6 +2333,7 @@
           "rank": 1,
           "quality_score": 79,
           "cost_per_quality": 0.000166,
+          "cost_per_hour_usd": 0.003144,
           "latency_p50_s": 0.972
         },
         {
@@ -2152,6 +2342,7 @@
           "rank": 2,
           "quality_score": 74,
           "cost_per_quality": 0.0002682,
+          "cost_per_hour_usd": 0.003595,
           "latency_p50_s": 1.02
         },
         {
@@ -2160,6 +2351,7 @@
           "rank": 3,
           "quality_score": 86,
           "cost_per_quality": 0.0007354,
+          "cost_per_hour_usd": 0.01499,
           "latency_p50_s": 1.063
         },
         {
@@ -2168,6 +2360,7 @@
           "rank": 4,
           "quality_score": 83,
           "cost_per_quality": 0.000503,
+          "cost_per_hour_usd": 0.009605,
           "latency_p50_s": 1.118
         },
         {
@@ -2176,6 +2369,7 @@
           "rank": 5,
           "quality_score": 87,
           "cost_per_quality": 0.0007613,
+          "cost_per_hour_usd": 0.01548,
           "latency_p50_s": 1.119
         }
       ]
@@ -2196,6 +2390,7 @@
           "rank": 1,
           "quality_score": 91,
           "cost_per_quality": 0.0001729,
+          "cost_per_hour_usd": 0.003634,
           "latency_p50_s": 1.674
         },
         {
@@ -2204,6 +2399,7 @@
           "rank": 2,
           "quality_score": 89,
           "cost_per_quality": 0.0001686,
+          "cost_per_hour_usd": 0.003378,
           "latency_p50_s": 1.222
         },
         {
@@ -2212,6 +2408,7 @@
           "rank": 3,
           "quality_score": 89,
           "cost_per_quality": 0.0001773,
+          "cost_per_hour_usd": 0.003596,
           "latency_p50_s": 1.508
         },
         {
@@ -2220,6 +2417,7 @@
           "rank": 4,
           "quality_score": 89,
           "cost_per_quality": 0.003112,
+          "cost_per_hour_usd": 0.06366,
           "latency_p50_s": 1.927
         },
         {
@@ -2228,6 +2426,7 @@
           "rank": 5,
           "quality_score": 89,
           "cost_per_quality": 0.004185,
+          "cost_per_hour_usd": 0.08558,
           "latency_p50_s": 2.103
         }
       ]
@@ -2248,6 +2447,7 @@
           "rank": 1,
           "quality_score": 88,
           "cost_per_quality": 0.002526,
+          "cost_per_hour_usd": 0.006527,
           "latency_p50_s": 28.874,
           "task_quality_score": 86
         },
@@ -2257,6 +2457,7 @@
           "rank": 2,
           "quality_score": 87,
           "cost_per_quality": 0.001483,
+          "cost_per_hour_usd": 0.004828,
           "latency_p50_s": 15.461,
           "task_quality_score": 85
         }
@@ -2278,6 +2479,7 @@
           "rank": 1,
           "quality_score": 87,
           "cost_per_quality": 0.001483,
+          "cost_per_hour_usd": 0.004828,
           "latency_p50_s": 15.461,
           "task_quality_score": 85
         },
@@ -2287,6 +2489,7 @@
           "rank": 2,
           "quality_score": 88,
           "cost_per_quality": 0.002526,
+          "cost_per_hour_usd": 0.006527,
           "latency_p50_s": 28.874,
           "task_quality_score": 86
         },
@@ -2296,6 +2499,7 @@
           "rank": 3,
           "quality_score": 87,
           "cost_per_quality": 0.00281,
+          "cost_per_hour_usd": 0.009664,
           "latency_p50_s": 8.644,
           "task_quality_score": 84
         },
@@ -2305,6 +2509,7 @@
           "rank": 4,
           "quality_score": 83,
           "cost_per_quality": 0.01405,
+          "cost_per_hour_usd": 0.01915,
           "latency_p50_s": 92.667,
           "task_quality_score": 81
         },
@@ -2314,6 +2519,7 @@
           "rank": 5,
           "quality_score": 88,
           "cost_per_quality": 0.0247,
+          "cost_per_hour_usd": 0.09419,
           "latency_p50_s": 24.557,
           "task_quality_score": 83
         }
@@ -2335,6 +2541,7 @@
           "rank": 1,
           "quality_score": 88,
           "cost_per_quality": 0.07297,
+          "cost_per_hour_usd": 0.2694,
           "latency_p50_s": 17.712,
           "task_quality_score": 97
         },
@@ -2344,6 +2551,7 @@
           "rank": 2,
           "quality_score": 84,
           "cost_per_quality": 0.0009954,
+          "cost_per_hour_usd": 0.003605,
           "latency_p50_s": 3.613,
           "task_quality_score": 94
         },
@@ -2353,6 +2561,7 @@
           "rank": 3,
           "quality_score": 87,
           "cost_per_quality": 0.001483,
+          "cost_per_hour_usd": 0.004828,
           "latency_p50_s": 15.461,
           "task_quality_score": 94
         },
@@ -2362,6 +2571,7 @@
           "rank": 4,
           "quality_score": 88,
           "cost_per_quality": 0.1002,
+          "cost_per_hour_usd": 0.3781,
           "latency_p50_s": 13.102,
           "task_quality_score": 94
         },
@@ -2371,6 +2581,7 @@
           "rank": 5,
           "quality_score": 88,
           "cost_per_quality": 0.002526,
+          "cost_per_hour_usd": 0.006527,
           "latency_p50_s": 28.874,
           "task_quality_score": 93
         }
@@ -2392,6 +2603,7 @@
           "rank": 1,
           "quality_score": 84,
           "cost_per_quality": 0.0009954,
+          "cost_per_hour_usd": 0.003605,
           "latency_p50_s": 3.613,
           "task_quality_score": 94
         },
@@ -2401,6 +2613,7 @@
           "rank": 2,
           "quality_score": 87,
           "cost_per_quality": 0.001483,
+          "cost_per_hour_usd": 0.004828,
           "latency_p50_s": 15.461,
           "task_quality_score": 94
         },
@@ -2410,6 +2623,7 @@
           "rank": 3,
           "quality_score": 88,
           "cost_per_quality": 0.002526,
+          "cost_per_hour_usd": 0.006527,
           "latency_p50_s": 28.874,
           "task_quality_score": 93
         },
@@ -2419,6 +2633,7 @@
           "rank": 4,
           "quality_score": 81,
           "cost_per_quality": 0.001939,
+          "cost_per_hour_usd": 0.006341,
           "latency_p50_s": 8.493,
           "task_quality_score": 83
         },
@@ -2428,6 +2643,7 @@
           "rank": 5,
           "quality_score": 87,
           "cost_per_quality": 0.00281,
+          "cost_per_hour_usd": 0.009664,
           "latency_p50_s": 8.644,
           "task_quality_score": 88
         }
@@ -2449,6 +2665,7 @@
           "rank": 1,
           "quality_score": 89,
           "cost_per_quality": 0.07927,
+          "cost_per_hour_usd": 0.3244,
           "latency_p50_s": 14.862,
           "task_quality_score": 91
         },
@@ -2458,6 +2675,7 @@
           "rank": 2,
           "quality_score": 88,
           "cost_per_quality": 0.1002,
+          "cost_per_hour_usd": 0.3781,
           "latency_p50_s": 13.102,
           "task_quality_score": 91
         },
@@ -2467,6 +2685,7 @@
           "rank": 3,
           "quality_score": 87,
           "cost_per_quality": 0.02426,
+          "cost_per_hour_usd": 0.08713,
           "latency_p50_s": 9.823,
           "task_quality_score": 90
         },
@@ -2476,6 +2695,7 @@
           "rank": 4,
           "quality_score": 87,
           "cost_per_quality": 0.05171,
+          "cost_per_hour_usd": 0.1761,
           "latency_p50_s": 15.848,
           "task_quality_score": 90
         },
@@ -2485,6 +2705,7 @@
           "rank": 5,
           "quality_score": 87,
           "cost_per_quality": 0.00281,
+          "cost_per_hour_usd": 0.009664,
           "latency_p50_s": 8.644,
           "task_quality_score": 89
         }
@@ -2506,6 +2727,7 @@
           "rank": 1,
           "quality_score": 84,
           "cost_per_quality": 0.0009954,
+          "cost_per_hour_usd": 0.003605,
           "latency_p50_s": 3.613,
           "task_quality_score": 83
         },
@@ -2515,6 +2737,7 @@
           "rank": 2,
           "quality_score": 87,
           "cost_per_quality": 0.001483,
+          "cost_per_hour_usd": 0.004828,
           "latency_p50_s": 15.461,
           "task_quality_score": 83
         },
@@ -2524,6 +2747,7 @@
           "rank": 3,
           "quality_score": 81,
           "cost_per_quality": 0.001939,
+          "cost_per_hour_usd": 0.006341,
           "latency_p50_s": 8.493,
           "task_quality_score": 80
         },
@@ -2533,6 +2757,7 @@
           "rank": 4,
           "quality_score": 88,
           "cost_per_quality": 0.002526,
+          "cost_per_hour_usd": 0.006527,
           "latency_p50_s": 28.874,
           "task_quality_score": 85
         },
@@ -2542,6 +2767,7 @@
           "rank": 5,
           "quality_score": 87,
           "cost_per_quality": 0.00281,
+          "cost_per_hour_usd": 0.009664,
           "latency_p50_s": 8.644,
           "task_quality_score": 89
         }
@@ -2563,6 +2789,7 @@
           "rank": 1,
           "quality_score": 89,
           "cost_per_quality": 0.07927,
+          "cost_per_hour_usd": 0.3244,
           "latency_p50_s": 14.862
         },
         {
@@ -2571,6 +2798,7 @@
           "rank": 2,
           "quality_score": 88,
           "cost_per_quality": 0.002526,
+          "cost_per_hour_usd": 0.006527,
           "latency_p50_s": 28.874
         },
         {
@@ -2579,6 +2807,7 @@
           "rank": 3,
           "quality_score": 88,
           "cost_per_quality": 0.0247,
+          "cost_per_hour_usd": 0.09419,
           "latency_p50_s": 24.557
         },
         {
@@ -2587,6 +2816,7 @@
           "rank": 4,
           "quality_score": 88,
           "cost_per_quality": 0.07297,
+          "cost_per_hour_usd": 0.2694,
           "latency_p50_s": 17.712
         },
         {
@@ -2595,6 +2825,7 @@
           "rank": 5,
           "quality_score": 88,
           "cost_per_quality": 0.1002,
+          "cost_per_hour_usd": 0.3781,
           "latency_p50_s": 13.102
         }
       ]
@@ -2615,6 +2846,7 @@
           "rank": 1,
           "quality_score": 84,
           "cost_per_quality": 0.0009954,
+          "cost_per_hour_usd": 0.003605,
           "latency_p50_s": 3.613
         },
         {
@@ -2623,6 +2855,7 @@
           "rank": 2,
           "quality_score": 87,
           "cost_per_quality": 0.001483,
+          "cost_per_hour_usd": 0.004828,
           "latency_p50_s": 15.461
         },
         {
@@ -2631,6 +2864,7 @@
           "rank": 3,
           "quality_score": 81,
           "cost_per_quality": 0.001939,
+          "cost_per_hour_usd": 0.006341,
           "latency_p50_s": 8.493
         },
         {
@@ -2639,6 +2873,7 @@
           "rank": 4,
           "quality_score": 88,
           "cost_per_quality": 0.002526,
+          "cost_per_hour_usd": 0.006527,
           "latency_p50_s": 28.874
         },
         {
@@ -2647,6 +2882,7 @@
           "rank": 5,
           "quality_score": 87,
           "cost_per_quality": 0.00281,
+          "cost_per_hour_usd": 0.009664,
           "latency_p50_s": 8.644
         }
       ]
@@ -2667,6 +2903,7 @@
           "rank": 1,
           "quality_score": 89,
           "cost_per_quality": 0.07927,
+          "cost_per_hour_usd": 0.3244,
           "latency_p50_s": 14.862
         },
         {
@@ -2675,6 +2912,7 @@
           "rank": 2,
           "quality_score": 88,
           "cost_per_quality": 0.002526,
+          "cost_per_hour_usd": 0.006527,
           "latency_p50_s": 28.874
         },
         {
@@ -2683,6 +2921,7 @@
           "rank": 3,
           "quality_score": 88,
           "cost_per_quality": 0.07297,
+          "cost_per_hour_usd": 0.2694,
           "latency_p50_s": 17.712
         },
         {
@@ -2691,6 +2930,7 @@
           "rank": 4,
           "quality_score": 88,
           "cost_per_quality": 0.0247,
+          "cost_per_hour_usd": 0.09419,
           "latency_p50_s": 24.557
         },
         {
@@ -2699,6 +2939,7 @@
           "rank": 5,
           "quality_score": 88,
           "cost_per_quality": 0.1002,
+          "cost_per_hour_usd": 0.3781,
           "latency_p50_s": 13.102
         }
       ]
@@ -2719,6 +2960,7 @@
           "rank": 1,
           "quality_score": 87,
           "cost_per_quality": 0.1034,
+          "cost_per_hour_usd": 0.08997,
           "latency_p50_s": 23.508,
           "task_quality_score": 85
         }
@@ -2740,6 +2982,7 @@
           "rank": 1,
           "quality_score": 85,
           "cost_per_quality": 0.004616,
+          "cost_per_hour_usd": 0.003923,
           "latency_p50_s": 18.96,
           "task_quality_score": 82
         },
@@ -2749,6 +2992,7 @@
           "rank": 2,
           "quality_score": 85,
           "cost_per_quality": 0.005496,
+          "cost_per_hour_usd": 0.004671,
           "latency_p50_s": 37.574,
           "task_quality_score": 81
         },
@@ -2758,6 +3002,7 @@
           "rank": 3,
           "quality_score": 87,
           "cost_per_quality": 0.1034,
+          "cost_per_hour_usd": 0.08997,
           "latency_p50_s": 23.508,
           "task_quality_score": 85
         },
@@ -2767,6 +3012,7 @@
           "rank": 4,
           "quality_score": 85,
           "cost_per_quality": 0.09234,
+          "cost_per_hour_usd": 0.07849,
           "latency_p50_s": 12.047,
           "task_quality_score": 81
         },
@@ -2776,6 +3022,7 @@
           "rank": 5,
           "quality_score": 85,
           "cost_per_quality": 0.1738,
+          "cost_per_hour_usd": 0.1464,
           "latency_p50_s": 20.985,
           "task_quality_score": 83
         }
@@ -2797,6 +3044,7 @@
           "rank": 1,
           "quality_score": 83,
           "cost_per_quality": 0.01414,
+          "cost_per_hour_usd": 0.01173,
           "latency_p50_s": 73.266,
           "task_quality_score": 96
         },
@@ -2806,6 +3054,7 @@
           "rank": 2,
           "quality_score": 87,
           "cost_per_quality": 0.2757,
+          "cost_per_hour_usd": 0.2399,
           "latency_p50_s": 31.503,
           "task_quality_score": 95
         },
@@ -2815,6 +3064,7 @@
           "rank": 3,
           "quality_score": 88,
           "cost_per_quality": 0.4016,
+          "cost_per_hour_usd": 0.3534,
           "latency_p50_s": 24.054,
           "task_quality_score": 95
         },
@@ -2824,6 +3074,7 @@
           "rank": 4,
           "quality_score": 85,
           "cost_per_quality": 0.005496,
+          "cost_per_hour_usd": 0.004671,
           "latency_p50_s": 37.574,
           "task_quality_score": 92
         },
@@ -2833,6 +3084,7 @@
           "rank": 5,
           "quality_score": 85,
           "cost_per_quality": 0.004616,
+          "cost_per_hour_usd": 0.003923,
           "latency_p50_s": 18.96,
           "task_quality_score": 91
         }
@@ -2854,6 +3106,7 @@
           "rank": 1,
           "quality_score": 82,
           "cost_per_quality": 0.004129,
+          "cost_per_hour_usd": 0.003386,
           "latency_p50_s": 5.094,
           "task_quality_score": 90
         },
@@ -2863,6 +3116,7 @@
           "rank": 2,
           "quality_score": 85,
           "cost_per_quality": 0.004616,
+          "cost_per_hour_usd": 0.003923,
           "latency_p50_s": 18.96,
           "task_quality_score": 91
         },
@@ -2872,6 +3126,7 @@
           "rank": 3,
           "quality_score": 85,
           "cost_per_quality": 0.005496,
+          "cost_per_hour_usd": 0.004671,
           "latency_p50_s": 37.574,
           "task_quality_score": 92
         },
@@ -2881,6 +3136,7 @@
           "rank": 4,
           "quality_score": 83,
           "cost_per_quality": 0.009696,
+          "cost_per_hour_usd": 0.008048,
           "latency_p50_s": 13.73,
           "task_quality_score": 90
         },
@@ -2890,6 +3146,7 @@
           "rank": 5,
           "quality_score": 83,
           "cost_per_quality": 0.01414,
+          "cost_per_hour_usd": 0.01173,
           "latency_p50_s": 73.266,
           "task_quality_score": 96
         }
@@ -2911,6 +3168,7 @@
           "rank": 1,
           "quality_score": 84,
           "cost_per_quality": 0.01972,
+          "cost_per_hour_usd": 0.01656,
           "latency_p50_s": 14.734,
           "task_quality_score": 88
         },
@@ -2920,6 +3178,7 @@
           "rank": 2,
           "quality_score": 87,
           "cost_per_quality": 0.1034,
+          "cost_per_hour_usd": 0.08997,
           "latency_p50_s": 23.508,
           "task_quality_score": 86
         },
@@ -2929,6 +3188,7 @@
           "rank": 3,
           "quality_score": 88,
           "cost_per_quality": 0.4016,
+          "cost_per_hour_usd": 0.3534,
           "latency_p50_s": 24.054,
           "task_quality_score": 86
         },
@@ -2938,6 +3198,7 @@
           "rank": 4,
           "quality_score": 85,
           "cost_per_quality": 0.1745,
+          "cost_per_hour_usd": 0.1483,
           "latency_p50_s": 30.668,
           "task_quality_score": 85
         },
@@ -2947,6 +3208,7 @@
           "rank": 5,
           "quality_score": 84,
           "cost_per_quality": 0.2638,
+          "cost_per_hour_usd": 0.2216,
           "latency_p50_s": 29.842,
           "task_quality_score": 85
         }
@@ -2968,6 +3230,7 @@
           "rank": 1,
           "quality_score": 82,
           "cost_per_quality": 0.004129,
+          "cost_per_hour_usd": 0.003386,
           "latency_p50_s": 5.094,
           "task_quality_score": 80
         },
@@ -2977,6 +3240,7 @@
           "rank": 2,
           "quality_score": 85,
           "cost_per_quality": 0.004616,
+          "cost_per_hour_usd": 0.003923,
           "latency_p50_s": 18.96,
           "task_quality_score": 82
         },
@@ -2986,6 +3250,7 @@
           "rank": 3,
           "quality_score": 85,
           "cost_per_quality": 0.005496,
+          "cost_per_hour_usd": 0.004671,
           "latency_p50_s": 37.574,
           "task_quality_score": 81
         },
@@ -2995,6 +3260,7 @@
           "rank": 4,
           "quality_score": 83,
           "cost_per_quality": 0.009696,
+          "cost_per_hour_usd": 0.008048,
           "latency_p50_s": 13.73,
           "task_quality_score": 80
         },
@@ -3004,6 +3270,7 @@
           "rank": 5,
           "quality_score": 84,
           "cost_per_quality": 0.01972,
+          "cost_per_hour_usd": 0.01656,
           "latency_p50_s": 14.734,
           "task_quality_score": 88
         }
@@ -3025,6 +3292,7 @@
           "rank": 1,
           "quality_score": 88,
           "cost_per_quality": 0.4016,
+          "cost_per_hour_usd": 0.3534,
           "latency_p50_s": 24.054
         },
         {
@@ -3033,6 +3301,7 @@
           "rank": 2,
           "quality_score": 87,
           "cost_per_quality": 0.1034,
+          "cost_per_hour_usd": 0.08997,
           "latency_p50_s": 23.508
         },
         {
@@ -3041,6 +3310,7 @@
           "rank": 3,
           "quality_score": 87,
           "cost_per_quality": 0.2757,
+          "cost_per_hour_usd": 0.2399,
           "latency_p50_s": 31.503
         },
         {
@@ -3049,6 +3319,7 @@
           "rank": 4,
           "quality_score": 85,
           "cost_per_quality": 0.004616,
+          "cost_per_hour_usd": 0.003923,
           "latency_p50_s": 18.96
         },
         {
@@ -3057,6 +3328,7 @@
           "rank": 5,
           "quality_score": 85,
           "cost_per_quality": 0.005496,
+          "cost_per_hour_usd": 0.004671,
           "latency_p50_s": 37.574
         }
       ]
@@ -3077,6 +3349,7 @@
           "rank": 1,
           "quality_score": 82,
           "cost_per_quality": 0.004129,
+          "cost_per_hour_usd": 0.003386,
           "latency_p50_s": 5.094
         },
         {
@@ -3085,6 +3358,7 @@
           "rank": 2,
           "quality_score": 85,
           "cost_per_quality": 0.004616,
+          "cost_per_hour_usd": 0.003923,
           "latency_p50_s": 18.96
         },
         {
@@ -3093,6 +3367,7 @@
           "rank": 3,
           "quality_score": 85,
           "cost_per_quality": 0.005496,
+          "cost_per_hour_usd": 0.004671,
           "latency_p50_s": 37.574
         },
         {
@@ -3101,6 +3376,7 @@
           "rank": 4,
           "quality_score": 83,
           "cost_per_quality": 0.009696,
+          "cost_per_hour_usd": 0.008048,
           "latency_p50_s": 13.73
         },
         {
@@ -3109,6 +3385,7 @@
           "rank": 5,
           "quality_score": 83,
           "cost_per_quality": 0.01414,
+          "cost_per_hour_usd": 0.01173,
           "latency_p50_s": 73.266
         }
       ]
@@ -3129,6 +3406,7 @@
           "rank": 1,
           "quality_score": 88,
           "cost_per_quality": 0.4016,
+          "cost_per_hour_usd": 0.3534,
           "latency_p50_s": 24.054
         },
         {
@@ -3137,6 +3415,7 @@
           "rank": 2,
           "quality_score": 87,
           "cost_per_quality": 0.2757,
+          "cost_per_hour_usd": 0.2399,
           "latency_p50_s": 31.503
         },
         {
@@ -3145,6 +3424,7 @@
           "rank": 3,
           "quality_score": 87,
           "cost_per_quality": 0.1034,
+          "cost_per_hour_usd": 0.08997,
           "latency_p50_s": 23.508
         },
         {
@@ -3153,6 +3433,7 @@
           "rank": 4,
           "quality_score": 85,
           "cost_per_quality": 0.1738,
+          "cost_per_hour_usd": 0.1464,
           "latency_p50_s": 20.985
         },
         {
@@ -3161,6 +3442,7 @@
           "rank": 5,
           "quality_score": 85,
           "cost_per_quality": 0.09234,
+          "cost_per_hour_usd": 0.07849,
           "latency_p50_s": 12.047
         }
       ]
