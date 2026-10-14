@@ -309,6 +309,27 @@ cost over its own score). A row with no judged samples carries neither, the
 same "no data" convention as `quality_score` itself. See `summarize`'s doc
 comment in `summary.go`.
 
+## Cost per hour
+
+Every row also carries `cost_per_hour_usd`, which puts every bucket and task on
+the same footing: what one hour of audio would cost that model. A model's
+**hourly tokens** are the mean `prompt_tokens` and `completion_tokens` of its
+non-errored 3600s-bucket samples, pooled across tasks (per model and reasoning
+effort), reported as `hourly_prompt_tokens`/`hourly_completion_tokens` on every
+row of that model. A row's `cost_per_hour_usd` is its own blended cost per
+token (`total_cost_usd` over the prompt + completion tokens of the same judged
+samples) times the model's hourly prompt + completion tokens, so a 30s row
+answers "what would an hour cost if it looked like these calls".
+`task_cost_per_hour_usd` is the same restricted to one task's samples. A model
+with no 3600s samples, or a zero cost, carries none of these (blank in the CSV,
+`n/a` in the table). `use_cases.json`/`use_cases.html` show each model's
+`cost_per_hour_usd` (its combined row's) directly under its cost per quality.
+See `hourlyTokensByModel` and `costPerHour` in `summary.go`.
+
+Cost per hour is an estimate based on average per hour inputs. In each audio
+speakers may be particularly fast or slow talkers, thus skewing the real
+cost for any given transcript. 
+
 ## Use cases (`use_cases.json`)
 
 Every time `RunSummary` refreshes the canonical version's `summary.json` (i.e.

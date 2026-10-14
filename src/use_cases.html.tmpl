@@ -419,6 +419,8 @@
     cursor: help;
   }
 
+  .metric-label.metric-sub { margin-top: 0.5rem; }
+
   .metric-value {
     font-size: 0.85rem;
     font-weight: 700;
@@ -475,7 +477,7 @@
   <div class="wrap header-inner">
     <div>
       <h1>Model Recommendations</h1>
-      <p class="subtitle">Best-fit models per use case — dictation, summarization, extraction, text correction, and voice-agent turns — ranked by quality, cost per quality, and p50 latency from voice_bench benchmark results.</p>
+      <p class="subtitle">Best-fit models per use case — dictation, summarization, extraction, text correction, and voice-agent turns — ranked by quality, cost per quality, and p50 latency (with cost per hour alongside) from voice_bench benchmark results.</p>
     </div>
     <div class="header-stats">
       <div class="stat">
@@ -522,6 +524,7 @@
     <div><span class="dot q-mid"></span>Quality 70–89 — acceptable tier, where cost/latency start deciding</div>
     <div><span class="rank-badge mini rank-1">1</span> Rank badges show best fit first for that specific use case, not a global leaderboard</div>
     <div><strong>Cost / quality</strong> — cents spent per 1–100 quality point earned; lower is more cost-efficient</div>
+    <div><strong>Cost / hour</strong> — estimated USD to process one hour of audio: the model's mean tokens per 3600s call priced at this row's own cost per token</div>
     <div><strong>Task quality</strong> — score on just this use case's own task, alongside the model's combined score across every task</div>
     <div>Tag filters match <strong>any</strong> selected tag; search matches title, description, tags, and model names</div>
   </div>
@@ -565,6 +568,8 @@
                 <div class="metric">
                   <div class="metric-label" title="Mean cents per judged call, per 1-100 quality point earned">Cost / quality</div>
                   <div class="metric-value plain">{{.CostLabel}}</div>
+                  <div class="metric-label metric-sub" title="Estimated USD to process one hour of audio at this model's hourly token volume (mean tokens of its 3600s calls), priced at this row's own cost per token">Cost / hour</div>
+                  <div class="metric-value plain">{{.CostPerHourLabel}}</div>
                 </div>
                 <div class="metric">
                   <div class="metric-label" title="Median end-to-end response latency">Latency p50</div>

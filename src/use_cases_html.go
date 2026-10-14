@@ -86,6 +86,7 @@ type modelRowView struct {
 	TaskQualityScore     int
 	TaskQualityClass     string
 	CostLabel            string
+	CostPerHourLabel     string
 	LatencyLabel         string
 }
 
@@ -175,6 +176,7 @@ func modelRowViews(models []useCaseModel, seen map[string]bool) []modelRowView {
 			TaskQualityScore:     m.TaskQualityScore,
 			TaskQualityClass:     qualityClass(m.TaskQualityScore),
 			CostLabel:            formatCostPerQuality(m.CostPerQuality),
+			CostPerHourLabel:     formatCostPerHour(m.CostPerHourUSD),
 			LatencyLabel:         formatLatencyP50(m.LatencyP50S),
 		}
 	}
@@ -231,6 +233,17 @@ func formatCostPerQuality(v float64) string {
 	}
 
 	return strconv.FormatFloat(v, 'f', -1, 64) + "¢"
+}
+
+// formatCostPerHour renders a cost_per_hour_usd value as dollars -- 0.2399 ->
+// "$0.2399", 5 -> "$5" -- and zero (no 3600s basis, or no cost data) as "n/a",
+// matching summary.go's costPerHourString.
+func formatCostPerHour(v float64) string {
+	if v == 0 {
+		return "n/a"
+	}
+
+	return "$" + strconv.FormatFloat(v, 'f', -1, 64)
 }
 
 // formatLatencyP50 renders sub-second p50s in milliseconds -- "561 ms" reads

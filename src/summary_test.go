@@ -292,6 +292,76 @@ func TestSummarize_costPerQuality(t *testing.T) {
 	assert.InDelta(t, (5.0/1)/1, entry.TaskCostPerQuality["text_correction"], 1e-12, "text_correction's own single sample, its own worst score")
 }
 
+// TestSummarize_costPerHour locks in the arithmetic: the model's hourly tokens
+// are the mean of its 3600s-bucket samples (errored ones excluded), and every
+// row -- any bucket, and each task within it -- is priced at its own blended
+// cost per token times those hourly tokens.
+func TestSummarize_costPerHour(t *testing.T) {
+	judge := map[string]float64{"faithfulness": 5, "coverage": 5}
+	samples := []sourceSample{
+		// 3600s: mean prompt 3000, mean completion 1000 -> 4000 hourly tokens.
+		{Model: "m", Task: "summarization", Bucket: "3600s", PromptTokens: 2000, CompletionTokens: 500, CostUSD: 1, Judge: judge},
+		{Model: "m", Task: "summarization", Bucket: "3600s", PromptTokens: 4000, CompletionTokens: 1500, CostUSD: 1, Judge: judge},
+		{Model: "m", Task: "summarization", Bucket: "3600s", PromptTokens: 999999, CompletionTokens: 999999, CostUSD: 999, Error: "boom"},
+		// 30s: 1000 tokens for $0.10 across two tasks.
+		{Model: "m", Task: "summarization", Bucket: "30s", PromptTokens: 400, CompletionTokens: 100, CostUSD: 0.05, Judge: judge},
+		{Model: "m", Task: "text_correction", Bucket: "30s", PromptTokens: 250, CompletionTokens: 250, CostUSD: 0.05, Judge: map[string]float64{"faithfulness": 5, "improvement": 5}},
+		// Another model with no 3600s samples has no hourly basis at all.
+		{Model: "other", Task: "summarization", Bucket: "30s", PromptTokens: 100, CompletionTokens: 100, CostUSD: 1, Judge: judge},
+	}
+
+	byKey := map[string]summaryEntry{}
+	for _, e := range summarize(samples) {
+		byKey[e.Model+"/"+e.Bucket] = e
+	}
+
+	hour := byKey["m/3600s"]
+	assert.Equal(t, 3000, hour.HourlyPromptTokens)
+	assert.Equal(t, 1000, hour.HourlyCompletionTokens)
+	assert.InDelta(t, 1.0, hour.CostPerHourUSD, 1e-9, "$2 over its 8000 judged tokens, times 4000 hourly tokens")
+
+	short := byKey["m/30s"]
+	assert.Equal(t, 3000, short.HourlyPromptTokens, "every row of a model shows the same hourly basis")
+	assert.InDelta(t, 0.1/1000*4000, short.CostPerHourUSD, 1e-9, "$0.10 over 1000 tokens, scaled to 4000")
+	assert.InDelta(t, 0.05/500*4000, short.TaskCostPerHourUSD["summarization"], 1e-9)
+	assert.InDelta(t, 0.05/500*4000, short.TaskCostPerHourUSD["text_correction"], 1e-9)
+
+	other := byKey["other/30s"]
+	assert.Zero(t, other.HourlyPromptTokens)
+	assert.Zero(t, other.CostPerHourUSD, "no 3600s samples, no hourly basis, no cost per hour")
+	assert.Empty(t, other.TaskCostPerHourUSD)
+}
+
+// TestSummarize_costPerHourKeepsReasoningEffortsApart: the same model at two
+// efforts has different completion tokens, so each gets its own hourly basis.
+func TestSummarize_costPerHourKeepsReasoningEffortsApart(t *testing.T) {
+	judge := map[string]float64{"faithfulness": 5, "coverage": 5}
+	samples := []sourceSample{
+		{Model: "m", ReasoningEffort: "low", Task: "summarization", Bucket: "3600s", PromptTokens: 1000, CompletionTokens: 100, CostUSD: 1, Judge: judge},
+		{Model: "m", ReasoningEffort: "high", Task: "summarization", Bucket: "3600s", PromptTokens: 1000, CompletionTokens: 900, CostUSD: 1, Judge: judge},
+	}
+
+	got := map[string]int{}
+	for _, e := range summarize(samples) {
+		got[e.ReasoningEffort] = e.HourlyCompletionTokens
+	}
+
+	assert.Equal(t, map[string]int{"low": 100, "high": 900}, got)
+}
+
+// TestSummarize_costPerHourOmittedForZeroCost: an unpriced model has a zero
+// cost per hour, which is omitted rather than reported as a real $0.
+func TestSummarize_costPerHourOmittedForZeroCost(t *testing.T) {
+	judge := map[string]float64{"faithfulness": 5, "coverage": 5}
+	entries := summarize([]sourceSample{
+		{Model: "m", Task: "summarization", Bucket: "3600s", PromptTokens: 1000, CompletionTokens: 100, Judge: judge},
+	})
+
+	require.Len(t, entries, 1)
+	assert.Equal(t, 1000, entries[0].HourlyPromptTokens)
+	assert.Zero(t, entries[0].CostPerHourUSD)
+}
+
 // TestSummarize_costPerQualityIsIndependentOfSampleCount is the regression
 // test for cost_per_quality being a TOTAL over the score: two models with the
 // exact same per-call cost and the exact same quality must get the exact same
@@ -527,7 +597,9 @@ func TestWriteCSV(t *testing.T) {
 				{
 					Model: "gemini", Bucket: "30s", QualityScore: 83,
 					TotalCostUSD: 0.083, CostPerQuality: 0.001,
-					Latency: stats{N: 4, Min: 1, Max: 3, Mean: 2, P50: 1.5, P95: 2.5}, ErrorCount: 2, TokensPerSecond: 117.3,
+					HourlyPromptTokens: 12000, HourlyCompletionTokens: 3000, CostPerHourUSD: 1.25,
+					TaskCostPerHourUSD: map[string]float64{"summarization": 1.5, "text_correction": 0.75},
+					Latency:            stats{N: 4, Min: 1, Max: 3, Mean: 2, P50: 1.5, P95: 2.5}, ErrorCount: 2, TokensPerSecond: 117.3,
 					TTFT:               stats{N: 4, Min: 0.1, Max: 0.3, Mean: 0.2, P50: 0.2, P95: 0.25},
 					TaskQuality:        map[string]int{"summarization": 90, "text_correction": 76},
 					TaskCostUSD:        map[string]float64{"summarization": 0.18, "text_correction": 0.038},
@@ -560,6 +632,7 @@ func TestWriteCSV(t *testing.T) {
 		"quality_summarization", "quality_text_correction",
 		"cost_usd_summarization", "cost_usd_text_correction",
 		"cost_per_quality_summarization", "cost_per_quality_text_correction",
+		"cost_per_hour_usd_summarization", "cost_per_hour_usd_text_correction",
 	)
 	require.Len(t, rows[1], len(wantHeader), "one cell per header column, including the discovered task columns")
 	require.Len(t, rows[2], len(wantHeader))
@@ -567,18 +640,20 @@ func TestWriteCSV(t *testing.T) {
 	assert.Equal(t, wantHeader, rows[0], "quality_<task> columns are appended in sorted task-name order")
 	assert.Equal(t, []string{
 		"claude-opus-5", "gemini", "", "30s", "83", "0.083", "0.001",
+		"12000", "3000", "1.25",
 		"4", "2", "1", "2", "1.5", "2.5", "3", "117.3",
 		"4", "0.1", "0.2", "0.2", "0.25", "0.3",
 		"90", "76",
 		"0.18", "0.038",
 		"0.002", "0.0005",
+		"1.5", "0.75",
 	}, rows[1])
 
 	// error_count is the one exception to the blank-for-zero convention: this
 	// row has zero errors (a real, meaningful count), not "no data", so it
 	// must render as a literal "0" even though every other cell here is
 	// blank -- see csvRow.
-	wantBrokenRow := []string{"combined", "broken", "", "30s", "", "", "", "", "0"}
+	wantBrokenRow := []string{"combined", "broken", "", "30s", "", "", "", "", "", "", "", "0"}
 	wantBrokenRow = append(wantBrokenRow, make([]string, len(wantHeader)-len(wantBrokenRow))...)
 	assert.Equal(t, wantBrokenRow, rows[2],
 		"no data anywhere -- including no per-task breakdown for this (model, bucket) -- must render as blank cells, except error_count which is always a real number")
@@ -747,6 +822,22 @@ func TestPrintEntries_includesCostPerQualityColumns(t *testing.T) {
 	assert.Contains(t, output, "0.001¢", "the overall cost-per-quality must reach the printed table")
 	assert.Contains(t, output, "summarization=0.002¢ text_correction=0.0005¢", "sorted by task name")
 	assert.Contains(t, output, "n/a")
+}
+
+func TestPrintEntries_includesCostPerHourColumns(t *testing.T) {
+	entries := []summaryEntry{
+		{
+			Model: "gemini", Bucket: "30s", QualityScore: 83, CostPerHourUSD: 1.25,
+			TaskCostPerHourUSD: map[string]float64{"text_correction": 0.75, "summarization": 1.5},
+		},
+	}
+
+	var buf bytes.Buffer
+	printEntries(&buf, entries)
+
+	output := buf.String()
+	assert.Contains(t, output, "$1.25")
+	assert.Contains(t, output, "summarization=$1.5 text_correction=$0.75", "sorted by task name")
 }
 
 // TestPrintEntries_cheapCostPerQualityIsNotFlattened proves the printed table
