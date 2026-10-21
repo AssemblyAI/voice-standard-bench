@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-20T15:51:29.444860422Z",
+  "generated_at": "2026-10-21T22:59:58.601981293Z",
   "sources": [
     "report-claude-opus-5-5.json",
     "report-gpt-5.6-sol.json"
@@ -2404,6 +2404,207 @@
           "task_cost_per_hour_usd": {
             "information_extraction": 0.01239,
             "text_correction": 0.01811
+          }
+        },
+        {
+          "model": "deepseek-v4.1-flash-1017",
+          "reasoning_effort": "default",
+          "bucket": "30s",
+          "quality_score": 94,
+          "total_cost_usd": 0.026853,
+          "cost_per_quality": 0.0005713,
+          "hourly_prompt_tokens": 13646,
+          "hourly_completion_tokens": 12668,
+          "cost_per_hour_usd": 0.01922,
+          "latency": {
+            "n": 50,
+            "min": 1.104,
+            "max": 8.696,
+            "mean": 2.999,
+            "p50": 2.197,
+            "p95": 6.73
+          },
+          "tokens_per_second": 109.406,
+          "ttft": {
+            "n": 50,
+            "min": 0.944,
+            "max": 12.504,
+            "mean": 3.144,
+            "p50": 2.175,
+            "p95": 9.141
+          },
+          "task_quality": {
+            "dictation": 98,
+            "information_extraction": 90,
+            "summarization": 96,
+            "text_correction": 94
+          },
+          "task_cost_usd": {
+            "dictation": 0.007117,
+            "information_extraction": 0.005821,
+            "summarization": 0.003541,
+            "text_correction": 0.010374
+          },
+          "task_cost_per_quality": {
+            "dictation": 0.0003631,
+            "information_extraction": 0.0006468,
+            "summarization": 0.0003689,
+            "text_correction": 0.001104
+          },
+          "task_cost_per_hour_usd": {
+            "dictation": 0.01516,
+            "information_extraction": 0.01908,
+            "summarization": 0.0175,
+            "text_correction": 0.02468
+          }
+        },
+        {
+          "model": "deepseek-v4.1-flash-1017",
+          "reasoning_effort": "default",
+          "bucket": "120s",
+          "quality_score": 91,
+          "total_cost_usd": 0.087752,
+          "cost_per_quality": 0.001929,
+          "hourly_prompt_tokens": 13646,
+          "hourly_completion_tokens": 12668,
+          "cost_per_hour_usd": 0.02405,
+          "latency": {
+            "n": 50,
+            "min": 2.341,
+            "max": 33.755,
+            "mean": 9.536,
+            "p50": 6.605,
+            "p95": 29.263
+          },
+          "tokens_per_second": 125.623,
+          "ttft": {
+            "n": 50,
+            "min": 1.452,
+            "max": 50.061,
+            "mean": 9.896,
+            "p50": 6.331,
+            "p95": 23.373
+          },
+          "task_quality": {
+            "dictation": 97,
+            "information_extraction": 90,
+            "summarization": 93,
+            "text_correction": 84
+          },
+          "task_cost_usd": {
+            "dictation": 0.028224,
+            "information_extraction": 0.015449,
+            "summarization": 0.005718,
+            "text_correction": 0.038361
+          },
+          "task_cost_per_quality": {
+            "dictation": 0.001455,
+            "information_extraction": 0.001717,
+            "summarization": 0.0006148,
+            "text_correction": 0.004567
+          },
+          "task_cost_per_hour_usd": {
+            "dictation": 0.0235,
+            "information_extraction": 0.02218,
+            "summarization": 0.01598,
+            "text_correction": 0.02754
+          }
+        },
+        {
+          "model": "deepseek-v4.1-flash-1017",
+          "reasoning_effort": "default",
+          "bucket": "900s",
+          "quality_score": 76,
+          "total_cost_usd": 0.30757,
+          "cost_per_quality": 0.01349,
+          "hourly_prompt_tokens": 13646,
+          "hourly_completion_tokens": 12668,
+          "cost_per_hour_usd": 0.02483,
+          "latency": {
+            "n": 30,
+            "min": 4.934,
+            "max": 157.832,
+            "mean": 48.315,
+            "p50": 30.898,
+            "p95": 118.818
+          },
+          "tokens_per_second": 145.9,
+          "ttft": {
+            "n": 0,
+            "min": 0,
+            "max": 0,
+            "mean": 0,
+            "p50": 0,
+            "p95": 0
+          },
+          "task_quality": {
+            "information_extraction": 84,
+            "summarization": 85,
+            "text_correction": 58
+          },
+          "task_cost_usd": {
+            "information_extraction": 0.073928,
+            "summarization": 0.020924,
+            "text_correction": 0.212718
+          },
+          "task_cost_per_quality": {
+            "information_extraction": 0.008801,
+            "summarization": 0.002462,
+            "text_correction": 0.03668
+          },
+          "task_cost_per_hour_usd": {
+            "information_extraction": 0.0228,
+            "summarization": 0.01364,
+            "text_correction": 0.02796
+          }
+        },
+        {
+          "model": "deepseek-v4.1-flash-1017",
+          "reasoning_effort": "default",
+          "bucket": "3600s",
+          "quality_score": 71,
+          "total_cost_usd": 0.559577,
+          "cost_per_quality": 0.02718,
+          "hourly_prompt_tokens": 13646,
+          "hourly_completion_tokens": 12668,
+          "cost_per_hour_usd": 0.0193,
+          "latency": {
+            "n": 29,
+            "min": 6.963,
+            "max": 207.979,
+            "mean": 73.079,
+            "p50": 36.468,
+            "p95": 194.56
+          },
+          "error_count": 1,
+          "tokens_per_second": 153.007,
+          "ttft": {
+            "n": 0,
+            "min": 0,
+            "max": 0,
+            "mean": 0,
+            "p50": 0,
+            "p95": 0
+          },
+          "task_quality": {
+            "information_extraction": 78,
+            "summarization": 81,
+            "text_correction": 55
+          },
+          "task_cost_usd": {
+            "information_extraction": 0.110383,
+            "summarization": 0.064028,
+            "text_correction": 0.385166
+          },
+          "task_cost_per_quality": {
+            "information_extraction": 0.01415,
+            "summarization": 0.007905,
+            "text_correction": 0.07781
+          },
+          "task_cost_per_hour_usd": {
+            "information_extraction": 0.01493,
+            "summarization": 0.01086,
+            "text_correction": 0.02452
           }
         },
         {
@@ -13347,6 +13548,200 @@
             "information_extraction": 0.01032,
             "summarization": 0.008677,
             "text_correction": 0.01535
+          }
+        },
+        {
+          "model": "deepseek-v4.1-flash-1017",
+          "reasoning_effort": "default",
+          "bucket": "30s",
+          "quality_score": 95,
+          "total_cost_usd": 0.022318,
+          "cost_per_quality": 0.0007831,
+          "hourly_prompt_tokens": 13646,
+          "hourly_completion_tokens": 13055,
+          "cost_per_hour_usd": 0.02243,
+          "latency": {
+            "n": 30,
+            "min": 1.727,
+            "max": 11.267,
+            "mean": 4.348,
+            "p50": 3.065,
+            "p95": 10.758
+          },
+          "tokens_per_second": 115.719,
+          "ttft": {
+            "n": 50,
+            "min": 0.944,
+            "max": 12.504,
+            "mean": 3.144,
+            "p50": 2.175,
+            "p95": 9.141
+          },
+          "task_quality": {
+            "information_extraction": 93,
+            "summarization": 98,
+            "text_correction": 94
+          },
+          "task_cost_usd": {
+            "information_extraction": 0.007095,
+            "summarization": 0.003809,
+            "text_correction": 0.011414
+          },
+          "task_cost_per_quality": {
+            "information_extraction": 0.0007629,
+            "summarization": 0.0003887,
+            "text_correction": 0.001214
+          },
+          "task_cost_per_hour_usd": {
+            "information_extraction": 0.02084,
+            "summarization": 0.01834,
+            "text_correction": 0.02555
+          }
+        },
+        {
+          "model": "deepseek-v4.1-flash-1017",
+          "reasoning_effort": "default",
+          "bucket": "120s",
+          "quality_score": 92,
+          "total_cost_usd": 0.059643,
+          "cost_per_quality": 0.002161,
+          "hourly_prompt_tokens": 13646,
+          "hourly_completion_tokens": 13055,
+          "cost_per_hour_usd": 0.02469,
+          "latency": {
+            "n": 30,
+            "min": 2.058,
+            "max": 44.072,
+            "mean": 10.264,
+            "p50": 5.939,
+            "p95": 31.415
+          },
+          "tokens_per_second": 129.046,
+          "ttft": {
+            "n": 50,
+            "min": 1.452,
+            "max": 50.061,
+            "mean": 9.896,
+            "p50": 6.331,
+            "p95": 23.373
+          },
+          "task_quality": {
+            "information_extraction": 88,
+            "summarization": 98,
+            "text_correction": 90
+          },
+          "task_cost_usd": {
+            "information_extraction": 0.012842,
+            "summarization": 0.005563,
+            "text_correction": 0.041238
+          },
+          "task_cost_per_quality": {
+            "information_extraction": 0.001459,
+            "summarization": 0.0005677,
+            "text_correction": 0.004582
+          },
+          "task_cost_per_hour_usd": {
+            "information_extraction": 0.02122,
+            "summarization": 0.01599,
+            "text_correction": 0.02819
+          }
+        },
+        {
+          "model": "deepseek-v4.1-flash-1017",
+          "reasoning_effort": "default",
+          "bucket": "900s",
+          "quality_score": 76,
+          "total_cost_usd": 0.2926,
+          "cost_per_quality": 0.01328,
+          "hourly_prompt_tokens": 13646,
+          "hourly_completion_tokens": 13055,
+          "cost_per_hour_usd": 0.02517,
+          "latency": {
+            "n": 29,
+            "min": 4.095,
+            "max": 216.218,
+            "mean": 51.653,
+            "p50": 37.556,
+            "p95": 126.353
+          },
+          "error_count": 1,
+          "tokens_per_second": 143.084,
+          "ttft": {
+            "n": 0,
+            "min": 0,
+            "max": 0,
+            "mean": 0,
+            "p50": 0,
+            "p95": 0
+          },
+          "task_quality": {
+            "information_extraction": 86,
+            "summarization": 97,
+            "text_correction": 45
+          },
+          "task_cost_usd": {
+            "information_extraction": 0.070956,
+            "summarization": 0.021205,
+            "text_correction": 0.200439
+          },
+          "task_cost_per_quality": {
+            "information_extraction": 0.008251,
+            "summarization": 0.002186,
+            "text_correction": 0.04949
+          },
+          "task_cost_per_hour_usd": {
+            "information_extraction": 0.02287,
+            "summarization": 0.01395,
+            "text_correction": 0.02862
+          }
+        },
+        {
+          "model": "deepseek-v4.1-flash-1017",
+          "reasoning_effort": "default",
+          "bucket": "3600s",
+          "quality_score": 75,
+          "total_cost_usd": 0.573052,
+          "cost_per_quality": 0.02635,
+          "hourly_prompt_tokens": 13646,
+          "hourly_completion_tokens": 13055,
+          "cost_per_hour_usd": 0.01976,
+          "latency": {
+            "n": 29,
+            "min": 11.059,
+            "max": 233.609,
+            "mean": 83.036,
+            "p50": 41.678,
+            "p95": 224.408
+          },
+          "error_count": 1,
+          "tokens_per_second": 143.338,
+          "ttft": {
+            "n": 0,
+            "min": 0,
+            "max": 0,
+            "mean": 0,
+            "p50": 0,
+            "p95": 0
+          },
+          "task_quality": {
+            "information_extraction": 80,
+            "summarization": 95,
+            "text_correction": 49
+          },
+          "task_cost_usd": {
+            "information_extraction": 0.126468,
+            "summarization": 0.065425,
+            "text_correction": 0.381159
+          },
+          "task_cost_per_quality": {
+            "information_extraction": 0.01581,
+            "summarization": 0.006887,
+            "text_correction": 0.08643
+          },
+          "task_cost_per_hour_usd": {
+            "information_extraction": 0.01624,
+            "summarization": 0.01118,
+            "text_correction": 0.02482
           }
         },
         {
@@ -24696,6 +25091,208 @@
         "information_extraction": 0.01112,
         "summarization": 0.009214,
         "text_correction": 0.01642
+      }
+    },
+    {
+      "model": "deepseek-v4.1-flash-1017",
+      "reasoning_effort": "default",
+      "bucket": "30s",
+      "quality_score": 95,
+      "total_cost_usd": 0.049171,
+      "cost_per_quality": 0.000647,
+      "hourly_prompt_tokens": 13646,
+      "hourly_completion_tokens": 12862,
+      "cost_per_hour_usd": 0.02058,
+      "latency": {
+        "n": 80,
+        "min": 1.104,
+        "max": 11.267,
+        "mean": 3.505,
+        "p50": 2.367,
+        "p95": 7.944
+      },
+      "tokens_per_second": 111.774,
+      "ttft": {
+        "n": 50,
+        "min": 0.944,
+        "max": 12.504,
+        "mean": 3.144,
+        "p50": 2.175,
+        "p95": 9.141
+      },
+      "task_quality": {
+        "dictation": 98,
+        "information_extraction": 91,
+        "summarization": 97,
+        "text_correction": 94
+      },
+      "task_cost_usd": {
+        "dictation": 0.007117,
+        "information_extraction": 0.012916,
+        "summarization": 0.00735,
+        "text_correction": 0.021788
+      },
+      "task_cost_per_quality": {
+        "dictation": 0.0003631,
+        "information_extraction": 0.0007097,
+        "summarization": 0.0003789,
+        "text_correction": 0.001159
+      },
+      "task_cost_per_hour_usd": {
+        "dictation": 0.01527,
+        "information_extraction": 0.02,
+        "summarization": 0.01792,
+        "text_correction": 0.02513
+      }
+    },
+    {
+      "model": "deepseek-v4.1-flash-1017",
+      "reasoning_effort": "default",
+      "bucket": "120s",
+      "quality_score": 92,
+      "total_cost_usd": 0.147395,
+      "cost_per_quality": 0.002003,
+      "hourly_prompt_tokens": 13646,
+      "hourly_completion_tokens": 12862,
+      "cost_per_hour_usd": 0.02434,
+      "latency": {
+        "n": 80,
+        "min": 2.058,
+        "max": 44.072,
+        "mean": 9.809,
+        "p50": 6.555,
+        "p95": 29.263
+      },
+      "tokens_per_second": 126.907,
+      "ttft": {
+        "n": 50,
+        "min": 1.452,
+        "max": 50.061,
+        "mean": 9.896,
+        "p50": 6.331,
+        "p95": 23.373
+      },
+      "task_quality": {
+        "dictation": 97,
+        "information_extraction": 89,
+        "summarization": 95,
+        "text_correction": 87
+      },
+      "task_cost_usd": {
+        "dictation": 0.028224,
+        "information_extraction": 0.028291,
+        "summarization": 0.011281,
+        "text_correction": 0.079599
+      },
+      "task_cost_per_quality": {
+        "dictation": 0.001455,
+        "information_extraction": 0.001589,
+        "summarization": 0.0005937,
+        "text_correction": 0.004575
+      },
+      "task_cost_per_hour_usd": {
+        "dictation": 0.02367,
+        "information_extraction": 0.02175,
+        "summarization": 0.01599,
+        "text_correction": 0.02787
+      }
+    },
+    {
+      "model": "deepseek-v4.1-flash-1017",
+      "reasoning_effort": "default",
+      "bucket": "900s",
+      "quality_score": 76,
+      "total_cost_usd": 0.60017,
+      "cost_per_quality": 0.01338,
+      "hourly_prompt_tokens": 13646,
+      "hourly_completion_tokens": 12862,
+      "cost_per_hour_usd": 0.025,
+      "latency": {
+        "n": 59,
+        "min": 4.095,
+        "max": 216.218,
+        "mean": 49.956,
+        "p50": 34.603,
+        "p95": 126.353
+      },
+      "error_count": 1,
+      "tokens_per_second": 144.516,
+      "ttft": {
+        "n": 0,
+        "min": 0,
+        "max": 0,
+        "mean": 0,
+        "p50": 0,
+        "p95": 0
+      },
+      "task_quality": {
+        "information_extraction": 85,
+        "summarization": 91,
+        "text_correction": 52
+      },
+      "task_cost_usd": {
+        "information_extraction": 0.144884,
+        "summarization": 0.042129,
+        "text_correction": 0.413157
+      },
+      "task_cost_per_quality": {
+        "information_extraction": 0.008523,
+        "summarization": 0.002315,
+        "text_correction": 0.04182
+      },
+      "task_cost_per_hour_usd": {
+        "information_extraction": 0.02284,
+        "summarization": 0.0138,
+        "text_correction": 0.02828
+      }
+    },
+    {
+      "model": "deepseek-v4.1-flash-1017",
+      "reasoning_effort": "default",
+      "bucket": "3600s",
+      "quality_score": 73,
+      "total_cost_usd": 1.132629,
+      "cost_per_quality": 0.02675,
+      "hourly_prompt_tokens": 13646,
+      "hourly_completion_tokens": 12862,
+      "cost_per_hour_usd": 0.01953,
+      "latency": {
+        "n": 58,
+        "min": 6.963,
+        "max": 233.609,
+        "mean": 78.057,
+        "p50": 38.877,
+        "p95": 207.979
+      },
+      "error_count": 2,
+      "tokens_per_second": 148.173,
+      "ttft": {
+        "n": 0,
+        "min": 0,
+        "max": 0,
+        "mean": 0,
+        "p50": 0,
+        "p95": 0
+      },
+      "task_quality": {
+        "information_extraction": 79,
+        "summarization": 88,
+        "text_correction": 52
+      },
+      "task_cost_usd": {
+        "information_extraction": 0.236851,
+        "summarization": 0.129453,
+        "text_correction": 0.766325
+      },
+      "task_cost_per_quality": {
+        "information_extraction": 0.01499,
+        "summarization": 0.007355,
+        "text_correction": 0.08187
+      },
+      "task_cost_per_hour_usd": {
+        "information_extraction": 0.0156,
+        "summarization": 0.01102,
+        "text_correction": 0.02467
       }
     },
     {
