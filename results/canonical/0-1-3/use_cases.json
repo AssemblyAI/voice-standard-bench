@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-20T15:51:29.52966604Z",
+  "generated_at": "2026-10-21T22:59:58.663681545Z",
   "use_cases": [
     {
       "bucket": "30s",
@@ -1262,23 +1262,23 @@
           "task_quality_score": 97
         },
         {
-          "model": "deepseek-v4.1-flash",
+          "model": "deepseek-v4.1-flash-1017",
           "reasoning_effort": "default",
           "rank": 4,
+          "quality_score": 92,
+          "cost_per_quality": 0.002003,
+          "cost_per_hour_usd": 0.02434,
+          "latency_p50_s": 6.555,
+          "task_quality_score": 97
+        },
+        {
+          "model": "deepseek-v4.1-flash",
+          "reasoning_effort": "default",
+          "rank": 5,
           "quality_score": 92,
           "cost_per_quality": 0.002661,
           "cost_per_hour_usd": 0.01939,
           "latency_p50_s": 19.724,
-          "task_quality_score": 97
-        },
-        {
-          "model": "claude-opus-4-6",
-          "reasoning_effort": "default",
-          "rank": 5,
-          "quality_score": 91,
-          "cost_per_quality": 0.009281,
-          "cost_per_hour_usd": 0.1899,
-          "latency_p50_s": 3.13,
           "task_quality_score": 97
         }
       ]

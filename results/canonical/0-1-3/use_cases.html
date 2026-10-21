@@ -485,7 +485,7 @@
         <span class="stat-label">use cases</span>
       </div>
       <div class="stat">
-        <span class="stat-value">33</span>
+        <span class="stat-value">34</span>
         <span class="stat-label">models</span>
       </div>
       <div class="stat">
@@ -4287,6 +4287,41 @@
           <li class="model-row">
             <span class="rank-badge rank-4">4</span>
             <div class="model-main">
+              <code class="model-name">deepseek-v4.1-flash-1017</code>
+              <div class="metric-row">
+                <div class="metric">
+                  <div class="metric-label" title="1-100 combined score across every task, judged reference-free (mechanically for dictation)">Quality</div>
+                  <div class="bar"><div class="bar-fill q-high" style="width:92%"></div></div>
+                  <div class="metric-value">92</div>
+                </div>
+                
+                <div class="metric">
+                  <div class="metric-label" title="1-100 score on just this use case's own task">Task quality</div>
+                  <div class="bar"><div class="bar-fill q-high" style="width:97%"></div></div>
+                  <div class="metric-value">97</div>
+                </div>
+                
+                <div class="metric">
+                  <div class="metric-label" title="Mean cents per judged call, per 1-100 quality point earned">Cost / quality</div>
+                  <div class="metric-value plain">0.002003¢</div>
+                  <div class="metric-label metric-sub" title="Estimated USD to process one hour of audio at this model's hourly token volume (mean tokens of its 3600s calls), priced at this row's own cost per token">Cost / hour</div>
+                  <div class="metric-value plain">$0.02434</div>
+                </div>
+                <div class="metric">
+                  <div class="metric-label" title="Median end-to-end response latency">Latency p50</div>
+                  <div class="metric-value plain">6.55 s</div>
+                </div>
+                <div class="metric">
+                  <div class="metric-label" title="Reasoning effort requested for this model, or &quot;default&quot; when -reasoning-effort wasn't set or this model doesn't support it">Reasoning effort</div>
+                  <div class="metric-value plain">default</div>
+                </div>
+              </div>
+            </div>
+          </li>
+          
+          <li class="model-row">
+            <span class="rank-badge rank-5">5</span>
+            <div class="model-main">
               <code class="model-name">deepseek-v4.1-flash</code>
               <div class="metric-row">
                 <div class="metric">
@@ -4310,41 +4345,6 @@
                 <div class="metric">
                   <div class="metric-label" title="Median end-to-end response latency">Latency p50</div>
                   <div class="metric-value plain">19.72 s</div>
-                </div>
-                <div class="metric">
-                  <div class="metric-label" title="Reasoning effort requested for this model, or &quot;default&quot; when -reasoning-effort wasn't set or this model doesn't support it">Reasoning effort</div>
-                  <div class="metric-value plain">default</div>
-                </div>
-              </div>
-            </div>
-          </li>
-          
-          <li class="model-row">
-            <span class="rank-badge rank-5">5</span>
-            <div class="model-main">
-              <code class="model-name">claude-opus-4-6</code>
-              <div class="metric-row">
-                <div class="metric">
-                  <div class="metric-label" title="1-100 combined score across every task, judged reference-free (mechanically for dictation)">Quality</div>
-                  <div class="bar"><div class="bar-fill q-high" style="width:91%"></div></div>
-                  <div class="metric-value">91</div>
-                </div>
-                
-                <div class="metric">
-                  <div class="metric-label" title="1-100 score on just this use case's own task">Task quality</div>
-                  <div class="bar"><div class="bar-fill q-high" style="width:97%"></div></div>
-                  <div class="metric-value">97</div>
-                </div>
-                
-                <div class="metric">
-                  <div class="metric-label" title="Mean cents per judged call, per 1-100 quality point earned">Cost / quality</div>
-                  <div class="metric-value plain">0.009281¢</div>
-                  <div class="metric-label metric-sub" title="Estimated USD to process one hour of audio at this model's hourly token volume (mean tokens of its 3600s calls), priced at this row's own cost per token">Cost / hour</div>
-                  <div class="metric-value plain">$0.1899</div>
-                </div>
-                <div class="metric">
-                  <div class="metric-label" title="Median end-to-end response latency">Latency p50</div>
-                  <div class="metric-value plain">3.13 s</div>
                 </div>
                 <div class="metric">
                   <div class="metric-label" title="Reasoning effort requested for this model, or &quot;default&quot; when -reasoning-effort wasn't set or this model doesn't support it">Reasoning effort</div>
@@ -10690,7 +10690,7 @@
 
 <footer>
   <div class="wrap">
-    Generated Oct 20, 2026 15:51 UTC from <a href="use_cases.json"><code>use_cases.json</code></a> — voice_bench benchmark (regenerate with <code>-refresh-canonical-summary</code>)
+    Generated Oct 21, 2026 22:59 UTC from <a href="use_cases.json"><code>use_cases.json</code></a> — voice_bench benchmark (regenerate with <code>-refresh-canonical-summary</code>)
   </div>
 </footer>
 
