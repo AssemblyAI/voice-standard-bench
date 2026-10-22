@@ -1198,6 +1198,16 @@
           "reasoning_effort": "default",
           "rank": 5,
           "quality_score": 92,
+          "cost_per_quality": 0.002003,
+          "cost_per_hour_usd": 0.02434,
+          "latency_p50_s": 6.555,
+          "task_quality_score": 97
+        },
+        {
+          "model": "deepseek-v4.1-flash",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 92,
           "cost_per_quality": 0.002661,
           "cost_per_hour_usd": 0.01939,
           "latency_p50_s": 19.724,
