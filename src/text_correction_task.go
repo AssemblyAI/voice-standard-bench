@@ -126,7 +126,7 @@ func (t *TextCorrectionTask) missedText(record TranscriptRecord) (string, error)
 // duplicated here for the same reason as dictation_task.go's
 // maxCompletionTokens -- sizing the request is this task's own call.
 func (t *TextCorrectionTask) maxCompletionTokens(input string, model ModelInfo) int {
-	want := estimatedTokens(input) + estimatedTokens(input)/5 + 64 + 15000 // input-sized, plus 20% headroom, plus thinking tokens
+	want := estimatedTokens(input) + estimatedTokens(input)/5 + 64 + 40000 // input-sized, plus 20% headroom, plus thinking tokens
 
 	if model.MaxCompletionTokens > 0 && want > model.MaxCompletionTokens {
 		want = model.MaxCompletionTokens

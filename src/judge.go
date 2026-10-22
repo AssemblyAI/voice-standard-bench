@@ -13,7 +13,7 @@ import (
 // judgeMaxTokens bounds the judge's reply. A couple of sentences of
 // chain-of-thought per rubric dimension plus a small trailing JSON object
 // comfortably fits well under this on every judge model tried.
-const judgeMaxTokens = 20000
+const judgeMaxTokens = 50000
 
 // JudgeError wraps every RunJudge failure mode — the completion call itself
 // failing (non-2xx, timeout, network error), a reply with no JSON object in
