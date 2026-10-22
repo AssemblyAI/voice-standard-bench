@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-21T22:59:58.663681545Z",
+  "generated_at": "2026-10-22T19:21:02.913542026Z",
   "use_cases": [
     {
       "bucket": "30s",
@@ -84,9 +84,19 @@
           "task_quality_score": 97
         },
         {
-          "model": "gpt-6-luna",
+          "model": "mercury-3",
           "reasoning_effort": "none",
           "rank": 2,
+          "quality_score": 88,
+          "cost_per_quality": 0.00006523,
+          "cost_per_hour_usd": 0.002392,
+          "latency_p50_s": 0.385,
+          "task_quality_score": 95
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "none",
+          "rank": 3,
           "quality_score": 94,
           "cost_per_quality": 0.00006988,
           "cost_per_hour_usd": 0.002813,
@@ -96,7 +106,7 @@
         {
           "model": "gemma-4-31b",
           "reasoning_effort": "none",
-          "rank": 3,
+          "rank": 4,
           "quality_score": 90,
           "cost_per_quality": 0.00008649,
           "cost_per_hour_usd": 0.003188,
@@ -106,22 +116,12 @@
         {
           "model": "gemma-4-31b",
           "reasoning_effort": "default",
-          "rank": 4,
+          "rank": 5,
           "quality_score": 93,
           "cost_per_quality": 0.00008451,
           "cost_per_hour_usd": 0.003166,
           "latency_p50_s": 0.882,
           "task_quality_score": 98
-        },
-        {
-          "model": "gpt-6-luna",
-          "reasoning_effort": "default",
-          "rank": 5,
-          "quality_score": 95,
-          "cost_per_quality": 0.0001281,
-          "cost_per_hour_usd": 0.00427,
-          "latency_p50_s": 1.694,
-          "task_quality_score": 97
         }
       ]
     },
@@ -146,9 +146,19 @@
           "task_quality_score": 81
         },
         {
+          "model": "mercury-3",
+          "reasoning_effort": "none",
+          "rank": 2,
+          "quality_score": 88,
+          "cost_per_quality": 0.00006523,
+          "cost_per_hour_usd": 0.002392,
+          "latency_p50_s": 0.385,
+          "task_quality_score": 95
+        },
+        {
           "model": "qwen3-32B",
           "reasoning_effort": "default",
-          "rank": 2,
+          "rank": 3,
           "quality_score": 82,
           "cost_per_quality": 0.0001136,
           "cost_per_hour_usd": 0.003042,
@@ -156,34 +166,24 @@
           "task_quality_score": 86
         },
         {
+          "model": "mercury-voice",
+          "reasoning_effort": "low",
+          "rank": 4,
+          "quality_score": 88,
+          "cost_per_quality": 0.0003426,
+          "cost_per_hour_usd": 0.006203,
+          "latency_p50_s": 0.546,
+          "task_quality_score": 98
+        },
+        {
           "model": "gemini-2.5-flash-lite",
           "reasoning_effort": "default",
-          "rank": 3,
+          "rank": 5,
           "quality_score": 88,
           "cost_per_quality": 0.0000685,
           "cost_per_hour_usd": 0.002647,
           "latency_p50_s": 0.699,
           "task_quality_score": 97
-        },
-        {
-          "model": "gemini-3.5-flash-lite",
-          "reasoning_effort": "low",
-          "rank": 4,
-          "quality_score": 92,
-          "cost_per_quality": 0.000306,
-          "cost_per_hour_usd": 0.01201,
-          "latency_p50_s": 0.831,
-          "task_quality_score": 98
-        },
-        {
-          "model": "gpt-4.1",
-          "reasoning_effort": "default",
-          "rank": 5,
-          "quality_score": 91,
-          "cost_per_quality": 0.001279,
-          "cost_per_hour_usd": 0.04944,
-          "latency_p50_s": 0.854,
-          "task_quality_score": 96
         }
       ]
     },
@@ -198,54 +198,44 @@
       ],
       "models": [
         {
-          "model": "gemma-4-31b",
-          "reasoning_effort": "none",
-          "rank": 1,
-          "quality_score": 90,
-          "cost_per_quality": 0.00008649,
-          "cost_per_hour_usd": 0.003188,
-          "latency_p50_s": 0.898,
-          "task_quality_score": 99
-        },
-        {
-          "model": "gemini-3.5-flash-lite",
+          "model": "mercury-voice",
           "reasoning_effort": "low",
-          "rank": 2,
-          "quality_score": 92,
-          "cost_per_quality": 0.000306,
-          "cost_per_hour_usd": 0.01201,
-          "latency_p50_s": 0.831,
+          "rank": 1,
+          "quality_score": 88,
+          "cost_per_quality": 0.0003426,
+          "cost_per_hour_usd": 0.006203,
+          "latency_p50_s": 0.546,
           "task_quality_score": 98
         },
         {
-          "model": "gpt-6-luna",
+          "model": "gemini-2.5-flash-lite",
+          "reasoning_effort": "default",
+          "rank": 2,
+          "quality_score": 88,
+          "cost_per_quality": 0.0000685,
+          "cost_per_hour_usd": 0.002647,
+          "latency_p50_s": 0.699,
+          "task_quality_score": 97
+        },
+        {
+          "model": "mercury-3",
           "reasoning_effort": "none",
           "rank": 3,
-          "quality_score": 94,
-          "cost_per_quality": 0.00006988,
-          "cost_per_hour_usd": 0.002813,
-          "latency_p50_s": 0.87,
-          "task_quality_score": 98
+          "quality_score": 88,
+          "cost_per_quality": 0.00006523,
+          "cost_per_hour_usd": 0.002392,
+          "latency_p50_s": 0.385,
+          "task_quality_score": 95
         },
         {
-          "model": "gemma-4-31b",
+          "model": "qwen3-32B",
           "reasoning_effort": "default",
           "rank": 4,
-          "quality_score": 93,
-          "cost_per_quality": 0.00008451,
-          "cost_per_hour_usd": 0.003166,
-          "latency_p50_s": 0.882,
-          "task_quality_score": 98
-        },
-        {
-          "model": "claude-haiku-4-5-20251001",
-          "reasoning_effort": "default",
-          "rank": 5,
-          "quality_score": 90,
-          "cost_per_quality": 0.0008263,
-          "cost_per_hour_usd": 0.03054,
-          "latency_p50_s": 0.991,
-          "task_quality_score": 98
+          "quality_score": 82,
+          "cost_per_quality": 0.0001136,
+          "cost_per_hour_usd": 0.003042,
+          "latency_p50_s": 0.506,
+          "task_quality_score": 86
         }
       ]
     },
@@ -322,9 +312,19 @@
       ],
       "models": [
         {
-          "model": "gpt-6-luna",
+          "model": "mercury-3",
           "reasoning_effort": "none",
           "rank": 1,
+          "quality_score": 88,
+          "cost_per_quality": 0.00006523,
+          "cost_per_hour_usd": 0.002392,
+          "latency_p50_s": 0.385,
+          "task_quality_score": 85
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "none",
+          "rank": 2,
           "quality_score": 94,
           "cost_per_quality": 0.00006988,
           "cost_per_hour_usd": 0.002813,
@@ -334,7 +334,7 @@
         {
           "model": "gemma-4-31b",
           "reasoning_effort": "default",
-          "rank": 2,
+          "rank": 3,
           "quality_score": 93,
           "cost_per_quality": 0.00008451,
           "cost_per_hour_usd": 0.003166,
@@ -344,7 +344,7 @@
         {
           "model": "glm-5.3-flash",
           "reasoning_effort": "default",
-          "rank": 3,
+          "rank": 4,
           "quality_score": 91,
           "cost_per_quality": 0.000205,
           "cost_per_hour_usd": 0.004276,
@@ -354,22 +354,12 @@
         {
           "model": "gpt-6-luna",
           "reasoning_effort": "default",
-          "rank": 4,
+          "rank": 5,
           "quality_score": 95,
           "cost_per_quality": 0.0001281,
           "cost_per_hour_usd": 0.00427,
           "latency_p50_s": 1.694,
           "task_quality_score": 88
-        },
-        {
-          "model": "gpt-6-luna",
-          "reasoning_effort": "high",
-          "rank": 5,
-          "quality_score": 96,
-          "cost_per_quality": 0.0001657,
-          "cost_per_hour_usd": 0.005361,
-          "latency_p50_s": 2.487,
-          "task_quality_score": 90
         }
       ]
     },
@@ -394,9 +384,19 @@
           "task_quality_score": 80
         },
         {
+          "model": "mercury-3",
+          "reasoning_effort": "none",
+          "rank": 2,
+          "quality_score": 88,
+          "cost_per_quality": 0.00006523,
+          "cost_per_hour_usd": 0.002392,
+          "latency_p50_s": 0.385,
+          "task_quality_score": 85
+        },
+        {
           "model": "qwen3-32B",
           "reasoning_effort": "default",
-          "rank": 2,
+          "rank": 3,
           "quality_score": 82,
           "cost_per_quality": 0.0001136,
           "cost_per_hour_usd": 0.003042,
@@ -404,34 +404,24 @@
           "task_quality_score": 71
         },
         {
+          "model": "mercury-voice",
+          "reasoning_effort": "low",
+          "rank": 4,
+          "quality_score": 88,
+          "cost_per_quality": 0.0003426,
+          "cost_per_hour_usd": 0.006203,
+          "latency_p50_s": 0.546,
+          "task_quality_score": 83
+        },
+        {
           "model": "gemini-2.5-flash-lite",
           "reasoning_effort": "default",
-          "rank": 3,
+          "rank": 5,
           "quality_score": 88,
           "cost_per_quality": 0.0000685,
           "cost_per_hour_usd": 0.002647,
           "latency_p50_s": 0.699,
           "task_quality_score": 74
-        },
-        {
-          "model": "gemini-3.5-flash-lite",
-          "reasoning_effort": "low",
-          "rank": 4,
-          "quality_score": 92,
-          "cost_per_quality": 0.000306,
-          "cost_per_hour_usd": 0.01201,
-          "latency_p50_s": 0.831,
-          "task_quality_score": 81
-        },
-        {
-          "model": "gpt-4.1",
-          "reasoning_effort": "default",
-          "rank": 5,
-          "quality_score": 91,
-          "cost_per_quality": 0.001279,
-          "cost_per_hour_usd": 0.04944,
-          "latency_p50_s": 0.854,
-          "task_quality_score": 86
         }
       ]
     },
@@ -446,54 +436,14 @@
       ],
       "models": [
         {
-          "model": "claude-sonnet-5-5",
-          "reasoning_effort": "default",
-          "rank": 1,
-          "quality_score": 93,
-          "cost_per_quality": 0.003114,
-          "cost_per_hour_usd": 0.1302,
-          "latency_p50_s": 1.444,
-          "task_quality_score": 93
-        },
-        {
-          "model": "claude-haiku-5-5",
-          "reasoning_effort": "default",
-          "rank": 2,
-          "quality_score": 92,
-          "cost_per_quality": 0.0001958,
-          "cost_per_hour_usd": 0.005924,
-          "latency_p50_s": 1.698,
-          "task_quality_score": 92
-        },
-        {
-          "model": "gpt-5.6-luna",
-          "reasoning_effort": "default",
-          "rank": 3,
-          "quality_score": 94,
-          "cost_per_quality": 0.0002396,
-          "cost_per_hour_usd": 0.008183,
-          "latency_p50_s": 1.338,
-          "task_quality_score": 91
-        },
-        {
-          "model": "gpt-6-sol",
-          "reasoning_effort": "default",
-          "rank": 4,
-          "quality_score": 95,
-          "cost_per_quality": 0.001972,
-          "cost_per_hour_usd": 0.07265,
-          "latency_p50_s": 1.524,
-          "task_quality_score": 89
-        },
-        {
-          "model": "gpt-6-luna",
+          "model": "mercury-3",
           "reasoning_effort": "none",
-          "rank": 5,
-          "quality_score": 94,
-          "cost_per_quality": 0.00006988,
-          "cost_per_hour_usd": 0.002813,
-          "latency_p50_s": 0.87,
-          "task_quality_score": 88
+          "rank": 1,
+          "quality_score": 88,
+          "cost_per_quality": 0.00006523,
+          "cost_per_hour_usd": 0.002392,
+          "latency_p50_s": 0.385,
+          "task_quality_score": 85
         }
       ]
     },
@@ -590,9 +540,19 @@
           "task_quality_score": 98
         },
         {
-          "model": "gemma-4-31b",
+          "model": "mercury-3",
           "reasoning_effort": "none",
           "rank": 3,
+          "quality_score": 88,
+          "cost_per_quality": 0.00006523,
+          "cost_per_hour_usd": 0.002392,
+          "latency_p50_s": 0.385,
+          "task_quality_score": 88
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "none",
+          "rank": 4,
           "quality_score": 90,
           "cost_per_quality": 0.00008649,
           "cost_per_hour_usd": 0.003188,
@@ -602,22 +562,12 @@
         {
           "model": "gemma-4-31b",
           "reasoning_effort": "default",
-          "rank": 4,
+          "rank": 5,
           "quality_score": 93,
           "cost_per_quality": 0.00008451,
           "cost_per_hour_usd": 0.003166,
           "latency_p50_s": 0.882,
           "task_quality_score": 94
-        },
-        {
-          "model": "gemma-4-31b",
-          "reasoning_effort": "low",
-          "rank": 5,
-          "quality_score": 86,
-          "cost_per_quality": 0.00009647,
-          "cost_per_hour_usd": 0.003389,
-          "latency_p50_s": 1.03,
-          "task_quality_score": 93
         }
       ]
     },
@@ -642,9 +592,19 @@
           "task_quality_score": 76
         },
         {
+          "model": "mercury-3",
+          "reasoning_effort": "none",
+          "rank": 2,
+          "quality_score": 88,
+          "cost_per_quality": 0.00006523,
+          "cost_per_hour_usd": 0.002392,
+          "latency_p50_s": 0.385,
+          "task_quality_score": 88
+        },
+        {
           "model": "qwen3-32B",
           "reasoning_effort": "default",
-          "rank": 2,
+          "rank": 3,
           "quality_score": 82,
           "cost_per_quality": 0.0001136,
           "cost_per_hour_usd": 0.003042,
@@ -652,34 +612,24 @@
           "task_quality_score": 88
         },
         {
+          "model": "mercury-voice",
+          "reasoning_effort": "low",
+          "rank": 4,
+          "quality_score": 88,
+          "cost_per_quality": 0.0003426,
+          "cost_per_hour_usd": 0.006203,
+          "latency_p50_s": 0.546,
+          "task_quality_score": 96
+        },
+        {
           "model": "gemini-2.5-flash-lite",
           "reasoning_effort": "default",
-          "rank": 3,
+          "rank": 5,
           "quality_score": 88,
           "cost_per_quality": 0.0000685,
           "cost_per_hour_usd": 0.002647,
           "latency_p50_s": 0.699,
           "task_quality_score": 93
-        },
-        {
-          "model": "gemini-3.5-flash-lite",
-          "reasoning_effort": "low",
-          "rank": 4,
-          "quality_score": 92,
-          "cost_per_quality": 0.000306,
-          "cost_per_hour_usd": 0.01201,
-          "latency_p50_s": 0.831,
-          "task_quality_score": 96
-        },
-        {
-          "model": "gpt-4.1",
-          "reasoning_effort": "default",
-          "rank": 5,
-          "quality_score": 91,
-          "cost_per_quality": 0.001279,
-          "cost_per_hour_usd": 0.04944,
-          "latency_p50_s": 0.854,
-          "task_quality_score": 92
         }
       ]
     },
@@ -694,54 +644,44 @@
       ],
       "models": [
         {
-          "model": "gpt-6-luna",
-          "reasoning_effort": "none",
-          "rank": 1,
-          "quality_score": 94,
-          "cost_per_quality": 0.00006988,
-          "cost_per_hour_usd": 0.002813,
-          "latency_p50_s": 0.87,
-          "task_quality_score": 98
-        },
-        {
-          "model": "gemma-4-31b",
-          "reasoning_effort": "none",
-          "rank": 2,
-          "quality_score": 90,
-          "cost_per_quality": 0.00008649,
-          "cost_per_hour_usd": 0.003188,
-          "latency_p50_s": 0.898,
-          "task_quality_score": 97
-        },
-        {
-          "model": "gemini-3.5-flash-lite",
+          "model": "mercury-voice",
           "reasoning_effort": "low",
-          "rank": 3,
-          "quality_score": 92,
-          "cost_per_quality": 0.000306,
-          "cost_per_hour_usd": 0.01201,
-          "latency_p50_s": 0.831,
+          "rank": 1,
+          "quality_score": 88,
+          "cost_per_quality": 0.0003426,
+          "cost_per_hour_usd": 0.006203,
+          "latency_p50_s": 0.546,
           "task_quality_score": 96
-        },
-        {
-          "model": "gemma-4-31b",
-          "reasoning_effort": "default",
-          "rank": 4,
-          "quality_score": 93,
-          "cost_per_quality": 0.00008451,
-          "cost_per_hour_usd": 0.003166,
-          "latency_p50_s": 0.882,
-          "task_quality_score": 94
         },
         {
           "model": "gemini-2.5-flash-lite",
           "reasoning_effort": "default",
-          "rank": 5,
+          "rank": 2,
           "quality_score": 88,
           "cost_per_quality": 0.0000685,
           "cost_per_hour_usd": 0.002647,
           "latency_p50_s": 0.699,
           "task_quality_score": 93
+        },
+        {
+          "model": "mercury-3",
+          "reasoning_effort": "none",
+          "rank": 3,
+          "quality_score": 88,
+          "cost_per_quality": 0.00006523,
+          "cost_per_hour_usd": 0.002392,
+          "latency_p50_s": 0.385,
+          "task_quality_score": 88
+        },
+        {
+          "model": "qwen3-32B",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 82,
+          "cost_per_quality": 0.0001136,
+          "cost_per_hour_usd": 0.003042,
+          "latency_p50_s": 0.506,
+          "task_quality_score": 88
         }
       ]
     },
@@ -818,9 +758,19 @@
       ],
       "models": [
         {
+          "model": "mercury-3",
+          "reasoning_effort": "none",
+          "rank": 1,
+          "quality_score": 88,
+          "cost_per_quality": 0.00006523,
+          "cost_per_hour_usd": 0.002392,
+          "latency_p50_s": 0.385,
+          "task_quality_score": 84
+        },
+        {
           "model": "gemini-2.5-flash-lite",
           "reasoning_effort": "default",
-          "rank": 1,
+          "rank": 2,
           "quality_score": 88,
           "cost_per_quality": 0.0000685,
           "cost_per_hour_usd": 0.002647,
@@ -830,7 +780,7 @@
         {
           "model": "gpt-6-luna",
           "reasoning_effort": "none",
-          "rank": 2,
+          "rank": 3,
           "quality_score": 94,
           "cost_per_quality": 0.00006988,
           "cost_per_hour_usd": 0.002813,
@@ -840,7 +790,7 @@
         {
           "model": "gemma-4-31b",
           "reasoning_effort": "default",
-          "rank": 3,
+          "rank": 4,
           "quality_score": 93,
           "cost_per_quality": 0.00008451,
           "cost_per_hour_usd": 0.003166,
@@ -850,21 +800,11 @@
         {
           "model": "gemma-4-31b",
           "reasoning_effort": "low",
-          "rank": 4,
+          "rank": 5,
           "quality_score": 86,
           "cost_per_quality": 0.00009647,
           "cost_per_hour_usd": 0.003389,
           "latency_p50_s": 1.03,
-          "task_quality_score": 90
-        },
-        {
-          "model": "gemma-4-31b",
-          "reasoning_effort": "none",
-          "rank": 5,
-          "quality_score": 90,
-          "cost_per_quality": 0.00008649,
-          "cost_per_hour_usd": 0.003188,
-          "latency_p50_s": 0.898,
           "task_quality_score": 90
         }
       ]
@@ -880,9 +820,19 @@
       ],
       "models": [
         {
+          "model": "mercury-3",
+          "reasoning_effort": "none",
+          "rank": 1,
+          "quality_score": 88,
+          "cost_per_quality": 0.00006523,
+          "cost_per_hour_usd": 0.002392,
+          "latency_p50_s": 0.385,
+          "task_quality_score": 84
+        },
+        {
           "model": "qwen3-32B",
           "reasoning_effort": "default",
-          "rank": 1,
+          "rank": 2,
           "quality_score": 82,
           "cost_per_quality": 0.0001136,
           "cost_per_hour_usd": 0.003042,
@@ -890,9 +840,19 @@
           "task_quality_score": 81
         },
         {
+          "model": "mercury-voice",
+          "reasoning_effort": "low",
+          "rank": 3,
+          "quality_score": 88,
+          "cost_per_quality": 0.0003426,
+          "cost_per_hour_usd": 0.006203,
+          "latency_p50_s": 0.546,
+          "task_quality_score": 76
+        },
+        {
           "model": "gemini-2.5-flash-lite",
           "reasoning_effort": "default",
-          "rank": 2,
+          "rank": 4,
           "quality_score": 88,
           "cost_per_quality": 0.0000685,
           "cost_per_hour_usd": 0.002647,
@@ -902,32 +862,12 @@
         {
           "model": "gemini-3.5-flash-lite",
           "reasoning_effort": "low",
-          "rank": 3,
+          "rank": 5,
           "quality_score": 92,
           "cost_per_quality": 0.000306,
           "cost_per_hour_usd": 0.01201,
           "latency_p50_s": 0.831,
           "task_quality_score": 93
-        },
-        {
-          "model": "gpt-4.1",
-          "reasoning_effort": "default",
-          "rank": 4,
-          "quality_score": 91,
-          "cost_per_quality": 0.001279,
-          "cost_per_hour_usd": 0.04944,
-          "latency_p50_s": 0.854,
-          "task_quality_score": 89
-        },
-        {
-          "model": "gemini-3.5-flash-lite",
-          "reasoning_effort": "default",
-          "rank": 5,
-          "quality_score": 90,
-          "cost_per_quality": 0.0002886,
-          "cost_per_hour_usd": 0.0113,
-          "latency_p50_s": 0.858,
-          "task_quality_score": 89
         }
       ]
     },
@@ -972,23 +912,23 @@
           "task_quality_score": 94
         },
         {
+          "model": "mercury-3",
+          "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 93,
+          "cost_per_quality": 0.0004568,
+          "cost_per_hour_usd": 0.00793,
+          "latency_p50_s": 1.368,
+          "task_quality_score": 94
+        },
+        {
           "model": "gemini-3.5-flash-lite",
           "reasoning_effort": "low",
-          "rank": 4,
+          "rank": 5,
           "quality_score": 92,
           "cost_per_quality": 0.000306,
           "cost_per_hour_usd": 0.01201,
           "latency_p50_s": 0.831,
-          "task_quality_score": 93
-        },
-        {
-          "model": "gemma-4-31b",
-          "reasoning_effort": "default",
-          "rank": 5,
-          "quality_score": 93,
-          "cost_per_quality": 0.00008451,
-          "cost_per_hour_usd": 0.003166,
-          "latency_p50_s": 0.882,
           "task_quality_score": 93
         }
       ]
@@ -1061,9 +1001,18 @@
       ],
       "models": [
         {
+          "model": "mercury-3",
+          "reasoning_effort": "none",
+          "rank": 1,
+          "quality_score": 88,
+          "cost_per_quality": 0.00006523,
+          "cost_per_hour_usd": 0.002392,
+          "latency_p50_s": 0.385
+        },
+        {
           "model": "gemini-2.5-flash-lite",
           "reasoning_effort": "default",
-          "rank": 1,
+          "rank": 2,
           "quality_score": 88,
           "cost_per_quality": 0.0000685,
           "cost_per_hour_usd": 0.002647,
@@ -1072,7 +1021,7 @@
         {
           "model": "gpt-6-luna",
           "reasoning_effort": "none",
-          "rank": 2,
+          "rank": 3,
           "quality_score": 94,
           "cost_per_quality": 0.00006988,
           "cost_per_hour_usd": 0.002813,
@@ -1081,7 +1030,7 @@
         {
           "model": "gemma-4-31b",
           "reasoning_effort": "default",
-          "rank": 3,
+          "rank": 4,
           "quality_score": 93,
           "cost_per_quality": 0.00008451,
           "cost_per_hour_usd": 0.003166,
@@ -1090,20 +1039,11 @@
         {
           "model": "gemma-4-31b",
           "reasoning_effort": "none",
-          "rank": 4,
+          "rank": 5,
           "quality_score": 90,
           "cost_per_quality": 0.00008649,
           "cost_per_hour_usd": 0.003188,
           "latency_p50_s": 0.898
-        },
-        {
-          "model": "gemma-4-31b",
-          "reasoning_effort": "low",
-          "rank": 5,
-          "quality_score": 86,
-          "cost_per_quality": 0.00009647,
-          "cost_per_hour_usd": 0.003389,
-          "latency_p50_s": 1.03
         }
       ]
     },
@@ -1127,40 +1067,40 @@
           "latency_p50_s": 0.28
         },
         {
+          "model": "mercury-3",
+          "reasoning_effort": "none",
+          "rank": 2,
+          "quality_score": 88,
+          "cost_per_quality": 0.00006523,
+          "cost_per_hour_usd": 0.002392,
+          "latency_p50_s": 0.385
+        },
+        {
           "model": "qwen3-32B",
           "reasoning_effort": "default",
-          "rank": 2,
+          "rank": 3,
           "quality_score": 82,
           "cost_per_quality": 0.0001136,
           "cost_per_hour_usd": 0.003042,
           "latency_p50_s": 0.506
         },
         {
+          "model": "mercury-voice",
+          "reasoning_effort": "low",
+          "rank": 4,
+          "quality_score": 88,
+          "cost_per_quality": 0.0003426,
+          "cost_per_hour_usd": 0.006203,
+          "latency_p50_s": 0.546
+        },
+        {
           "model": "gemini-2.5-flash-lite",
           "reasoning_effort": "default",
-          "rank": 3,
+          "rank": 5,
           "quality_score": 88,
           "cost_per_quality": 0.0000685,
           "cost_per_hour_usd": 0.002647,
           "latency_p50_s": 0.699
-        },
-        {
-          "model": "gemini-3.5-flash-lite",
-          "reasoning_effort": "low",
-          "rank": 4,
-          "quality_score": 92,
-          "cost_per_quality": 0.000306,
-          "cost_per_hour_usd": 0.01201,
-          "latency_p50_s": 0.831
-        },
-        {
-          "model": "gpt-4.1",
-          "reasoning_effort": "default",
-          "rank": 5,
-          "quality_score": 91,
-          "cost_per_quality": 0.001279,
-          "cost_per_hour_usd": 0.04944,
-          "latency_p50_s": 0.854
         }
       ]
     },
@@ -1175,49 +1115,31 @@
       ],
       "models": [
         {
-          "model": "gpt-6-luna",
+          "model": "mercury-3",
           "reasoning_effort": "none",
           "rank": 1,
-          "quality_score": 94,
-          "cost_per_quality": 0.00006988,
-          "cost_per_hour_usd": 0.002813,
-          "latency_p50_s": 0.87
+          "quality_score": 88,
+          "cost_per_quality": 0.00006523,
+          "cost_per_hour_usd": 0.002392,
+          "latency_p50_s": 0.385
         },
         {
-          "model": "gpt-5.6-luna",
-          "reasoning_effort": "default",
+          "model": "mercury-voice",
+          "reasoning_effort": "low",
           "rank": 2,
-          "quality_score": 94,
-          "cost_per_quality": 0.0002396,
-          "cost_per_hour_usd": 0.008183,
-          "latency_p50_s": 1.338
+          "quality_score": 88,
+          "cost_per_quality": 0.0003426,
+          "cost_per_hour_usd": 0.006203,
+          "latency_p50_s": 0.546
         },
         {
-          "model": "gemma-4-31b",
+          "model": "gemini-2.5-flash-lite",
           "reasoning_effort": "default",
           "rank": 3,
-          "quality_score": 93,
-          "cost_per_quality": 0.00008451,
-          "cost_per_hour_usd": 0.003166,
-          "latency_p50_s": 0.882
-        },
-        {
-          "model": "gpt-5.2",
-          "reasoning_effort": "default",
-          "rank": 4,
-          "quality_score": 93,
-          "cost_per_quality": 0.001637,
-          "cost_per_hour_usd": 0.06414,
-          "latency_p50_s": 1.363
-        },
-        {
-          "model": "gemini-3.5-flash-lite",
-          "reasoning_effort": "low",
-          "rank": 5,
-          "quality_score": 92,
-          "cost_per_quality": 0.000306,
-          "cost_per_hour_usd": 0.01201,
-          "latency_p50_s": 0.831
+          "quality_score": 88,
+          "cost_per_quality": 0.0000685,
+          "cost_per_hour_usd": 0.002647,
+          "latency_p50_s": 0.699
         }
       ]
     },
@@ -1276,6 +1198,16 @@
           "reasoning_effort": "default",
           "rank": 5,
           "quality_score": 92,
+          "cost_per_quality": 0.002003,
+          "cost_per_hour_usd": 0.02434,
+          "latency_p50_s": 6.555,
+          "task_quality_score": 97
+        },
+        {
+          "model": "deepseek-v4.1-flash",
+          "reasoning_effort": "default",
+          "rank": 5,
+          "quality_score": 92,
           "cost_per_quality": 0.002661,
           "cost_per_hour_usd": 0.01939,
           "latency_p50_s": 19.724,
@@ -1294,9 +1226,19 @@
       ],
       "models": [
         {
-          "model": "gpt-6-luna",
+          "model": "mercury-3",
           "reasoning_effort": "none",
           "rank": 1,
+          "quality_score": 82,
+          "cost_per_quality": 0.0001544,
+          "cost_per_hour_usd": 0.002782,
+          "latency_p50_s": 0.583,
+          "task_quality_score": 88
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "none",
+          "rank": 2,
           "quality_score": 89,
           "cost_per_quality": 0.0001686,
           "cost_per_hour_usd": 0.003378,
@@ -1306,7 +1248,7 @@
         {
           "model": "gemma-4-31b",
           "reasoning_effort": "default",
-          "rank": 2,
+          "rank": 3,
           "quality_score": 89,
           "cost_per_quality": 0.0001773,
           "cost_per_hour_usd": 0.003596,
@@ -1316,7 +1258,7 @@
         {
           "model": "gemma-4-31b",
           "reasoning_effort": "none",
-          "rank": 3,
+          "rank": 4,
           "quality_score": 91,
           "cost_per_quality": 0.0001729,
           "cost_per_hour_usd": 0.003634,
@@ -1326,21 +1268,11 @@
         {
           "model": "glm-5.3-flash",
           "reasoning_effort": "default",
-          "rank": 4,
+          "rank": 5,
           "quality_score": 90,
           "cost_per_quality": 0.0008623,
           "cost_per_hour_usd": 0.005672,
           "latency_p50_s": 5.647,
-          "task_quality_score": 95
-        },
-        {
-          "model": "gpt-6-luna",
-          "reasoning_effort": "default",
-          "rank": 5,
-          "quality_score": 92,
-          "cost_per_quality": 0.0002752,
-          "cost_per_hour_usd": 0.004851,
-          "latency_p50_s": 2.368,
           "task_quality_score": 95
         }
       ]
@@ -1356,9 +1288,29 @@
       ],
       "models": [
         {
+          "model": "mercury-3",
+          "reasoning_effort": "none",
+          "rank": 1,
+          "quality_score": 82,
+          "cost_per_quality": 0.0001544,
+          "cost_per_hour_usd": 0.002782,
+          "latency_p50_s": 0.583,
+          "task_quality_score": 88
+        },
+        {
+          "model": "mercury-voice",
+          "reasoning_effort": "low",
+          "rank": 2,
+          "quality_score": 86,
+          "cost_per_quality": 0.0005554,
+          "cost_per_hour_usd": 0.00675,
+          "latency_p50_s": 0.804,
+          "task_quality_score": 88
+        },
+        {
           "model": "gemini-2.5-flash-lite",
           "reasoning_effort": "default",
-          "rank": 1,
+          "rank": 3,
           "quality_score": 79,
           "cost_per_quality": 0.000166,
           "cost_per_hour_usd": 0.003144,
@@ -1368,7 +1320,7 @@
         {
           "model": "qwen3-32B",
           "reasoning_effort": "default",
-          "rank": 2,
+          "rank": 4,
           "quality_score": 74,
           "cost_per_quality": 0.0002682,
           "cost_per_hour_usd": 0.003595,
@@ -1378,32 +1330,12 @@
         {
           "model": "gemini-3.5-flash-lite",
           "reasoning_effort": "default",
-          "rank": 3,
+          "rank": 5,
           "quality_score": 86,
           "cost_per_quality": 0.0007354,
           "cost_per_hour_usd": 0.01499,
           "latency_p50_s": 1.063,
           "task_quality_score": 87
-        },
-        {
-          "model": "gemini-3.1-flash-lite",
-          "reasoning_effort": "default",
-          "rank": 4,
-          "quality_score": 83,
-          "cost_per_quality": 0.000503,
-          "cost_per_hour_usd": 0.009605,
-          "latency_p50_s": 1.118,
-          "task_quality_score": 84
-        },
-        {
-          "model": "gemini-3.5-flash-lite",
-          "reasoning_effort": "low",
-          "rank": 5,
-          "quality_score": 87,
-          "cost_per_quality": 0.0007613,
-          "cost_per_hour_usd": 0.01548,
-          "latency_p50_s": 1.119,
-          "task_quality_score": 88
         }
       ]
     },
@@ -1418,54 +1350,54 @@
       ],
       "models": [
         {
-          "model": "gpt-6-luna",
-          "reasoning_effort": "none",
+          "model": "gpt-4.1",
+          "reasoning_effort": "default",
           "rank": 1,
-          "quality_score": 89,
-          "cost_per_quality": 0.0001686,
-          "cost_per_hour_usd": 0.003378,
-          "latency_p50_s": 1.222,
-          "task_quality_score": 96
+          "quality_score": 87,
+          "cost_per_quality": 0.002928,
+          "cost_per_hour_usd": 0.05951,
+          "latency_p50_s": 1.156,
+          "task_quality_score": 90
         },
         {
-          "model": "gemma-4-31b",
-          "reasoning_effort": "default",
-          "rank": 2,
-          "quality_score": 89,
-          "cost_per_quality": 0.0001773,
-          "cost_per_hour_usd": 0.003596,
-          "latency_p50_s": 1.508,
-          "task_quality_score": 96
-        },
-        {
-          "model": "gemma-4-31b",
+          "model": "mercury-3",
           "reasoning_effort": "none",
+          "rank": 2,
+          "quality_score": 82,
+          "cost_per_quality": 0.0001544,
+          "cost_per_hour_usd": 0.002782,
+          "latency_p50_s": 0.583,
+          "task_quality_score": 88
+        },
+        {
+          "model": "mercury-voice",
+          "reasoning_effort": "low",
           "rank": 3,
-          "quality_score": 91,
-          "cost_per_quality": 0.0001729,
-          "cost_per_hour_usd": 0.003634,
-          "latency_p50_s": 1.674,
-          "task_quality_score": 96
+          "quality_score": 86,
+          "cost_per_quality": 0.0005554,
+          "cost_per_hour_usd": 0.00675,
+          "latency_p50_s": 0.804,
+          "task_quality_score": 88
         },
         {
-          "model": "gpt-5.1",
-          "reasoning_effort": "default",
+          "model": "gemini-3.5-flash-lite",
+          "reasoning_effort": "low",
           "rank": 4,
-          "quality_score": 89,
-          "cost_per_quality": 0.003112,
-          "cost_per_hour_usd": 0.06366,
-          "latency_p50_s": 1.927,
-          "task_quality_score": 95
+          "quality_score": 87,
+          "cost_per_quality": 0.0007613,
+          "cost_per_hour_usd": 0.01548,
+          "latency_p50_s": 1.119,
+          "task_quality_score": 88
         },
         {
-          "model": "gpt-5.2",
+          "model": "gemini-3.5-flash-lite",
           "reasoning_effort": "default",
           "rank": 5,
-          "quality_score": 89,
-          "cost_per_quality": 0.004185,
-          "cost_per_hour_usd": 0.08558,
-          "latency_p50_s": 2.103,
-          "task_quality_score": 94
+          "quality_score": 86,
+          "cost_per_quality": 0.0007354,
+          "cost_per_hour_usd": 0.01499,
+          "latency_p50_s": 1.063,
+          "task_quality_score": 87
         }
       ]
     },
@@ -1552,9 +1484,19 @@
           "task_quality_score": 85
         },
         {
-          "model": "gemma-4-31b",
+          "model": "mercury-3",
           "reasoning_effort": "none",
           "rank": 2,
+          "quality_score": 82,
+          "cost_per_quality": 0.0001544,
+          "cost_per_hour_usd": 0.002782,
+          "latency_p50_s": 0.583,
+          "task_quality_score": 80
+        },
+        {
+          "model": "gemma-4-31b",
+          "reasoning_effort": "none",
+          "rank": 3,
           "quality_score": 91,
           "cost_per_quality": 0.0001729,
           "cost_per_hour_usd": 0.003634,
@@ -1564,7 +1506,7 @@
         {
           "model": "gemma-4-31b",
           "reasoning_effort": "low",
-          "rank": 3,
+          "rank": 4,
           "quality_score": 84,
           "cost_per_quality": 0.0002087,
           "cost_per_hour_usd": 0.003653,
@@ -1574,22 +1516,12 @@
         {
           "model": "gemma-4-31b",
           "reasoning_effort": "default",
-          "rank": 4,
+          "rank": 5,
           "quality_score": 89,
           "cost_per_quality": 0.0001773,
           "cost_per_hour_usd": 0.003596,
           "latency_p50_s": 1.508,
           "task_quality_score": 83
-        },
-        {
-          "model": "glm-5.3-flash",
-          "reasoning_effort": "default",
-          "rank": 5,
-          "quality_score": 90,
-          "cost_per_quality": 0.0008623,
-          "cost_per_hour_usd": 0.005672,
-          "latency_p50_s": 5.647,
-          "task_quality_score": 81
         }
       ]
     },
@@ -1604,9 +1536,29 @@
       ],
       "models": [
         {
+          "model": "mercury-3",
+          "reasoning_effort": "none",
+          "rank": 1,
+          "quality_score": 82,
+          "cost_per_quality": 0.0001544,
+          "cost_per_hour_usd": 0.002782,
+          "latency_p50_s": 0.583,
+          "task_quality_score": 80
+        },
+        {
+          "model": "mercury-voice",
+          "reasoning_effort": "low",
+          "rank": 2,
+          "quality_score": 86,
+          "cost_per_quality": 0.0005554,
+          "cost_per_hour_usd": 0.00675,
+          "latency_p50_s": 0.804,
+          "task_quality_score": 86
+        },
+        {
           "model": "gemini-2.5-flash-lite",
           "reasoning_effort": "default",
-          "rank": 1,
+          "rank": 3,
           "quality_score": 79,
           "cost_per_quality": 0.000166,
           "cost_per_hour_usd": 0.003144,
@@ -1616,7 +1568,7 @@
         {
           "model": "qwen3-32B",
           "reasoning_effort": "default",
-          "rank": 2,
+          "rank": 4,
           "quality_score": 74,
           "cost_per_quality": 0.0002682,
           "cost_per_hour_usd": 0.003595,
@@ -1626,32 +1578,12 @@
         {
           "model": "gemini-3.5-flash-lite",
           "reasoning_effort": "default",
-          "rank": 3,
+          "rank": 5,
           "quality_score": 86,
           "cost_per_quality": 0.0007354,
           "cost_per_hour_usd": 0.01499,
           "latency_p50_s": 1.063,
           "task_quality_score": 80
-        },
-        {
-          "model": "gemini-3.1-flash-lite",
-          "reasoning_effort": "default",
-          "rank": 4,
-          "quality_score": 83,
-          "cost_per_quality": 0.000503,
-          "cost_per_hour_usd": 0.009605,
-          "latency_p50_s": 1.118,
-          "task_quality_score": 83
-        },
-        {
-          "model": "gemini-3.5-flash-lite",
-          "reasoning_effort": "low",
-          "rank": 5,
-          "quality_score": 87,
-          "cost_per_quality": 0.0007613,
-          "cost_per_hour_usd": 0.01548,
-          "latency_p50_s": 1.119,
-          "task_quality_score": 85
         }
       ]
     },
@@ -1666,29 +1598,19 @@
       ],
       "models": [
         {
-          "model": "gpt-5.6-luna",
-          "reasoning_effort": "default",
+          "model": "mercury-voice",
+          "reasoning_effort": "low",
           "rank": 1,
-          "quality_score": 92,
-          "cost_per_quality": 0.000532,
-          "cost_per_hour_usd": 0.009926,
-          "latency_p50_s": 2.199,
-          "task_quality_score": 91
-        },
-        {
-          "model": "gemma-4-31b",
-          "reasoning_effort": "none",
-          "rank": 2,
-          "quality_score": 91,
-          "cost_per_quality": 0.0001729,
-          "cost_per_hour_usd": 0.003634,
-          "latency_p50_s": 1.674,
-          "task_quality_score": 89
+          "quality_score": 86,
+          "cost_per_quality": 0.0005554,
+          "cost_per_hour_usd": 0.00675,
+          "latency_p50_s": 0.804,
+          "task_quality_score": 86
         },
         {
           "model": "gemini-3.5-flash-lite",
           "reasoning_effort": "low",
-          "rank": 3,
+          "rank": 2,
           "quality_score": 87,
           "cost_per_quality": 0.0007613,
           "cost_per_hour_usd": 0.01548,
@@ -1698,7 +1620,7 @@
         {
           "model": "gpt-6-luna",
           "reasoning_effort": "none",
-          "rank": 4,
+          "rank": 3,
           "quality_score": 89,
           "cost_per_quality": 0.0001686,
           "cost_per_hour_usd": 0.003378,
@@ -1728,9 +1650,19 @@
           "task_quality_score": 99
         },
         {
+          "model": "mercury-voice",
+          "reasoning_effort": "low",
+          "rank": 2,
+          "quality_score": 86,
+          "cost_per_quality": 0.0005554,
+          "cost_per_hour_usd": 0.00675,
+          "latency_p50_s": 0.804,
+          "task_quality_score": 98
+        },
+        {
           "model": "gpt-6-astra",
           "reasoning_effort": "default",
-          "rank": 2,
+          "rank": 3,
           "quality_score": 94,
           "cost_per_quality": 0.01789,
           "cost_per_hour_usd": 0.374,
@@ -1740,7 +1672,7 @@
         {
           "model": "gemini-3.8-flash",
           "reasoning_effort": "low",
-          "rank": 3,
+          "rank": 4,
           "quality_score": 91,
           "cost_per_quality": 0.001235,
           "cost_per_hour_usd": 0.02664,
@@ -1750,22 +1682,12 @@
         {
           "model": "deepseek-v4.1-flash",
           "reasoning_effort": "default",
-          "rank": 4,
+          "rank": 5,
           "quality_score": 92,
           "cost_per_quality": 0.002661,
           "cost_per_hour_usd": 0.01939,
           "latency_p50_s": 19.724,
           "task_quality_score": 97
-        },
-        {
-          "model": "glm-5.3",
-          "reasoning_effort": "default",
-          "rank": 5,
-          "quality_score": 91,
-          "cost_per_quality": 0.007437,
-          "cost_per_hour_usd": 0.04129,
-          "latency_p50_s": 4.159,
-          "task_quality_score": 96
         }
       ]
     },
@@ -1780,9 +1702,19 @@
       ],
       "models": [
         {
-          "model": "gpt-6-luna",
+          "model": "mercury-3",
           "reasoning_effort": "none",
           "rank": 1,
+          "quality_score": 82,
+          "cost_per_quality": 0.0001544,
+          "cost_per_hour_usd": 0.002782,
+          "latency_p50_s": 0.583,
+          "task_quality_score": 91
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "none",
+          "rank": 2,
           "quality_score": 89,
           "cost_per_quality": 0.0001686,
           "cost_per_hour_usd": 0.003378,
@@ -1792,7 +1724,7 @@
         {
           "model": "gemma-4-31b",
           "reasoning_effort": "none",
-          "rank": 2,
+          "rank": 3,
           "quality_score": 91,
           "cost_per_quality": 0.0001729,
           "cost_per_hour_usd": 0.003634,
@@ -1802,7 +1734,7 @@
         {
           "model": "gemma-4-31b",
           "reasoning_effort": "default",
-          "rank": 3,
+          "rank": 4,
           "quality_score": 89,
           "cost_per_quality": 0.0001773,
           "cost_per_hour_usd": 0.003596,
@@ -1812,22 +1744,12 @@
         {
           "model": "gemma-4-31b",
           "reasoning_effort": "low",
-          "rank": 4,
+          "rank": 5,
           "quality_score": 84,
           "cost_per_quality": 0.0002087,
           "cost_per_hour_usd": 0.003653,
           "latency_p50_s": 1.629,
           "task_quality_score": 86
-        },
-        {
-          "model": "gpt-6-luna",
-          "reasoning_effort": "default",
-          "rank": 5,
-          "quality_score": 92,
-          "cost_per_quality": 0.0002752,
-          "cost_per_hour_usd": 0.004851,
-          "latency_p50_s": 2.368,
-          "task_quality_score": 95
         }
       ]
     },
@@ -1842,9 +1764,29 @@
       ],
       "models": [
         {
+          "model": "mercury-3",
+          "reasoning_effort": "none",
+          "rank": 1,
+          "quality_score": 82,
+          "cost_per_quality": 0.0001544,
+          "cost_per_hour_usd": 0.002782,
+          "latency_p50_s": 0.583,
+          "task_quality_score": 91
+        },
+        {
+          "model": "mercury-voice",
+          "reasoning_effort": "low",
+          "rank": 2,
+          "quality_score": 86,
+          "cost_per_quality": 0.0005554,
+          "cost_per_hour_usd": 0.00675,
+          "latency_p50_s": 0.804,
+          "task_quality_score": 98
+        },
+        {
           "model": "gemini-2.5-flash-lite",
           "reasoning_effort": "default",
-          "rank": 1,
+          "rank": 3,
           "quality_score": 79,
           "cost_per_quality": 0.000166,
           "cost_per_hour_usd": 0.003144,
@@ -1854,7 +1796,7 @@
         {
           "model": "qwen3-32B",
           "reasoning_effort": "default",
-          "rank": 2,
+          "rank": 4,
           "quality_score": 74,
           "cost_per_quality": 0.0002682,
           "cost_per_hour_usd": 0.003595,
@@ -1864,32 +1806,12 @@
         {
           "model": "gemini-3.5-flash-lite",
           "reasoning_effort": "default",
-          "rank": 3,
+          "rank": 5,
           "quality_score": 86,
           "cost_per_quality": 0.0007354,
           "cost_per_hour_usd": 0.01499,
           "latency_p50_s": 1.063,
           "task_quality_score": 92
-        },
-        {
-          "model": "gemini-3.1-flash-lite",
-          "reasoning_effort": "default",
-          "rank": 4,
-          "quality_score": 83,
-          "cost_per_quality": 0.000503,
-          "cost_per_hour_usd": 0.009605,
-          "latency_p50_s": 1.118,
-          "task_quality_score": 88
-        },
-        {
-          "model": "gemini-3.5-flash-lite",
-          "reasoning_effort": "low",
-          "rank": 5,
-          "quality_score": 87,
-          "cost_per_quality": 0.0007613,
-          "cost_per_hour_usd": 0.01548,
-          "latency_p50_s": 1.119,
-          "task_quality_score": 93
         }
       ]
     },
@@ -1904,23 +1826,23 @@
       ],
       "models": [
         {
-          "model": "gemini-3.5-flash-lite",
+          "model": "mercury-voice",
           "reasoning_effort": "low",
           "rank": 1,
+          "quality_score": 86,
+          "cost_per_quality": 0.0005554,
+          "cost_per_hour_usd": 0.00675,
+          "latency_p50_s": 0.804,
+          "task_quality_score": 98
+        },
+        {
+          "model": "gemini-3.5-flash-lite",
+          "reasoning_effort": "low",
+          "rank": 2,
           "quality_score": 87,
           "cost_per_quality": 0.0007613,
           "cost_per_hour_usd": 0.01548,
           "latency_p50_s": 1.119,
-          "task_quality_score": 93
-        },
-        {
-          "model": "gpt-5.1",
-          "reasoning_effort": "default",
-          "rank": 2,
-          "quality_score": 89,
-          "cost_per_quality": 0.003112,
-          "cost_per_hour_usd": 0.06366,
-          "latency_p50_s": 1.927,
           "task_quality_score": 93
         },
         {
@@ -1934,24 +1856,24 @@
           "task_quality_score": 92
         },
         {
-          "model": "gpt-6-luna",
+          "model": "mercury-3",
           "reasoning_effort": "none",
           "rank": 4,
-          "quality_score": 89,
-          "cost_per_quality": 0.0001686,
-          "cost_per_hour_usd": 0.003378,
-          "latency_p50_s": 1.222,
-          "task_quality_score": 92
+          "quality_score": 82,
+          "cost_per_quality": 0.0001544,
+          "cost_per_hour_usd": 0.002782,
+          "latency_p50_s": 0.583,
+          "task_quality_score": 91
         },
         {
-          "model": "gemma-4-31b",
-          "reasoning_effort": "none",
+          "model": "gemini-2.5-flash-lite",
+          "reasoning_effort": "default",
           "rank": 5,
-          "quality_score": 91,
-          "cost_per_quality": 0.0001729,
-          "cost_per_hour_usd": 0.003634,
-          "latency_p50_s": 1.674,
-          "task_quality_score": 90
+          "quality_score": 79,
+          "cost_per_quality": 0.000166,
+          "cost_per_hour_usd": 0.003144,
+          "latency_p50_s": 0.972,
+          "task_quality_score": 89
         }
       ]
     },
@@ -2090,9 +2012,19 @@
       ],
       "models": [
         {
+          "model": "mercury-voice",
+          "reasoning_effort": "low",
+          "rank": 1,
+          "quality_score": 86,
+          "cost_per_quality": 0.0005554,
+          "cost_per_hour_usd": 0.00675,
+          "latency_p50_s": 0.804,
+          "task_quality_score": 73
+        },
+        {
           "model": "gemini-2.5-flash-lite",
           "reasoning_effort": "default",
-          "rank": 1,
+          "rank": 2,
           "quality_score": 79,
           "cost_per_quality": 0.000166,
           "cost_per_hour_usd": 0.003144,
@@ -2102,7 +2034,7 @@
         {
           "model": "gemini-3.5-flash-lite",
           "reasoning_effort": "default",
-          "rank": 2,
+          "rank": 3,
           "quality_score": 86,
           "cost_per_quality": 0.0007354,
           "cost_per_hour_usd": 0.01499,
@@ -2112,7 +2044,7 @@
         {
           "model": "gemini-3.1-flash-lite",
           "reasoning_effort": "default",
-          "rank": 3,
+          "rank": 4,
           "quality_score": 83,
           "cost_per_quality": 0.000503,
           "cost_per_hour_usd": 0.009605,
@@ -2122,22 +2054,12 @@
         {
           "model": "gemini-3.5-flash-lite",
           "reasoning_effort": "low",
-          "rank": 4,
+          "rank": 5,
           "quality_score": 87,
           "cost_per_quality": 0.0007613,
           "cost_per_hour_usd": 0.01548,
           "latency_p50_s": 1.119,
           "task_quality_score": 83
-        },
-        {
-          "model": "gpt-4.1",
-          "reasoning_effort": "default",
-          "rank": 5,
-          "quality_score": 87,
-          "cost_per_quality": 0.002928,
-          "cost_per_hour_usd": 0.05951,
-          "latency_p50_s": 1.156,
-          "task_quality_score": 87
         }
       ]
     },
@@ -2271,9 +2193,18 @@
       ],
       "models": [
         {
-          "model": "gpt-6-luna",
+          "model": "mercury-3",
           "reasoning_effort": "none",
           "rank": 1,
+          "quality_score": 82,
+          "cost_per_quality": 0.0001544,
+          "cost_per_hour_usd": 0.002782,
+          "latency_p50_s": 0.583
+        },
+        {
+          "model": "gpt-6-luna",
+          "reasoning_effort": "none",
+          "rank": 2,
           "quality_score": 89,
           "cost_per_quality": 0.0001686,
           "cost_per_hour_usd": 0.003378,
@@ -2282,7 +2213,7 @@
         {
           "model": "gemma-4-31b",
           "reasoning_effort": "none",
-          "rank": 2,
+          "rank": 3,
           "quality_score": 91,
           "cost_per_quality": 0.0001729,
           "cost_per_hour_usd": 0.003634,
@@ -2291,7 +2222,7 @@
         {
           "model": "gemma-4-31b",
           "reasoning_effort": "default",
-          "rank": 3,
+          "rank": 4,
           "quality_score": 89,
           "cost_per_quality": 0.0001773,
           "cost_per_hour_usd": 0.003596,
@@ -2300,20 +2231,11 @@
         {
           "model": "gemma-4-31b",
           "reasoning_effort": "low",
-          "rank": 4,
+          "rank": 5,
           "quality_score": 84,
           "cost_per_quality": 0.0002087,
           "cost_per_hour_usd": 0.003653,
           "latency_p50_s": 1.629
-        },
-        {
-          "model": "gpt-6-luna",
-          "reasoning_effort": "default",
-          "rank": 5,
-          "quality_score": 92,
-          "cost_per_quality": 0.0002752,
-          "cost_per_hour_usd": 0.004851,
-          "latency_p50_s": 2.368
         }
       ]
     },
@@ -2328,9 +2250,27 @@
       ],
       "models": [
         {
+          "model": "mercury-3",
+          "reasoning_effort": "none",
+          "rank": 1,
+          "quality_score": 82,
+          "cost_per_quality": 0.0001544,
+          "cost_per_hour_usd": 0.002782,
+          "latency_p50_s": 0.583
+        },
+        {
+          "model": "mercury-voice",
+          "reasoning_effort": "low",
+          "rank": 2,
+          "quality_score": 86,
+          "cost_per_quality": 0.0005554,
+          "cost_per_hour_usd": 0.00675,
+          "latency_p50_s": 0.804
+        },
+        {
           "model": "gemini-2.5-flash-lite",
           "reasoning_effort": "default",
-          "rank": 1,
+          "rank": 3,
           "quality_score": 79,
           "cost_per_quality": 0.000166,
           "cost_per_hour_usd": 0.003144,
@@ -2339,7 +2279,7 @@
         {
           "model": "qwen3-32B",
           "reasoning_effort": "default",
-          "rank": 2,
+          "rank": 4,
           "quality_score": 74,
           "cost_per_quality": 0.0002682,
           "cost_per_hour_usd": 0.003595,
@@ -2348,29 +2288,11 @@
         {
           "model": "gemini-3.5-flash-lite",
           "reasoning_effort": "default",
-          "rank": 3,
+          "rank": 5,
           "quality_score": 86,
           "cost_per_quality": 0.0007354,
           "cost_per_hour_usd": 0.01499,
           "latency_p50_s": 1.063
-        },
-        {
-          "model": "gemini-3.1-flash-lite",
-          "reasoning_effort": "default",
-          "rank": 4,
-          "quality_score": 83,
-          "cost_per_quality": 0.000503,
-          "cost_per_hour_usd": 0.009605,
-          "latency_p50_s": 1.118
-        },
-        {
-          "model": "gemini-3.5-flash-lite",
-          "reasoning_effort": "low",
-          "rank": 5,
-          "quality_score": 87,
-          "cost_per_quality": 0.0007613,
-          "cost_per_hour_usd": 0.01548,
-          "latency_p50_s": 1.119
         }
       ]
     },
@@ -2385,18 +2307,9 @@
       ],
       "models": [
         {
-          "model": "gemma-4-31b",
-          "reasoning_effort": "none",
-          "rank": 1,
-          "quality_score": 91,
-          "cost_per_quality": 0.0001729,
-          "cost_per_hour_usd": 0.003634,
-          "latency_p50_s": 1.674
-        },
-        {
           "model": "gpt-6-luna",
           "reasoning_effort": "none",
-          "rank": 2,
+          "rank": 1,
           "quality_score": 89,
           "cost_per_quality": 0.0001686,
           "cost_per_hour_usd": 0.003378,
@@ -2405,29 +2318,38 @@
         {
           "model": "gemma-4-31b",
           "reasoning_effort": "default",
-          "rank": 3,
+          "rank": 2,
           "quality_score": 89,
           "cost_per_quality": 0.0001773,
           "cost_per_hour_usd": 0.003596,
           "latency_p50_s": 1.508
         },
         {
-          "model": "gpt-5.1",
-          "reasoning_effort": "default",
-          "rank": 4,
-          "quality_score": 89,
-          "cost_per_quality": 0.003112,
-          "cost_per_hour_usd": 0.06366,
-          "latency_p50_s": 1.927
+          "model": "gemini-3.5-flash-lite",
+          "reasoning_effort": "low",
+          "rank": 3,
+          "quality_score": 87,
+          "cost_per_quality": 0.0007613,
+          "cost_per_hour_usd": 0.01548,
+          "latency_p50_s": 1.119
         },
         {
-          "model": "gpt-5.2",
+          "model": "gpt-4.1",
           "reasoning_effort": "default",
+          "rank": 4,
+          "quality_score": 87,
+          "cost_per_quality": 0.002928,
+          "cost_per_hour_usd": 0.05951,
+          "latency_p50_s": 1.156
+        },
+        {
+          "model": "mercury-voice",
+          "reasoning_effort": "low",
           "rank": 5,
-          "quality_score": 89,
-          "cost_per_quality": 0.004185,
-          "cost_per_hour_usd": 0.08558,
-          "latency_p50_s": 2.103
+          "quality_score": 86,
+          "cost_per_quality": 0.0005554,
+          "cost_per_hour_usd": 0.00675,
+          "latency_p50_s": 0.804
         }
       ]
     },
