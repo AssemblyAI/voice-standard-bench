@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-22T19:21:02.913542026Z",
+  "generated_at": "2026-10-29T19:18:31.999427137Z",
   "use_cases": [
     {
       "bucket": "30s",
@@ -882,9 +882,19 @@
       ],
       "models": [
         {
+          "model": "gpt-6.1-terra",
+          "reasoning_effort": "default",
+          "rank": 1,
+          "quality_score": 96,
+          "cost_per_quality": 0.0009783,
+          "cost_per_hour_usd": 0.0342,
+          "latency_p50_s": 1.269,
+          "task_quality_score": 95
+        },
+        {
           "model": "gpt-6-luna",
           "reasoning_effort": "none",
-          "rank": 1,
+          "rank": 2,
           "quality_score": 94,
           "cost_per_quality": 0.00006988,
           "cost_per_hour_usd": 0.002813,
@@ -894,7 +904,7 @@
         {
           "model": "gemini-3.1-flash-lite",
           "reasoning_effort": "default",
-          "rank": 2,
+          "rank": 3,
           "quality_score": 90,
           "cost_per_quality": 0.0001983,
           "cost_per_hour_usd": 0.007548,
@@ -904,7 +914,7 @@
         {
           "model": "gpt-5.6-luna",
           "reasoning_effort": "default",
-          "rank": 3,
+          "rank": 4,
           "quality_score": 94,
           "cost_per_quality": 0.0002396,
           "cost_per_hour_usd": 0.008183,
@@ -914,22 +924,12 @@
         {
           "model": "mercury-3",
           "reasoning_effort": "default",
-          "rank": 4,
+          "rank": 5,
           "quality_score": 93,
           "cost_per_quality": 0.0004568,
           "cost_per_hour_usd": 0.00793,
           "latency_p50_s": 1.368,
           "task_quality_score": 94
-        },
-        {
-          "model": "gemini-3.5-flash-lite",
-          "reasoning_effort": "low",
-          "rank": 5,
-          "quality_score": 92,
-          "cost_per_quality": 0.000306,
-          "cost_per_hour_usd": 0.01201,
-          "latency_p50_s": 0.831,
-          "task_quality_score": 93
         }
       ]
     },
@@ -962,9 +962,18 @@
           "latency_p50_s": 1.833
         },
         {
-          "model": "gpt-6.1-sol",
+          "model": "gpt-6.1-terra",
           "reasoning_effort": "default",
           "rank": 3,
+          "quality_score": 96,
+          "cost_per_quality": 0.0009783,
+          "cost_per_hour_usd": 0.0342,
+          "latency_p50_s": 1.269
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "default",
+          "rank": 4,
           "quality_score": 96,
           "cost_per_quality": 0.001751,
           "cost_per_hour_usd": 0.07427,
@@ -973,20 +982,11 @@
         {
           "model": "gpt-6-astra",
           "reasoning_effort": "default",
-          "rank": 4,
+          "rank": 5,
           "quality_score": 96,
           "cost_per_quality": 0.007915,
           "cost_per_hour_usd": 0.3085,
           "latency_p50_s": 2.46
-        },
-        {
-          "model": "gpt-6-luna",
-          "reasoning_effort": "default",
-          "rank": 5,
-          "quality_score": 95,
-          "cost_per_quality": 0.0001281,
-          "cost_per_hour_usd": 0.00427,
-          "latency_p50_s": 1.694
         }
       ]
     },
@@ -1187,16 +1187,6 @@
           "model": "deepseek-v4.1-flash-1017",
           "reasoning_effort": "default",
           "rank": 4,
-          "quality_score": 92,
-          "cost_per_quality": 0.002003,
-          "cost_per_hour_usd": 0.02434,
-          "latency_p50_s": 6.555,
-          "task_quality_score": 97
-        },
-        {
-          "model": "deepseek-v4.1-flash",
-          "reasoning_effort": "default",
-          "rank": 5,
           "quality_score": 92,
           "cost_per_quality": 0.002003,
           "cost_per_hour_usd": 0.02434,
@@ -1432,9 +1422,19 @@
           "task_quality_score": 91
         },
         {
-          "model": "gemini-4-argon",
+          "model": "gpt-6.1-terra",
           "reasoning_effort": "default",
           "rank": 3,
+          "quality_score": 93,
+          "cost_per_quality": 0.002011,
+          "cost_per_hour_usd": 0.03854,
+          "latency_p50_s": 1.635,
+          "task_quality_score": 91
+        },
+        {
+          "model": "gemini-4-argon",
+          "reasoning_effort": "default",
+          "rank": 4,
           "quality_score": 94,
           "cost_per_quality": 0.003433,
           "cost_per_hour_usd": 0.07282,
@@ -1444,21 +1444,11 @@
         {
           "model": "gpt-6-sol",
           "reasoning_effort": "default",
-          "rank": 4,
+          "rank": 5,
           "quality_score": 91,
           "cost_per_quality": 0.004819,
           "cost_per_hour_usd": 0.09048,
           "latency_p50_s": 2.488,
-          "task_quality_score": 91
-        },
-        {
-          "model": "gpt-5.5",
-          "reasoning_effort": "default",
-          "rank": 5,
-          "quality_score": 92,
-          "cost_per_quality": 0.01412,
-          "cost_per_hour_usd": 0.2631,
-          "latency_p50_s": 3.154,
           "task_quality_score": 91
         }
       ]
@@ -2094,9 +2084,19 @@
           "task_quality_score": 89
         },
         {
+          "model": "gpt-6.1-terra",
+          "reasoning_effort": "default",
+          "rank": 3,
+          "quality_score": 93,
+          "cost_per_quality": 0.002011,
+          "cost_per_hour_usd": 0.03854,
+          "latency_p50_s": 1.635,
+          "task_quality_score": 89
+        },
+        {
           "model": "gemma-4-31b",
           "reasoning_effort": "none",
-          "rank": 3,
+          "rank": 4,
           "quality_score": 91,
           "cost_per_quality": 0.0001729,
           "cost_per_hour_usd": 0.003634,
@@ -2106,22 +2106,12 @@
         {
           "model": "gpt-5.1",
           "reasoning_effort": "default",
-          "rank": 4,
+          "rank": 5,
           "quality_score": 89,
           "cost_per_quality": 0.003112,
           "cost_per_hour_usd": 0.06366,
           "latency_p50_s": 1.927,
           "task_quality_score": 88
-        },
-        {
-          "model": "gpt-4.1",
-          "reasoning_effort": "default",
-          "rank": 5,
-          "quality_score": 87,
-          "cost_per_quality": 0.002928,
-          "cost_per_hour_usd": 0.05951,
-          "latency_p50_s": 1.156,
-          "task_quality_score": 87
         }
       ]
     },
@@ -2163,22 +2153,22 @@
           "latency_p50_s": 5.268
         },
         {
-          "model": "gpt-6.1-sol",
+          "model": "gpt-6.1-terra",
           "reasoning_effort": "default",
           "rank": 4,
+          "quality_score": 93,
+          "cost_per_quality": 0.002011,
+          "cost_per_hour_usd": 0.03854,
+          "latency_p50_s": 1.635
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "default",
+          "rank": 5,
           "quality_score": 93,
           "cost_per_quality": 0.004256,
           "cost_per_hour_usd": 0.09065,
           "latency_p50_s": 6.761
-        },
-        {
-          "model": "claude-opus-5-5",
-          "reasoning_effort": "default",
-          "rank": 5,
-          "quality_score": 93,
-          "cost_per_quality": 0.01413,
-          "cost_per_hour_usd": 0.2669,
-          "latency_p50_s": 5.383
         }
       ]
     },
@@ -2426,24 +2416,24 @@
           "task_quality_score": 84
         },
         {
-          "model": "deepseek-v4.1-flash",
+          "model": "gpt-6.1-terra",
           "reasoning_effort": "default",
           "rank": 4,
+          "quality_score": 86,
+          "cost_per_quality": 0.01084,
+          "cost_per_hour_usd": 0.03786,
+          "latency_p50_s": 6.159,
+          "task_quality_score": 82
+        },
+        {
+          "model": "deepseek-v4.1-flash",
+          "reasoning_effort": "default",
+          "rank": 5,
           "quality_score": 83,
           "cost_per_quality": 0.01405,
           "cost_per_hour_usd": 0.01915,
           "latency_p50_s": 92.667,
           "task_quality_score": 81
-        },
-        {
-          "model": "gpt-6.1-sol",
-          "reasoning_effort": "default",
-          "rank": 5,
-          "quality_score": 88,
-          "cost_per_quality": 0.0247,
-          "cost_per_hour_usd": 0.09419,
-          "latency_p50_s": 24.557,
-          "task_quality_score": 83
         }
       ]
     },
