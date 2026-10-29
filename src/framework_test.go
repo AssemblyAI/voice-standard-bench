@@ -199,7 +199,7 @@ func TestRunnerRunProducesOneJudgedSamplePerModelPerRecord(t *testing.T) {
 
 	runner := NewRunner[fakeRecord](task, RunConfig{
 		Models:              models,
-		JudgeModel:          "judge",
+		JudgeModels:         []string{"judge"},
 		MaxSamplesPerBucket: -1,
 		Concurrency:         3,
 	})
@@ -219,6 +219,41 @@ func TestRunnerRunProducesOneJudgedSamplePerModelPerRecord(t *testing.T) {
 	assert.EqualValues(t, len(records)*len(models), task.judgeCalls.Load())
 }
 
+// TestRunnerRunWithTwoJudgesCallsTaskOnceAndJudgesTwice: the candidate is called
+// once per record, its one output is judged by every judge, each judge's Sample
+// carries its JudgeModel, and the shared judge concurrency cap still holds.
+func TestRunnerRunWithTwoJudgesCallsTaskOnceAndJudgesTwice(t *testing.T) {
+	task := &fakeTask{delay: 20 * time.Millisecond}
+	records := testRecords(4)
+	models := testModels(2)
+
+	runner := NewRunner[fakeRecord](task, RunConfig{
+		Models:              models,
+		JudgeModels:         []string{"judge-a", "judge-b"},
+		MaxSamplesPerBucket: -1,
+		Concurrency:         2,
+	})
+
+	samples := runner.Run(context.Background(), records)
+
+	pairs := len(records) * len(models)
+
+	require.Len(t, samples, pairs*2)
+	assert.EqualValues(t, pairs, task.recordCalls.Load())
+	assert.EqualValues(t, pairs*2, task.judgeCalls.Load())
+	assert.LessOrEqual(t, task.judgePeak.Max(), 2)
+	assert.Len(t, samplesForJudge(samples, "judge-a"), pairs)
+	assert.Len(t, samplesForJudge(samples, "judge-b"), pairs)
+
+	for _, s := range samples {
+		assert.Equal(t, float64(5), s.Judge["quality"])
+	}
+
+	cells := Aggregate(samples)
+	assert.Len(t, cellsForJudge(cells, "judge-a"), len(cellsForJudge(cells, "judge-b")))
+	assert.NotEmpty(t, cellsForJudge(cells, "judge-a"))
+}
+
 // TestRunnerRunPreservesRunRecordMeasurementsAfterJudging is a regression
 // test for a bug found while building DictationTask: runRecord used to
 // return RunJudge's Sample wholesale on success, silently discarding
@@ -230,7 +265,7 @@ func TestRunnerRunPreservesRunRecordMeasurementsAfterJudging(t *testing.T) {
 	task := &fakeTask{delay: time.Millisecond}
 	runner := NewRunner[fakeRecord](task, RunConfig{
 		Models:      testModels(1),
-		JudgeModel:  "judge",
+		JudgeModels: []string{"judge"},
 		Concurrency: 1,
 	})
 
@@ -256,7 +291,7 @@ func TestRunnerRunComputesCostFromModelPricing(t *testing.T) {
 
 	runner := NewRunner[fakeRecord](task, RunConfig{
 		Models:      models,
-		JudgeModel:  "judge",
+		JudgeModels: []string{"judge"},
 		Concurrency: 1,
 	})
 
@@ -288,7 +323,7 @@ func TestRunnerRunSkipsJudgeOnRunRecordFailure(t *testing.T) {
 
 	runner := NewRunner[fakeRecord](task, RunConfig{
 		Models:      testModels(1),
-		JudgeModel:  "judge",
+		JudgeModels: []string{"judge"},
 		Concurrency: 2,
 	})
 
@@ -318,7 +353,7 @@ func TestRunnerRunBoundsConcurrencyPerModel(t *testing.T) {
 
 	runner := NewRunner[fakeRecord](task, RunConfig{
 		Models:      testModels(1),
-		JudgeModel:  "judge",
+		JudgeModels: []string{"judge"},
 		Concurrency: 2,
 	})
 
@@ -334,7 +369,7 @@ func TestRunnerRunBoundsJudgeConcurrencyAcrossModels(t *testing.T) {
 
 	runner := NewRunner[fakeRecord](task, RunConfig{
 		Models:      testModels(2), // 2 models running fully in parallel...
-		JudgeModel:  "judge",
+		JudgeModels: []string{"judge"},
 		Concurrency: 2, // ...but at most 2 judge calls in flight TOTAL, shared between them.
 	})
 
@@ -458,7 +493,7 @@ func TestRunnerRunBenchmarkFiltersToRequestedBuckets(t *testing.T) {
 
 	runner := NewRunner[fakeRecord](task, RunConfig{
 		Models:              testModels(1),
-		JudgeModel:          "judge",
+		JudgeModels:         []string{"judge"},
 		MaxSamplesPerBucket: -1,
 		Concurrency:         1,
 		Buckets:             []string{"3600s"},
@@ -479,7 +514,7 @@ func TestRunnerRunBenchmarkLoadsSamplesAndAggregates(t *testing.T) {
 
 	runner := NewRunner[fakeRecord](task, RunConfig{
 		Models:              testModels(1),
-		JudgeModel:          "judge",
+		JudgeModels:         []string{"judge"},
 		MaxSamplesPerBucket: -1,
 		Concurrency:         2,
 	})
@@ -527,7 +562,7 @@ func TestRunnerZeroConcurrencyDoesNotDeadlock(t *testing.T) {
 
 	runner := NewRunner[fakeRecord](task, RunConfig{
 		Models:      testModels(1),
-		JudgeModel:  "judge",
+		JudgeModels: []string{"judge"},
 		Concurrency: 0, // must be normalized to 1, not passed through to JobLimiter as-is.
 	})
 
@@ -579,7 +614,7 @@ func TestRunnerRunStashesEverySuccessfulTaskRun(t *testing.T) {
 	store := NewTaskRunStore(t.TempDir())
 	models, records := testModels(2), testRecords(3)
 
-	runner := NewRunner[fakeRecord](task, RunConfig{Models: models, JudgeModel: "judge", Concurrency: 2, TaskRuns: store})
+	runner := NewRunner[fakeRecord](task, RunConfig{Models: models, JudgeModels: []string{"judge"}, Concurrency: 2, TaskRuns: store})
 	runner.Run(context.Background(), records)
 
 	assert.Equal(t, 4, store.Count(), "2 models x the 2 records that did not fail")
@@ -624,7 +659,7 @@ func TestRunnerRunStashesTaskRunBeforeJudgingIt(t *testing.T) {
 		}
 	}
 
-	runner := NewRunner[fakeRecord](task, RunConfig{Models: testModels(2), JudgeModel: "judge", Concurrency: 2, TaskRuns: store})
+	runner := NewRunner[fakeRecord](task, RunConfig{Models: testModels(2), JudgeModels: []string{"judge"}, Concurrency: 2, TaskRuns: store})
 	runner.Run(context.Background(), testRecords(3))
 
 	assert.EqualValues(t, 6, task.judgeCalls.Load())
@@ -640,7 +675,7 @@ func TestRunnerRunKeepsTaskRunsWhoseJudgeCallFailed(t *testing.T) {
 	task := &judgeProbeTask{fakeTask: &fakeTask{delay: time.Millisecond}, judgeErr: errors.New("judge is down")}
 	records := testRecords(3)
 
-	runner := NewRunner[fakeRecord](task, RunConfig{Models: testModels(1), JudgeModel: "judge", Concurrency: 2, TaskRuns: store})
+	runner := NewRunner[fakeRecord](task, RunConfig{Models: testModels(1), JudgeModels: []string{"judge"}, Concurrency: 2, TaskRuns: store})
 	samples := runner.Run(context.Background(), records)
 
 	require.Len(t, samples, 3)
@@ -687,7 +722,7 @@ func TestRunnerRunStillJudgesWhenStashingFails(t *testing.T) {
 
 	store := NewTaskRunStore(notADir)
 
-	runner := NewRunner[fakeRecord](&fakeTask{delay: time.Millisecond}, RunConfig{Models: testModels(1), JudgeModel: "judge", Concurrency: 2, TaskRuns: store})
+	runner := NewRunner[fakeRecord](&fakeTask{delay: time.Millisecond}, RunConfig{Models: testModels(1), JudgeModels: []string{"judge"}, Concurrency: 2, TaskRuns: store})
 	samples := runner.Run(context.Background(), testRecords(2))
 
 	require.Len(t, samples, 2)
@@ -712,7 +747,7 @@ func earlierRun(t *testing.T, task Task[fakeRecord], models []ModelInfo, records
 	t.Helper()
 
 	runDir = t.TempDir()
-	runner := NewRunner[fakeRecord](task, RunConfig{Models: models, JudgeModel: "judge", Concurrency: 2, TaskRuns: NewTaskRunStore(runDir)})
+	runner := NewRunner[fakeRecord](task, RunConfig{Models: models, JudgeModels: []string{"judge"}, Concurrency: 2, TaskRuns: NewTaskRunStore(runDir)})
 
 	if ttft {
 		runner.RunTTFT(context.Background(), records)
@@ -745,7 +780,7 @@ func TestRunnerRunReplaysStashedTaskRunsInsteadOfCallingTheTask(t *testing.T) {
 	}}
 
 	replay := NewTaskRunStore(earlier)
-	runner := NewRunner[fakeRecord](task, RunConfig{Models: models, JudgeModel: "judge", Concurrency: 2, Replay: replay})
+	runner := NewRunner[fakeRecord](task, RunConfig{Models: models, JudgeModels: []string{"judge"}, Concurrency: 2, Replay: replay})
 
 	samples := runner.Run(context.Background(), records)
 
@@ -781,7 +816,7 @@ func TestRunnerRunReplayCallsLiveWhatTheEarlierRunDidNotStash(t *testing.T) {
 	replay := NewTaskRunStore(earlier)
 
 	// One model more, and a fourth record.
-	runner := NewRunner[fakeRecord](task, RunConfig{Models: testModels(2), JudgeModel: "judge", Concurrency: 2, Replay: replay})
+	runner := NewRunner[fakeRecord](task, RunConfig{Models: testModels(2), JudgeModels: []string{"judge"}, Concurrency: 2, Replay: replay})
 	samples := runner.Run(context.Background(), testRecords(4))
 
 	require.Len(t, samples, 8)
@@ -804,7 +839,7 @@ func TestRunnerRunReplayRetriesARunThatFailedTheFirstTime(t *testing.T) {
 	task := &fakeTask{delay: time.Millisecond} // it doesn't fail this time
 	replay := NewTaskRunStore(earlier)
 
-	runner := NewRunner[fakeRecord](task, RunConfig{Models: testModels(1), JudgeModel: "judge", Concurrency: 2, Replay: replay})
+	runner := NewRunner[fakeRecord](task, RunConfig{Models: testModels(1), JudgeModels: []string{"judge"}, Concurrency: 2, Replay: replay})
 	samples := runner.Run(context.Background(), testRecords(3))
 
 	require.Len(t, samples, 3)
@@ -825,14 +860,14 @@ func TestRunnerRunReplayRejudgesRunsWhoseJudgeFailedBefore(t *testing.T) {
 
 	earlier := t.TempDir()
 	judgeDown := &judgeProbeTask{fakeTask: &fakeTask{delay: time.Millisecond}, judgeErr: errors.New("judge is down")}
-	first := NewRunner[fakeRecord](judgeDown, RunConfig{Models: models, JudgeModel: "judge", Concurrency: 2, TaskRuns: NewTaskRunStore(earlier)})
+	first := NewRunner[fakeRecord](judgeDown, RunConfig{Models: models, JudgeModels: []string{"judge"}, Concurrency: 2, TaskRuns: NewTaskRunStore(earlier)})
 
 	for _, s := range first.Run(context.Background(), records) {
 		require.Nil(t, s.Judge, "the first run's judge was down")
 	}
 
 	task := &fakeTask{delay: time.Millisecond}
-	second := NewRunner[fakeRecord](task, RunConfig{Models: models, JudgeModel: "judge", Concurrency: 2, Replay: NewTaskRunStore(earlier)})
+	second := NewRunner[fakeRecord](task, RunConfig{Models: models, JudgeModels: []string{"judge"}, Concurrency: 2, Replay: NewTaskRunStore(earlier)})
 	samples := second.Run(context.Background(), records)
 
 	require.Len(t, samples, 3)
@@ -854,7 +889,7 @@ func TestRunnerRunReplayStashesWhatItReusedSoTheNewRunCanBeReplayed(t *testing.T
 
 	secondDir := t.TempDir()
 	second := NewRunner[fakeRecord](&fakeTask{delay: time.Millisecond}, RunConfig{
-		Models: models, JudgeModel: "judge", Concurrency: 2,
+		Models: models, JudgeModels: []string{"judge"}, Concurrency: 2,
 		Replay: NewTaskRunStore(first), TaskRuns: NewTaskRunStore(secondDir),
 	})
 	second.Run(context.Background(), records)
@@ -876,7 +911,7 @@ func TestRunnerRunReplayStashesWhatItReusedSoTheNewRunCanBeReplayed(t *testing.T
 
 	// Replayed in its turn, with the first run out of the picture, no call is made.
 	third := &fakeTask{delay: time.Millisecond}
-	NewRunner[fakeRecord](third, RunConfig{Models: models, JudgeModel: "judge", Concurrency: 2, Replay: NewTaskRunStore(secondDir)}).
+	NewRunner[fakeRecord](third, RunConfig{Models: models, JudgeModels: []string{"judge"}, Concurrency: 2, Replay: NewTaskRunStore(secondDir)}).
 		Run(context.Background(), records)
 
 	assert.EqualValues(t, 0, third.recordCalls.Load())
@@ -904,7 +939,7 @@ func TestRunnerRunReplayCallsLiveWhenAStashedFileCannotBeTrusted(t *testing.T) {
 	task := &fakeTask{delay: time.Millisecond}
 	newStash := NewTaskRunStore(t.TempDir())
 
-	runner := NewRunner[fakeRecord](task, RunConfig{Models: testModels(1), JudgeModel: "judge", Concurrency: 2, Replay: NewTaskRunStore(earlier), TaskRuns: newStash})
+	runner := NewRunner[fakeRecord](task, RunConfig{Models: testModels(1), JudgeModels: []string{"judge"}, Concurrency: 2, Replay: NewTaskRunStore(earlier), TaskRuns: newStash})
 	samples := runner.Run(context.Background(), testRecords(3))
 
 	require.Len(t, samples, 3)
@@ -958,7 +993,7 @@ func TestRunnerRunSkipJudgeStashesButNeverJudges(t *testing.T) {
 	store := NewTaskRunStore(t.TempDir())
 	models := []ModelInfo{{ID: "model-0", PromptPricePerMillion: 3, CompletionPricePerMillion: 15}}
 
-	runner := NewRunner[fakeRecord](task, RunConfig{Models: models, JudgeModel: "judge", Concurrency: 2, TaskRuns: store, SkipJudge: true})
+	runner := NewRunner[fakeRecord](task, RunConfig{Models: models, JudgeModels: []string{"judge"}, Concurrency: 2, TaskRuns: store, SkipJudge: true})
 	samples := runner.Run(context.Background(), testRecords(3))
 
 	require.Len(t, samples, 3)

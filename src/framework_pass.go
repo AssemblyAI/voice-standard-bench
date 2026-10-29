@@ -40,10 +40,13 @@ type frameworkPassConfig struct {
 	// bucket the loaded dataset has, mirroring ModelsFlag's own "empty means
 	// everything" convention (see filterModels in voicebench.go).
 	BucketsFlag string
-	JudgeModel  string
+	// JudgeModels are the judges grading every candidate's output: each task
+	// call is made once and judged by all of them, and each judge gets its own
+	// report-<judge>.json. -judge-model takes them comma-separated.
+	JudgeModels []string
 	// ReasoningEffort, when non-empty, is applied to every candidate model
 	// that advertises support for it -- see applyReasoningEffort
-	// (voicebench.go). Never applied to JudgeModel, which is passed to
+	// (voicebench.go). Never applied to JudgeModels, which are passed to
 	// RunJudge by bare ID, not as a ModelInfo (see judge.go's RunJudge).
 	ReasoningEffort string
 
@@ -193,6 +196,10 @@ func runFrameworkBenchmarkPass(ctx context.Context, cfg frameworkPassConfig) {
 		fatal(errors.New("framework: no API key: set the ASSEMBLY_AI_TOKEN environment variable (GET /v1/models needs none, but running completions does)"))
 	}
 
+	if len(cfg.JudgeModels) == 0 {
+		fatal(errors.New("framework: no judge model: pass at least one -judge-model"))
+	}
+
 	gw := NewGateway(cfg.GatewayURL, key, cfg.Timeout)
 
 	log.Printf("framework: fetching available models from %s/v1/models", cfg.GatewayURL)
@@ -206,11 +213,13 @@ func runFrameworkBenchmarkPass(ctx context.Context, cfg frameworkPassConfig) {
 
 	if !explicit {
 		// mirrors main()'s judge-exclusion logic
-		before := len(models)
-		models = removeModel(models, cfg.JudgeModel)
+		for _, judge := range cfg.JudgeModels {
+			before := len(models)
+			models = removeModel(models, judge)
 
-		if len(models) < before {
-			log.Printf("framework: excluding judge model %s from the default candidate set (pass -models to include it explicitly)", cfg.JudgeModel)
+			if len(models) < before {
+				log.Printf("framework: excluding judge model %s from the default candidate set (pass -models to include it explicitly)", judge)
+			}
 		}
 
 		// gpt-oss and nemotron models are skipped by default due to very
@@ -222,8 +231,12 @@ func runFrameworkBenchmarkPass(ctx context.Context, cfg frameworkPassConfig) {
 		if len(removedUnstable) > 0 {
 			log.Printf("framework: excluding unstable model(s) %s from the default candidate set (pass -models to include them explicitly)", strings.Join(removedUnstable, ", "))
 		}
-	} else if containsModel(models, cfg.JudgeModel) {
-		log.Printf("framework: warning: judge model %s is also in -models — it will grade its own output on every task it runs", cfg.JudgeModel)
+	} else {
+		for _, judge := range cfg.JudgeModels {
+			if containsModel(models, judge) {
+				log.Printf("framework: warning: judge model %s is also in -models — it will grade its own output on every task it runs", judge)
+			}
+		}
 	}
 
 	if cfg.ReasoningEffort != "" {
@@ -304,7 +317,7 @@ func runFrameworkStandardPass(ctx context.Context, gw *Gateway, models []ModelIn
 
 	tasks, err := frameworkTasks(gw, RunConfig{
 		Models:              models,
-		JudgeModel:          cfg.JudgeModel,
+		JudgeModels:         cfg.JudgeModels,
 		MaxSamplesPerBucket: cfg.MaxSamplesPerBucket,
 		Concurrency:         cfg.Concurrency,
 		Buckets:             buckets,
@@ -334,14 +347,27 @@ func runFrameworkStandardPass(ctx context.Context, gw *Gateway, models []ModelIn
 		cells = append(cells, taskCells...)
 	}
 
-	PrintReport(os.Stdout, cells)
+	for _, judge := range cfg.JudgeModels {
+		judgeCells := cellsForJudge(cells, judge)
+
+		if len(cfg.JudgeModels) > 1 {
+			fmt.Fprintf(os.Stdout, "\n##### judge: %s #####\n", judge)
+		}
+
+		PrintReport(os.Stdout, judgeCells)
+	}
 
 	log.Printf("framework: recorded %d failure(s) under %s", failures.Count(), failures.RunDir())
 	log.Printf("framework: stashed %d task run output(s) under %s", taskRuns.Count(), taskRuns.Dir())
-	logReplay("", replay.standardRuns(), samples)
 
-	if err := WriteJSONReport(reportDir, samples, cells, cfg.JudgeModel); err != nil {
-		fatal(fmt.Errorf("framework: writing results: %w", err))
+	// Every judge's samples cover the same task calls; count one judge's so the
+	// replay log isn't multiplied by the number of judges.
+	logReplay("", replay.standardRuns(), samplesForJudge(samples, cfg.JudgeModels[0]))
+
+	for _, judge := range cfg.JudgeModels {
+		if err := WriteJSONReport(reportDir, samplesForJudge(samples, judge), cellsForJudge(cells, judge), judge); err != nil {
+			fatal(fmt.Errorf("framework: writing results: %w", err))
+		}
 	}
 
 	log.Printf("framework: wrote full results to %s", reportDir)
@@ -387,7 +413,7 @@ func runFrameworkTTFTPass(ctx context.Context, gw *Gateway, models []ModelInfo, 
 
 	tasks, err := frameworkTasks(gw, RunConfig{
 		Models:              models,
-		JudgeModel:          cfg.JudgeModel,
+		JudgeModels:         cfg.JudgeModels,
 		MaxSamplesPerBucket: cfg.MaxSamplesPerBucket,
 		Concurrency:         cfg.Concurrency,
 		Buckets:             buckets,
@@ -478,6 +504,32 @@ func cellsToTTFTCells(cells []Cell) []TTFTCell {
 	out := make([]TTFTCell, 0, len(cells))
 	for _, c := range cells {
 		out = append(out, cellToTTFTCell(c))
+	}
+
+	return out
+}
+
+// samplesForJudge returns the subset of samples scored by judge, preserving order.
+func samplesForJudge(samples []Sample, judge string) []Sample {
+	var out []Sample
+
+	for _, s := range samples {
+		if s.JudgeModel == judge {
+			out = append(out, s)
+		}
+	}
+
+	return out
+}
+
+// cellsForJudge is samplesForJudge's counterpart for aggregated cells.
+func cellsForJudge(cells []Cell, judge string) []Cell {
+	var out []Cell
+
+	for _, c := range cells {
+		if c.JudgeModel == judge {
+			out = append(out, c)
+		}
 	}
 
 	return out

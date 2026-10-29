@@ -415,6 +415,12 @@ see Zheng et al., 2023, "Judging LLM-as-a-Judge and Benchmarking..."). If you
 pass `-models` explicitly and include the judge model in it, that's respected
 as a deliberate choice, with a warning logged.
 
+`-judge-model` also takes several models, comma-separated
+(`-judge-model claude-opus-5,gpt-5`). Each candidate is still called once per
+record; its single output is then graded by every judge, each judge call taking
+a slot of the shared judge concurrency cap (`-concurrency`). Every judge gets
+its own `report-<judge>.json`, so canonical results stay per judge as before.
+
 ## Concurrency and the gateway's rate limit — read this before raising `-concurrency`
 
 The gateway enforces a per-account, per-model rate limit (default 30

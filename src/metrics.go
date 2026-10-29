@@ -32,6 +32,10 @@ type Sample struct {
 	// itself, since RunRecord returns before Runner merges in the judged
 	// result. Zero (not "no data") for an errored or never-judged sample.
 	CostUSD float64
+	// JudgeModel is the judge that produced Judge (and SchemaInvalid): a pass
+	// with several judges yields one Sample per judge for each task call. Empty
+	// for a TTFT sample, which is never judged.
+	JudgeModel string
 	// Judge holds this sample's quality scores, keyed by rubric dimension
 	// name (see prompts.Spec.Rubric). Empty if judging was skipped or failed
 	// independently of the task call itself.
@@ -166,6 +170,9 @@ type Cell struct {
 	ReasoningEffort string
 	Task            string
 	Bucket          string
+	// JudgeModel mirrors Sample.JudgeModel: samples scored by different judges
+	// never share a Cell. Not serialized -- a report file is already one judge's.
+	JudgeModel string `json:"-"`
 
 	N      int // total samples attempted, success or failure
 	Errors int // samples where the task call itself failed or was skipped
@@ -197,19 +204,21 @@ type Cell struct {
 // is sorted by (Task, Model, ReasoningEffort, Bucket-by-duration) so a report
 // can print it directly without re-sorting.
 func Aggregate(samples []Sample) []Cell {
-	type key struct{ model, reasoningEffort, task, bucket string }
+	type key struct{ model, reasoningEffort, task, bucket, judge string }
 
 	groups := map[key][]Sample{}
 
 	for _, s := range samples {
-		k := key{s.Model, s.ReasoningEffort, s.Task, s.Bucket}
+		k := key{s.Model, s.ReasoningEffort, s.Task, s.Bucket, s.JudgeModel}
 		groups[k] = append(groups[k], s)
 	}
 
 	cells := make([]Cell, 0, len(groups))
 
 	for k, group := range groups {
-		cells = append(cells, buildCell(k.model, k.reasoningEffort, k.task, k.bucket, group))
+		cell := buildCell(k.model, k.reasoningEffort, k.task, k.bucket, group)
+		cell.JudgeModel = k.judge
+		cells = append(cells, cell)
 	}
 
 	sort.Slice(cells, func(i, j int) bool {
@@ -223,6 +232,10 @@ func Aggregate(samples []Sample) []Cell {
 
 		if cells[i].ReasoningEffort != cells[j].ReasoningEffort {
 			return cells[i].ReasoningEffort < cells[j].ReasoningEffort
+		}
+
+		if cells[i].JudgeModel != cells[j].JudgeModel {
+			return cells[i].JudgeModel < cells[j].JudgeModel
 		}
 
 		si, oki := bucketSeconds(cells[i].Bucket)
