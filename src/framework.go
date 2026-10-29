@@ -104,11 +104,13 @@ type Task[R any] interface {
 type RunConfig struct {
 	// Models are the candidate models under test.
 	Models []ModelInfo
-	// JudgeModel grades every candidate's output. It should not also appear
+	// JudgeModels each grade every candidate's output. None should also appear
 	// in Models (see the self-grading note on -judge-model in the original
-	// voicebench.go), but Runner does not enforce that itself -- excluding it
-	// is a caller/CLI-wiring concern, not a framework one.
-	JudgeModel string
+	// voicebench.go), but Runner does not enforce that itself -- excluding them
+	// is a caller/CLI-wiring concern, not a framework one. With more than one,
+	// a candidate is still called once per record: that one output is judged by
+	// every judge, and Run returns one Sample per (model, record, judge).
+	JudgeModels []string
 	// MaxSamplesPerBucket caps how many records SampleDataset draws per
 	// bucket; <= 0 means "use every loaded record" (see SampleDataset's own
 	// doc comment on Task).
@@ -187,6 +189,10 @@ func NewRunner[R Record](task Task[R], config RunConfig) *Runner[R] {
 		config.Concurrency = 1
 	}
 
+	if len(config.JudgeModels) == 0 {
+		config.JudgeModels = []string{""}
+	}
+
 	return &Runner[R]{task: task, config: config}
 }
 
@@ -221,7 +227,10 @@ func (r *Runner[R]) LoadAndSample() ([]R, error) {
 // Run executes the standard, judged pass over records: every model against
 // every record, bounded per model by config.Concurrency, with each
 // successful RunRecord call immediately followed by a RunJudge call bounded
-// by the separate, shared judge concurrency described on Runner. A
+// by the separate, shared judge concurrency described on Runner. With several
+// config.JudgeModels, the one task call's output is judged by each of them, every
+// judge call taking its own slot of that shared concurrency; each judge's Sample
+// carries its JudgeModel. A
 // RunRecord failure short-circuits straight to its own Sample -- RunJudge is
 // never called for a record whose task call didn't succeed, since there is
 // nothing to grade. A success is stashed to config.TaskRuns (when set) first,
@@ -235,7 +244,7 @@ func (r *Runner[R]) LoadAndSample() ([]R, error) {
 func (r *Runner[R]) Run(ctx context.Context, records []R) []Sample {
 	judgeLimiter := concurrency.NewJobLimiter(r.config.Concurrency)
 
-	return r.runAll(ctx, records, func(ctx context.Context, model ModelInfo, record R) Sample {
+	return r.runAll(ctx, records, func(ctx context.Context, model ModelInfo, record R) []Sample {
 		return r.runRecord(ctx, model, record, judgeLimiter)
 	})
 }
@@ -267,8 +276,8 @@ func (r *Runner[R]) Run(ctx context.Context, records []R) []Sample {
 func (r *Runner[R]) RunTTFT(ctx context.Context, records []R) []Sample {
 	records = filterBucketed(records, TTFTBuckets)
 
-	return r.runAll(ctx, records, func(ctx context.Context, model ModelInfo, record R) Sample {
-		return r.runTTFTRecord(ctx, model, record)
+	return r.runAll(ctx, records, func(ctx context.Context, model ModelInfo, record R) []Sample {
+		return []Sample{r.runTTFTRecord(ctx, model, record)}
 	})
 }
 

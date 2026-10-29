@@ -108,7 +108,7 @@ func TestRunFrameworkBenchmarkPass(t *testing.T) {
 		APIKey:              "test-key",
 		Timeout:             5 * time.Second,
 		TasksFlag:           "dictation,summarization",
-		JudgeModel:          "the-judge",
+		JudgeModels:         []string{"the-judge"},
 		MaxSamplesPerBucket: -1,
 		Concurrency:         2,
 	}
@@ -164,7 +164,7 @@ func TestRunFrameworkBenchmarkPassRecordsFailures(t *testing.T) {
 		APIKey:              "test-key",
 		Timeout:             5 * time.Second,
 		TasksFlag:           "dictation,summarization",
-		JudgeModel:          "the-judge",
+		JudgeModels:         []string{"the-judge"},
 		MaxSamplesPerBucket: -1,
 		Concurrency:         2,
 	}
@@ -225,7 +225,7 @@ func TestRunFrameworkBenchmarkPass_alwaysRunsTTFTAndAppendsCanonical(t *testing.
 		APIKey:              "test-key",
 		Timeout:             5 * time.Second,
 		TasksFlag:           "dictation,summarization",
-		JudgeModel:          "the-judge",
+		JudgeModels:         []string{"the-judge"},
 		MaxSamplesPerBucket: -1,
 		Concurrency:         2,
 		ApproveMerge:        true,
@@ -313,7 +313,7 @@ func TestRunFrameworkBenchmarkPass_bucketsRestrictsRunAndMergesOnlyThatBucket(t 
 		APIKey:              "test-key",
 		Timeout:             5 * time.Second,
 		TasksFlag:           "summarization",
-		JudgeModel:          "the-judge",
+		JudgeModels:         []string{"the-judge"},
 		MaxSamplesPerBucket: -1,
 		Concurrency:         2,
 		ApproveMerge:        true,
@@ -392,7 +392,7 @@ func TestRunFrameworkBenchmarkPassFiltersTasks(t *testing.T) {
 		APIKey:              "test-key",
 		Timeout:             5 * time.Second,
 		TasksFlag:           "dictation",
-		JudgeModel:          "the-judge",
+		JudgeModels:         []string{"the-judge"},
 		MaxSamplesPerBucket: -1,
 		Concurrency:         2,
 	}
@@ -453,7 +453,7 @@ func TestRunFrameworkBenchmarkPassTextCorrection(t *testing.T) {
 		APIKey:              "test-key",
 		Timeout:             5 * time.Second,
 		TasksFlag:           "text_correction",
-		JudgeModel:          "the-judge",
+		JudgeModels:         []string{"the-judge"},
 		MaxSamplesPerBucket: -1,
 		Concurrency:         2,
 	}
@@ -526,7 +526,7 @@ func TestRunFrameworkBenchmarkPassInformationExtraction(t *testing.T) {
 		APIKey:              "test-key",
 		Timeout:             5 * time.Second,
 		TasksFlag:           "information_extraction",
-		JudgeModel:          "the-judge",
+		JudgeModels:         []string{"the-judge"},
 		MaxSamplesPerBucket: -1,
 		Concurrency:         2,
 	}
@@ -591,7 +591,7 @@ func TestRunFrameworkBenchmarkPassInformationExtractionInvalidSchema(t *testing.
 		APIKey:              "test-key",
 		Timeout:             5 * time.Second,
 		TasksFlag:           "information_extraction",
-		JudgeModel:          "the-judge",
+		JudgeModels:         []string{"the-judge"},
 		MaxSamplesPerBucket: -1,
 		Concurrency:         2,
 	}
@@ -664,7 +664,7 @@ func TestRunFrameworkBenchmarkPass_reasoningEffort(t *testing.T) {
 		APIKey:              "test-key",
 		Timeout:             5 * time.Second,
 		TasksFlag:           "summarization",
-		JudgeModel:          "the-judge",
+		JudgeModels:         []string{"the-judge"},
 		ReasoningEffort:     "low",
 		MaxSamplesPerBucket: -1,
 		Concurrency:         2,
@@ -727,7 +727,7 @@ func TestRunFrameworkBenchmarkPass_stashesEachTaskRunBesideTheReport(t *testing.
 		APIKey:              "test-key",
 		Timeout:             5 * time.Second,
 		TasksFlag:           "dictation,summarization",
-		JudgeModel:          "the-judge",
+		JudgeModels:         []string{"the-judge"},
 		MaxSamplesPerBucket: -1,
 		Concurrency:         2,
 	}
@@ -856,7 +856,7 @@ func TestRunFrameworkBenchmarkPass_doesNotStashFailedTaskRuns(t *testing.T) {
 		APIKey:              "test-key",
 		Timeout:             5 * time.Second,
 		TasksFlag:           "dictation,summarization",
-		JudgeModel:          "the-judge",
+		JudgeModels:         []string{"the-judge"},
 		MaxSamplesPerBucket: -1,
 		Concurrency:         2,
 	}
@@ -1029,7 +1029,7 @@ func TestRunFrameworkBenchmarkPass_replayReusesAnEarlierRunAndOnlyJudges(t *test
 		APIKey:              "test-key",
 		Timeout:             5 * time.Second,
 		TasksFlag:           "dictation,summarization",
-		JudgeModel:          "the-judge",
+		JudgeModels:         []string{"the-judge"},
 		MaxSamplesPerBucket: -1,
 		Concurrency:         2,
 		ApproveMerge:        true,
@@ -1055,7 +1055,7 @@ func TestRunFrameworkBenchmarkPass_replayReusesAnEarlierRunAndOnlyJudges(t *test
 
 	replayCfg := cfg
 	replayCfg.Replay = first
-	replayCfg.JudgeModel = "the-new-judge"
+	replayCfg.JudgeModels = []string{"the-new-judge"}
 	runFrameworkBenchmarkPass(context.Background(), replayCfg)
 
 	assert.EqualValues(t, 0, g.candidateCalls.Load(), "no candidate model is called again")
@@ -1152,7 +1152,7 @@ func TestRunFrameworkBenchmarkPass_replayCallsLiveWhatTheEarlierRunDidNotStash(t
 		APIKey:              "test-key",
 		Timeout:             5 * time.Second,
 		TasksFlag:           "dictation",
-		JudgeModel:          "the-judge",
+		JudgeModels:         []string{"the-judge"},
 		MaxSamplesPerBucket: -1,
 		Concurrency:         2,
 		ApproveMerge:        true,
@@ -1197,7 +1197,7 @@ func TestRunFrameworkBenchmarkPass_skipJudgeGathersThenReplayJudges(t *testing.T
 		APIKey:              "test-key",
 		Timeout:             5 * time.Second,
 		TasksFlag:           "dictation,summarization",
-		JudgeModel:          "the-judge",
+		JudgeModels:         []string{"the-judge"},
 		MaxSamplesPerBucket: -1,
 		Concurrency:         2,
 		ApproveMerge:        true,

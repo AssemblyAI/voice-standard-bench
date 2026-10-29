@@ -20,8 +20,8 @@ import (
 // config.Concurrency. perRecord does whatever the calling pass (Run or
 // RunTTFT) needs for one (model, record) pair and returns its Sample;
 // runAll only owns the fan-out, the concurrency bound, and thread-safe
-// collection -- the one shape every pass shares.
-func (r *Runner[R]) runAll(ctx context.Context, records []R, perRecord func(ctx context.Context, model ModelInfo, record R) Sample) []Sample {
+// collection (perRecord returns every Sample the pair produced: one per judge) -- the one shape every pass shares.
+func (r *Runner[R]) runAll(ctx context.Context, records []R, perRecord func(ctx context.Context, model ModelInfo, record R) []Sample) []Sample {
 	collect, samples := newSampleCollector()
 
 	var modelsWG sync.WaitGroup
@@ -38,7 +38,7 @@ func (r *Runner[R]) runAll(ctx context.Context, records []R, perRecord func(ctx 
 				record := record
 
 				recordLimiter.Run(func() error {
-					collect(perRecord(ctx, model, record))
+					collect(perRecord(ctx, model, record)...)
 					return nil
 				})
 			}
@@ -63,40 +63,70 @@ func (r *Runner[R]) runAll(ctx context.Context, records []R, perRecord func(ctx 
 // each successful result to config.TaskRuns, ahead of the judge call: every
 // task's RunRecord passes through here, so that is done once, for all of them,
 // rather than in each task.
-func (r *Runner[R]) runRecord(ctx context.Context, model ModelInfo, record R, judgeLimiter concurrency.Limiter) Sample {
+func (r *Runner[R]) runRecord(ctx context.Context, model ModelInfo, record R, judgeLimiter concurrency.Limiter) []Sample {
 	sample, result, err := r.callOrReplay(ctx, model, record, r.task.RunRecord)
 	if err != nil {
-		return sample
+		return r.perJudge(sample)
 	}
 
 	sample.CostUSD = model.Cost(sample.PromptTokens, sample.CompletionTokens)
 
 	r.stashTaskRun(sample, result)
 
+	samples := r.perJudge(sample)
+
 	if r.config.SkipJudge {
-		return sample
+		return samples
 	}
 
-	judged, err := runSync(judgeLimiter, func() (Sample, error) {
-		return r.task.RunJudge(ctx, model, record, r.config.JudgeModel, result, r.config.Failures)
-	})
-	if err != nil {
-		// The task call succeeded; only the quality score is missing.
-		// Latency/token measurements from RunRecord are still valid
-		// measurements and stay in `sample`.
-		return sample
+	// The task call ran once; every judge grades that same result, each call
+	// bounded by the shared judgeLimiter.
+	var wg sync.WaitGroup
+
+	for i := range samples {
+		wg.Add(1)
+
+		go func(s *Sample) {
+			defer wg.Done()
+
+			judged, err := runSync(judgeLimiter, func() (Sample, error) {
+				return r.task.RunJudge(ctx, model, record, s.JudgeModel, result, r.config.Failures)
+			})
+			if err != nil {
+				// The task call succeeded; only the quality score is missing.
+				// Latency/token measurements from RunRecord are still valid
+				// measurements and stay in `sample`.
+				return
+			}
+
+			// Merge RunJudge's quality-scoring fields onto RunRecord's sample rather
+			// than replacing it outright: RunJudge is only responsible for Judge and
+			// SchemaInvalid (see its doc comment on the Task interface), so a Task
+			// implementation never has to reconstruct Model/Task/Bucket/RecordID or
+			// copy result's latency/token fields back onto its returned Sample just
+			// to avoid silently zeroing them here.
+			s.Judge = judged.Judge
+			s.SchemaInvalid = judged.SchemaInvalid
+		}(&samples[i])
 	}
 
-	// Merge RunJudge's quality-scoring fields onto RunRecord's sample rather
-	// than replacing it outright: RunJudge is only responsible for Judge and
-	// SchemaInvalid (see its doc comment on the Task interface), so a Task
-	// implementation never has to reconstruct Model/Task/Bucket/RecordID or
-	// copy result's latency/token fields back onto its returned Sample just
-	// to avoid silently zeroing them here.
-	sample.Judge = judged.Judge
-	sample.SchemaInvalid = judged.SchemaInvalid
+	wg.Wait()
 
-	return sample
+	return samples
+}
+
+// perJudge returns one copy of sample per configured judge model, each tagged
+// with its JudgeModel, so a failed or unjudged task call still shows up under
+// every judge's report.
+func (r *Runner[R]) perJudge(sample Sample) []Sample {
+	samples := make([]Sample, len(r.config.JudgeModels))
+
+	for i, judge := range r.config.JudgeModels {
+		samples[i] = sample
+		samples[i].JudgeModel = judge
+	}
+
+	return samples
 }
 
 // runTTFTRecord is runRecord's streaming counterpart: one (model, record) pair
@@ -168,16 +198,16 @@ func (r *Runner[R]) stashTaskRun(sample Sample, result CompletionResult) {
 // collected so far -- the shared-mutex-protected-slice pattern runAll needs
 // since every model's goroutines, and every record's job within them, feed
 // into the same final []Sample.
-func newSampleCollector() (collect func(Sample), samples func() []Sample) {
+func newSampleCollector() (collect func(...Sample), samples func() []Sample) {
 	var (
 		mu  sync.Mutex
 		all []Sample
 	)
 
-	collect = func(s Sample) {
+	collect = func(s ...Sample) {
 		mu.Lock()
 		defer mu.Unlock()
-		all = append(all, s)
+		all = append(all, s...)
 	}
 
 	samples = func() []Sample {

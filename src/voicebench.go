@@ -35,7 +35,7 @@ func main() {
 	tasksFlag := flag.String("tasks", "information_extraction,text_correction,summarization", "comma-separated tasks to run")
 	modelsFlag := flag.String("models", "", "comma-separated model IDs to benchmark (default: every model returned by GET /v1/models, minus -judge-model)")
 	bucketsFlag := flag.String("buckets", "", "comma-separated audio-length buckets to benchmark, e.g. 30s,120s (default: every bucket present in the loaded dataset); the canonical merge only updates the bucket(s) actually run, leaving every other bucket's already-merged data untouched")
-	judgeModel := flag.String("judge-model", "claude-opus-5", "fixed model used to grade quality; excluded from the default candidate set to avoid self-grading")
+	judgeModel := flag.String("judge-model", "claude-opus-5-5,gpt-6.1-sol", "fixed model used to grade quality, or several comma-separated to run every judge over each model output (each task call is made once and judged by all of them, one report-<judge>.json per judge); judges are excluded from the default candidate set to avoid self-grading")
 	maxSamples := flag.Int("max-samples-per-bucket", 10, "max transcripts to benchmark per audio-length bucket per task, sampled deterministically by record id (<=0 means every loaded record)")
 	concurrency := flag.Int("concurrency", 5, "max concurrent in-flight requests PER MODEL — see the rate-limit note on NewGateway in gateway.go before raising this")
 	timeout := flag.Duration("timeout", 500*time.Second, "per-request timeout, for both task and judge completions")
@@ -64,7 +64,7 @@ func main() {
 		ModelsFlag:          *modelsFlag,
 		TasksFlag:           *tasksFlag,
 		BucketsFlag:         *bucketsFlag,
-		JudgeModel:          *judgeModel,
+		JudgeModels:         parseCSV(*judgeModel),
 		ReasoningEffort:     *reasoningEffort,
 		MaxSamplesPerBucket: *maxSamples,
 		Concurrency:         *concurrency,
