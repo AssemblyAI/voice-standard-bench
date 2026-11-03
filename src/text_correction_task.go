@@ -122,7 +122,7 @@ func (t *TextCorrectionTask) missedText(record TranscriptRecord) (string, error)
 // is roughly as long as its input -- cleanup, not compression) plus 20%
 // headroom and a fixed thinking-token allowance, clamped to the model's own
 // advertised max. Mirrors taskMaxTokens' text_correction branch
-// (voicebench.go, shared there with dictation's identical formula) exactly;
+// (voicebench.go) exactly, so the TTFT pass sizes requests the same way;
 // duplicated here for the same reason as dictation_task.go's
 // maxCompletionTokens -- sizing the request is this task's own call.
 func (t *TextCorrectionTask) maxCompletionTokens(input string, model ModelInfo) int {

@@ -167,7 +167,9 @@ func taskMaxTokens(task string, transcript string, model ModelInfo) int {
 	var want int
 
 	switch task {
-	case prompts.TextCorrection, prompts.Dictation:
+	case prompts.TextCorrection:
+		want = estimatedTokens(transcript) + estimatedTokens(transcript)/5 + 64 + 40000 // input-sized, plus 20% headroom, plus thinking tokens
+	case prompts.Dictation:
 		want = estimatedTokens(transcript) + estimatedTokens(transcript)/5 + 64 + 15000 // input-sized, plus 20% headroom, plus thinking tokens
 	case prompts.InformationExtraction:
 		want = 15000
