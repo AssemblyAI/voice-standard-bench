@@ -115,8 +115,8 @@ func TestTextCorrectionTaskSampleDatasetMatchesSampleByBucket(t *testing.T) {
 
 // ---------------------------------------------------------------------------
 // maxCompletionTokens -- must match the text_correction branch of the
-// original benchmark's taskMaxTokens exactly (shared there with dictation's
-// identical formula).
+// original benchmark's taskMaxTokens exactly (the TTFT pass still sizes its
+// requests with taskMaxTokens).
 // ---------------------------------------------------------------------------
 
 func TestTextCorrectionTaskMaxCompletionTokensMatchesOriginalTaskMaxTokens(t *testing.T) {

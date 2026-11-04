@@ -76,7 +76,14 @@ func TestTaskMaxTokens(t *testing.T) {
 			task:       prompts.TextCorrection,
 			transcript: strings.Repeat("x", 4000), // estimatedTokens = 4000/4+1 = 1001
 			model:      ModelInfo{},
-			want:       16265,
+			want:       41265, // 1001 + 200 + 64 + 40000 thinking tokens
+		},
+		{
+			name:       "dictation scales the same way with a smaller thinking budget",
+			task:       prompts.Dictation,
+			transcript: strings.Repeat("x", 4000), // estimatedTokens = 4000/4+1 = 1001
+			model:      ModelInfo{},
+			want:       16265, // 1001 + 200 + 64 + 15000 thinking tokens
 		},
 		{
 			name:       "clamped to the model's own advertised max completion tokens",

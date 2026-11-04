@@ -163,11 +163,19 @@ func contextLengthExceeded(model ModelInfo, systemPrompt, transcript string) boo
 // summarization and extraction produce short, roughly fixed-size output
 // regardless of transcript length. Every budget is clamped to the model's own
 // advertised max completion tokens when GET /v1/models reported one.
+//
+// The text-correction and dictation branches must stay equal to
+// TextCorrectionTask.maxCompletionTokens and DictationTask.maxCompletionTokens:
+// the TTFT pass (ttft.go) still sizes its streaming requests here, so a budget
+// raised in a task's own method but not here gives that task's TTFT run a
+// smaller thinking budget than its quality run.
 func taskMaxTokens(task string, transcript string, model ModelInfo) int {
 	var want int
 
 	switch task {
-	case prompts.TextCorrection, prompts.Dictation:
+	case prompts.TextCorrection:
+		want = estimatedTokens(transcript) + estimatedTokens(transcript)/5 + 64 + 40000 // input-sized, plus 20% headroom, plus thinking tokens
+	case prompts.Dictation:
 		want = estimatedTokens(transcript) + estimatedTokens(transcript)/5 + 64 + 15000 // input-sized, plus 20% headroom, plus thinking tokens
 	case prompts.InformationExtraction:
 		want = 15000
