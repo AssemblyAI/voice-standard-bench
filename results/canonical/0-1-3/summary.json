@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-29T19:18:31.926488168Z",
+  "generated_at": "2026-11-17T17:26:01.825757188Z",
   "sources": [
     "report-claude-5-5-opus.json",
     "report-claude-opus-5-5.json",
@@ -4887,6 +4887,207 @@
             "information_extraction": 0.04302,
             "summarization": 0.04568,
             "text_correction": 0.1075
+          }
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "reasoning_effort": "default",
+          "bucket": "30s",
+          "quality_score": 94,
+          "total_cost_usd": 0.390919,
+          "cost_per_quality": 0.008317,
+          "hourly_prompt_tokens": 13957,
+          "hourly_completion_tokens": 13539,
+          "cost_per_hour_usd": 0.1571,
+          "latency": {
+            "n": 50,
+            "min": 1.655,
+            "max": 24.151,
+            "mean": 6.719,
+            "p50": 5.632,
+            "p95": 14.554
+          },
+          "tokens_per_second": 133.813,
+          "ttft": {
+            "n": 50,
+            "min": 1.093,
+            "max": 16.238,
+            "mean": 5.125,
+            "p50": 4.307,
+            "p95": 10.085
+          },
+          "task_quality": {
+            "dictation": 99,
+            "information_extraction": 89,
+            "summarization": 98,
+            "text_correction": 93
+          },
+          "task_cost_usd": {
+            "dictation": 0.060829,
+            "information_extraction": 0.087521,
+            "summarization": 0.086998,
+            "text_correction": 0.155571
+          },
+          "task_cost_per_quality": {
+            "dictation": 0.003072,
+            "information_extraction": 0.009834,
+            "summarization": 0.008877,
+            "text_correction": 0.01673
+          },
+          "task_cost_per_hour_usd": {
+            "dictation": 0.1128,
+            "information_extraction": 0.1562,
+            "summarization": 0.1645,
+            "text_correction": 0.1809
+          }
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "reasoning_effort": "default",
+          "bucket": "120s",
+          "quality_score": 92,
+          "total_cost_usd": 0.656394,
+          "cost_per_quality": 0.01427,
+          "hourly_prompt_tokens": 13957,
+          "hourly_completion_tokens": 13539,
+          "cost_per_hour_usd": 0.1601,
+          "latency": {
+            "n": 50,
+            "min": 4.542,
+            "max": 23.594,
+            "mean": 10.846,
+            "p50": 8.909,
+            "p95": 21.863
+          },
+          "tokens_per_second": 146.899,
+          "ttft": {
+            "n": 50,
+            "min": 3.62,
+            "max": 25.894,
+            "mean": 9.177,
+            "p50": 8.377,
+            "p95": 19.493
+          },
+          "task_quality": {
+            "dictation": 96,
+            "information_extraction": 85,
+            "summarization": 95,
+            "text_correction": 91
+          },
+          "task_cost_usd": {
+            "dictation": 0.152071,
+            "information_extraction": 0.131097,
+            "summarization": 0.141237,
+            "text_correction": 0.231989
+          },
+          "task_cost_per_quality": {
+            "dictation": 0.00792,
+            "information_extraction": 0.01542,
+            "summarization": 0.01487,
+            "text_correction": 0.02549
+          },
+          "task_cost_per_hour_usd": {
+            "dictation": 0.1453,
+            "information_extraction": 0.1528,
+            "summarization": 0.1608,
+            "text_correction": 0.1762
+          }
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "reasoning_effort": "default",
+          "bucket": "900s",
+          "quality_score": 83,
+          "total_cost_usd": 1.589217,
+          "cost_per_quality": 0.06382,
+          "hourly_prompt_tokens": 13957,
+          "hourly_completion_tokens": 13539,
+          "cost_per_hour_usd": 0.1511,
+          "latency": {
+            "n": 30,
+            "min": 11.899,
+            "max": 103.609,
+            "mean": 42.199,
+            "p50": 24.683,
+            "p95": 93.513
+          },
+          "tokens_per_second": 152.259,
+          "ttft": {
+            "n": 0,
+            "min": 0,
+            "max": 0,
+            "mean": 0,
+            "p50": 0,
+            "p95": 0
+          },
+          "task_quality": {
+            "information_extraction": 76,
+            "summarization": 86,
+            "text_correction": 88
+          },
+          "task_cost_usd": {
+            "information_extraction": 0.358108,
+            "summarization": 0.272458,
+            "text_correction": 0.958651
+          },
+          "task_cost_per_quality": {
+            "information_extraction": 0.04712,
+            "summarization": 0.03168,
+            "text_correction": 0.1089
+          },
+          "task_cost_per_hour_usd": {
+            "information_extraction": 0.1334,
+            "summarization": 0.1214,
+            "text_correction": 0.1715
+          }
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "reasoning_effort": "default",
+          "bucket": "3600s",
+          "quality_score": 83,
+          "total_cost_usd": 3.551828,
+          "cost_per_quality": 0.1476,
+          "hourly_prompt_tokens": 13957,
+          "hourly_completion_tokens": 13539,
+          "cost_per_hour_usd": 0.1225,
+          "latency": {
+            "n": 29,
+            "min": 18.337,
+            "max": 443.651,
+            "mean": 93.489,
+            "p50": 31.189,
+            "p95": 280.912
+          },
+          "error_count": 1,
+          "tokens_per_second": 151.218,
+          "ttft": {
+            "n": 0,
+            "min": 0,
+            "max": 0,
+            "mean": 0,
+            "p50": 0,
+            "p95": 0
+          },
+          "task_quality": {
+            "information_extraction": 78,
+            "summarization": 85,
+            "text_correction": 86
+          },
+          "task_cost_usd": {
+            "information_extraction": 0.593835,
+            "summarization": 0.468367,
+            "text_correction": 2.489626
+          },
+          "task_cost_per_quality": {
+            "information_extraction": 0.07613,
+            "summarization": 0.0551,
+            "text_correction": 0.3217
+          },
+          "task_cost_per_hour_usd": {
+            "information_extraction": 0.08546,
+            "summarization": 0.07421,
+            "text_correction": 0.1582
           }
         },
         {
@@ -24609,6 +24810,207 @@
           }
         },
         {
+          "model": "gemini-4-hydrogen",
+          "reasoning_effort": "default",
+          "bucket": "30s",
+          "quality_score": 93,
+          "total_cost_usd": 0.390919,
+          "cost_per_quality": 0.008407,
+          "hourly_prompt_tokens": 13957,
+          "hourly_completion_tokens": 13539,
+          "cost_per_hour_usd": 0.1571,
+          "latency": {
+            "n": 50,
+            "min": 1.655,
+            "max": 24.151,
+            "mean": 6.719,
+            "p50": 5.632,
+            "p95": 14.554
+          },
+          "tokens_per_second": 133.813,
+          "ttft": {
+            "n": 50,
+            "min": 1.093,
+            "max": 16.238,
+            "mean": 5.125,
+            "p50": 4.307,
+            "p95": 10.085
+          },
+          "task_quality": {
+            "dictation": 99,
+            "information_extraction": 86,
+            "summarization": 100,
+            "text_correction": 88
+          },
+          "task_cost_usd": {
+            "dictation": 0.060829,
+            "information_extraction": 0.087521,
+            "summarization": 0.086998,
+            "text_correction": 0.155571
+          },
+          "task_cost_per_quality": {
+            "dictation": 0.003072,
+            "information_extraction": 0.01018,
+            "summarization": 0.0087,
+            "text_correction": 0.01768
+          },
+          "task_cost_per_hour_usd": {
+            "dictation": 0.1128,
+            "information_extraction": 0.1562,
+            "summarization": 0.1645,
+            "text_correction": 0.1809
+          }
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "reasoning_effort": "default",
+          "bucket": "120s",
+          "quality_score": 92,
+          "total_cost_usd": 0.656394,
+          "cost_per_quality": 0.01427,
+          "hourly_prompt_tokens": 13957,
+          "hourly_completion_tokens": 13539,
+          "cost_per_hour_usd": 0.1601,
+          "latency": {
+            "n": 50,
+            "min": 4.542,
+            "max": 23.594,
+            "mean": 10.846,
+            "p50": 8.909,
+            "p95": 21.863
+          },
+          "tokens_per_second": 146.899,
+          "ttft": {
+            "n": 50,
+            "min": 3.62,
+            "max": 25.894,
+            "mean": 9.177,
+            "p50": 8.377,
+            "p95": 19.493
+          },
+          "task_quality": {
+            "dictation": 96,
+            "information_extraction": 86,
+            "summarization": 99,
+            "text_correction": 88
+          },
+          "task_cost_usd": {
+            "dictation": 0.152071,
+            "information_extraction": 0.131097,
+            "summarization": 0.141237,
+            "text_correction": 0.231989
+          },
+          "task_cost_per_quality": {
+            "dictation": 0.00792,
+            "information_extraction": 0.01524,
+            "summarization": 0.01427,
+            "text_correction": 0.02636
+          },
+          "task_cost_per_hour_usd": {
+            "dictation": 0.1453,
+            "information_extraction": 0.1528,
+            "summarization": 0.1608,
+            "text_correction": 0.1762
+          }
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "reasoning_effort": "default",
+          "bucket": "900s",
+          "quality_score": 82,
+          "total_cost_usd": 1.589217,
+          "cost_per_quality": 0.0646,
+          "hourly_prompt_tokens": 13957,
+          "hourly_completion_tokens": 13539,
+          "cost_per_hour_usd": 0.1511,
+          "latency": {
+            "n": 30,
+            "min": 11.899,
+            "max": 103.609,
+            "mean": 42.199,
+            "p50": 24.683,
+            "p95": 93.513
+          },
+          "tokens_per_second": 152.259,
+          "ttft": {
+            "n": 0,
+            "min": 0,
+            "max": 0,
+            "mean": 0,
+            "p50": 0,
+            "p95": 0
+          },
+          "task_quality": {
+            "information_extraction": 75,
+            "summarization": 93,
+            "text_correction": 76
+          },
+          "task_cost_usd": {
+            "information_extraction": 0.358108,
+            "summarization": 0.272458,
+            "text_correction": 0.958651
+          },
+          "task_cost_per_quality": {
+            "information_extraction": 0.04775,
+            "summarization": 0.0293,
+            "text_correction": 0.1261
+          },
+          "task_cost_per_hour_usd": {
+            "information_extraction": 0.1334,
+            "summarization": 0.1214,
+            "text_correction": 0.1715
+          }
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "reasoning_effort": "default",
+          "bucket": "3600s",
+          "quality_score": 78,
+          "total_cost_usd": 3.551828,
+          "cost_per_quality": 0.157,
+          "hourly_prompt_tokens": 13957,
+          "hourly_completion_tokens": 13539,
+          "cost_per_hour_usd": 0.1225,
+          "latency": {
+            "n": 29,
+            "min": 18.337,
+            "max": 443.651,
+            "mean": 93.489,
+            "p50": 31.189,
+            "p95": 280.912
+          },
+          "error_count": 1,
+          "tokens_per_second": 151.218,
+          "ttft": {
+            "n": 0,
+            "min": 0,
+            "max": 0,
+            "mean": 0,
+            "p50": 0,
+            "p95": 0
+          },
+          "task_quality": {
+            "information_extraction": 72,
+            "summarization": 88,
+            "text_correction": 74
+          },
+          "task_cost_usd": {
+            "information_extraction": 0.593835,
+            "summarization": 0.468367,
+            "text_correction": 2.489626
+          },
+          "task_cost_per_quality": {
+            "information_extraction": 0.08248,
+            "summarization": 0.05322,
+            "text_correction": 0.3738
+          },
+          "task_cost_per_hour_usd": {
+            "information_extraction": 0.08546,
+            "summarization": 0.07421,
+            "text_correction": 0.1582
+          }
+        },
+        {
           "model": "gpt-6.1-terra",
           "reasoning_effort": "default",
           "bucket": "30s",
@@ -30230,6 +30632,207 @@
         "information_extraction": 0.04305,
         "summarization": 0.04557,
         "text_correction": 0.1076
+      }
+    },
+    {
+      "model": "gemini-4-hydrogen",
+      "reasoning_effort": "default",
+      "bucket": "30s",
+      "quality_score": 94,
+      "total_cost_usd": 0.781838,
+      "cost_per_quality": 0.008317,
+      "hourly_prompt_tokens": 13957,
+      "hourly_completion_tokens": 13539,
+      "cost_per_hour_usd": 0.1571,
+      "latency": {
+        "n": 100,
+        "min": 1.655,
+        "max": 24.151,
+        "mean": 6.719,
+        "p50": 5.632,
+        "p95": 14.554
+      },
+      "tokens_per_second": 133.813,
+      "ttft": {
+        "n": 50,
+        "min": 1.093,
+        "max": 16.238,
+        "mean": 5.125,
+        "p50": 4.307,
+        "p95": 10.085
+      },
+      "task_quality": {
+        "dictation": 99,
+        "information_extraction": 88,
+        "summarization": 99,
+        "text_correction": 90
+      },
+      "task_cost_usd": {
+        "dictation": 0.121658,
+        "information_extraction": 0.175042,
+        "summarization": 0.173996,
+        "text_correction": 0.311142
+      },
+      "task_cost_per_quality": {
+        "dictation": 0.003072,
+        "information_extraction": 0.009946,
+        "summarization": 0.008788,
+        "text_correction": 0.01729
+      },
+      "task_cost_per_hour_usd": {
+        "dictation": 0.1128,
+        "information_extraction": 0.1562,
+        "summarization": 0.1645,
+        "text_correction": 0.1809
+      }
+    },
+    {
+      "model": "gemini-4-hydrogen",
+      "reasoning_effort": "default",
+      "bucket": "120s",
+      "quality_score": 92,
+      "total_cost_usd": 1.312788,
+      "cost_per_quality": 0.01427,
+      "hourly_prompt_tokens": 13957,
+      "hourly_completion_tokens": 13539,
+      "cost_per_hour_usd": 0.1601,
+      "latency": {
+        "n": 100,
+        "min": 4.542,
+        "max": 23.594,
+        "mean": 10.846,
+        "p50": 8.909,
+        "p95": 21.863
+      },
+      "tokens_per_second": 146.899,
+      "ttft": {
+        "n": 50,
+        "min": 3.62,
+        "max": 25.894,
+        "mean": 9.177,
+        "p50": 8.377,
+        "p95": 19.493
+      },
+      "task_quality": {
+        "dictation": 96,
+        "information_extraction": 86,
+        "summarization": 97,
+        "text_correction": 89
+      },
+      "task_cost_usd": {
+        "dictation": 0.304142,
+        "information_extraction": 0.262194,
+        "summarization": 0.282474,
+        "text_correction": 0.463978
+      },
+      "task_cost_per_quality": {
+        "dictation": 0.00792,
+        "information_extraction": 0.01524,
+        "summarization": 0.01456,
+        "text_correction": 0.02607
+      },
+      "task_cost_per_hour_usd": {
+        "dictation": 0.1453,
+        "information_extraction": 0.1528,
+        "summarization": 0.1608,
+        "text_correction": 0.1762
+      }
+    },
+    {
+      "model": "gemini-4-hydrogen",
+      "reasoning_effort": "default",
+      "bucket": "900s",
+      "quality_score": 83,
+      "total_cost_usd": 3.178434,
+      "cost_per_quality": 0.06382,
+      "hourly_prompt_tokens": 13957,
+      "hourly_completion_tokens": 13539,
+      "cost_per_hour_usd": 0.1511,
+      "latency": {
+        "n": 60,
+        "min": 11.899,
+        "max": 103.609,
+        "mean": 42.199,
+        "p50": 24.683,
+        "p95": 93.513
+      },
+      "tokens_per_second": 152.259,
+      "ttft": {
+        "n": 0,
+        "min": 0,
+        "max": 0,
+        "mean": 0,
+        "p50": 0,
+        "p95": 0
+      },
+      "task_quality": {
+        "information_extraction": 76,
+        "summarization": 90,
+        "text_correction": 82
+      },
+      "task_cost_usd": {
+        "information_extraction": 0.716216,
+        "summarization": 0.544916,
+        "text_correction": 1.917302
+      },
+      "task_cost_per_quality": {
+        "information_extraction": 0.04712,
+        "summarization": 0.03027,
+        "text_correction": 0.1169
+      },
+      "task_cost_per_hour_usd": {
+        "information_extraction": 0.1334,
+        "summarization": 0.1214,
+        "text_correction": 0.1715
+      }
+    },
+    {
+      "model": "gemini-4-hydrogen",
+      "reasoning_effort": "default",
+      "bucket": "3600s",
+      "quality_score": 80,
+      "total_cost_usd": 7.103656,
+      "cost_per_quality": 0.1531,
+      "hourly_prompt_tokens": 13957,
+      "hourly_completion_tokens": 13539,
+      "cost_per_hour_usd": 0.1225,
+      "latency": {
+        "n": 58,
+        "min": 18.337,
+        "max": 443.651,
+        "mean": 93.489,
+        "p50": 31.189,
+        "p95": 280.912
+      },
+      "error_count": 2,
+      "tokens_per_second": 151.218,
+      "ttft": {
+        "n": 0,
+        "min": 0,
+        "max": 0,
+        "mean": 0,
+        "p50": 0,
+        "p95": 0
+      },
+      "task_quality": {
+        "information_extraction": 75,
+        "summarization": 87,
+        "text_correction": 80
+      },
+      "task_cost_usd": {
+        "information_extraction": 1.18767,
+        "summarization": 0.936734,
+        "text_correction": 4.979252
+      },
+      "task_cost_per_quality": {
+        "information_extraction": 0.07918,
+        "summarization": 0.05384,
+        "text_correction": 0.3458
+      },
+      "task_cost_per_hour_usd": {
+        "information_extraction": 0.08546,
+        "summarization": 0.07421,
+        "text_correction": 0.1582
       }
     },
     {
