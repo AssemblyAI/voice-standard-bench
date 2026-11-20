@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/AssemblyAI/voice-standard-bench/internal/jsonrepair"
@@ -204,12 +205,9 @@ type ExtractionEntities struct {
 	Dates         []string `json:"dates"`
 }
 
-// extractionRequiredKeys are the top-level keys the task prompt tells the
-// model never to omit, even when a field has nothing to report.
-var extractionRequiredKeys = []string{"participants", "action_items", "decisions", "entities"}
-
 // ValidateExtraction checks that raw is a JSON object matching Extraction's
-// schema with every required key present. A model wrapping its output in a
+// schema with every required key present and non-null, including nested
+// fields and array elements. A model wrapping its output in a
 // markdown code fence, or prefacing it with a sentence of commentary despite
 // being told not to, is tolerated the same way judge output is (see
 // extractJSONObject) — but a genuinely missing key is not: the task prompt
@@ -228,21 +226,13 @@ func ValidateExtraction(raw string) (Extraction, error) {
 		return Extraction{}, fmt.Errorf("not a JSON object: %w", err)
 	}
 
-	var keys map[string]json.RawMessage
-	if err := json.Unmarshal([]byte(object), &keys); err != nil {
+	var value any
+	if err := json.Unmarshal([]byte(object), &value); err != nil {
 		return Extraction{}, fmt.Errorf("not a JSON object: %w", err)
 	}
 
-	var missing []string
-
-	for _, key := range extractionRequiredKeys {
-		if _, ok := keys[key]; !ok {
-			missing = append(missing, key)
-		}
-	}
-
-	if len(missing) > 0 {
-		return Extraction{}, fmt.Errorf("missing required key(s): %s", strings.Join(missing, ", "))
+	if err := validateExtractionValue(value, reflect.TypeOf(Extraction{}), "$"); err != nil {
+		return Extraction{}, fmt.Errorf("does not match extraction schema: %w", err)
 	}
 
 	var extraction Extraction
@@ -251,4 +241,46 @@ func ValidateExtraction(raw string) (Extraction, error) {
 	}
 
 	return extraction, nil
+}
+
+// validateExtractionValue checks the JSON shape against Extraction's own
+// field types and tags, so nested required fields cannot drift from the
+// decoded schema. Unmarshal alone accepts absent fields and null as zero
+// values. Only the three kinds used by Extraction are supported here.
+func validateExtractionValue(value any, typ reflect.Type, path string) error {
+	switch typ.Kind() {
+	case reflect.Struct:
+		object, ok := value.(map[string]any)
+		if !ok {
+			return fmt.Errorf("%s must be an object", path)
+		}
+		for i := 0; i < typ.NumField(); i++ {
+			field := typ.Field(i)
+			key := field.Tag.Get("json")
+			child, ok := object[key]
+			if !ok {
+				return fmt.Errorf("missing required key: %s.%s", path, key)
+			}
+			if err := validateExtractionValue(child, field.Type, path+"."+key); err != nil {
+				return err
+			}
+		}
+	case reflect.Slice:
+		array, ok := value.([]any)
+		if !ok {
+			return fmt.Errorf("%s must be an array", path)
+		}
+		for i, child := range array {
+			if err := validateExtractionValue(child, typ.Elem(), fmt.Sprintf("%s[%d]", path, i)); err != nil {
+				return err
+			}
+		}
+	case reflect.String:
+		if _, ok := value.(string); !ok {
+			return fmt.Errorf("%s must be a string", path)
+		}
+	default:
+		return fmt.Errorf("%s has unsupported extraction type %s", path, typ)
+	}
+	return nil
 }
