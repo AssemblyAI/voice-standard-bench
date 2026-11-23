@@ -264,6 +264,85 @@ async def elevenlabs_translate(stream, src, tgt, args):
     return result
 
 
+SPEECHMATICS_WS = "wss://eu.rt.speechmatics.com/v2"
+
+
+async def speechmatics_translate(stream, src, tgt, args):
+    """The same audio through Speechmatics real-time transcription with translation, at real-time speed.
+    Finals only (AddTranslation); partial translations are off. Latency is from each final AddTranscript
+    to the next AddTranslation after it."""
+    import websockets
+
+    base = CACHE if args.dataset == "fleurs" else CACHE / args.dataset
+    cache = base / "speechmatics" / f"{stream['name']}-{tgt}.json"
+    if cache.exists():
+        return json.loads(cache.read_text())
+    start = {"message": "StartRecognition",
+             "audio_format": {"type": "raw", "encoding": "pcm_s16le", "sample_rate": prep.RATE},
+             "transcription_config": {"language": src, "operating_point": "enhanced"},
+             "translation_config": {"target_languages": [tgt], "enable_partials": False}}
+    major = int(str(getattr(websockets, "__version__", "0")).split(".")[0] or 0)
+    hdr = "additional_headers" if major >= 14 else "extra_headers"
+    finals, translations, latency, errors = [], [], [], []
+    last_final = None
+    pcm, step = stream["pcm"], prep.RATE * 2 // 20
+    async with websockets.connect(SPEECHMATICS_WS, max_size=None,
+                                  **{hdr: {"Authorization": f"Bearer {os.environ['SPEECHMATICS_API_KEY']}"}}) as ws:
+        await ws.send(json.dumps(start))
+        started = asyncio.get_running_loop().create_future()
+
+        async def send():
+            await asyncio.wait_for(started, timeout=30)
+            t0, seq = time.monotonic(), 0
+            for i in range(0, len(pcm), step):
+                await ws.send(pcm[i:i + step])
+                seq += 1
+                wait = t0 + (i // step + 1) * 0.05 - time.monotonic()
+                if wait > 0:
+                    await asyncio.sleep(wait)
+            await ws.send(json.dumps({"message": "EndOfStream", "last_seq_no": seq}))
+
+        async def recv():
+            nonlocal last_final
+            while True:
+                try:
+                    msg = await asyncio.wait_for(ws.recv(), timeout=60)
+                except (asyncio.TimeoutError, websockets.ConnectionClosed):
+                    return
+                if isinstance(msg, bytes):
+                    continue
+                m = json.loads(msg)
+                kind = m.get("message")
+                if kind == "RecognitionStarted" and not started.done():
+                    started.set_result(True)
+                elif kind == "AddTranscript":
+                    text = (m.get("metadata") or {}).get("transcript", "").strip()
+                    if text:
+                        finals.append(text)
+                        last_final = time.monotonic()
+                elif kind == "AddTranslation":
+                    text = " ".join(r.get("content", "") for r in m.get("results", [])).strip()
+                    if text:
+                        translations.append(text)
+                        if last_final is not None:
+                            latency.append(round(time.monotonic() - last_final, 3))
+                            last_final = None
+                elif kind == "Warning":
+                    errors.append(str(m)[:200])
+                elif kind == "Error":
+                    if not started.done():
+                        started.set_exception(RuntimeError(str(m)[:300]))
+                    raise RuntimeError(f"speechmatics {stream['name']}-{tgt}: {str(m)[:300]}")
+                elif kind == "EndOfTranscript":
+                    return
+
+        await asyncio.gather(send(), recv())
+    result = {"turns": finals, "translations": translations, "missing": [], "latency_s": latency, "errors": errors}
+    cache.parent.mkdir(parents=True, exist_ok=True)
+    cache.write_text(json.dumps(result, ensure_ascii=False))
+    return result
+
+
 SONIOX_WS = "wss://stt-rt.soniox.com/transcribe-websocket"
 
 
@@ -519,6 +598,8 @@ def main():
     ap.add_argument("--elevenlabs-api", default="scribe_edit", choices=["scribe_edit", "translation"],
                     help="scribe_edit: Scribe live + a transcript_edit asking for the translation (text only, any plan). "
                          "translation: the speech-to-speech realtime translation API (enterprise only)")
+    ap.add_argument("--speechmatics", action="store_true",
+                    help="also run Speechmatics real-time translation, finals only (needs SPEECHMATICS_API_KEY)")
     ap.add_argument("--soniox", action="store_true", help="also run Soniox real-time translation (needs SONIOX_API_KEY)")
     ap.add_argument("--soniox-model", default="stt-rt-v6", help="Soniox real-time model (stt-rt-v5 if v6 is refused)")
     ap.add_argument("--elevenlabs-dub", action="store_true",
@@ -586,6 +667,27 @@ def main():
             sys.exit("every ElevenLabs session failed; see the errors above, or re-run without --elevenlabs")
         eleven = [None if isinstance(r, Exception) else r for r in eleven]
 
+    smx = [None] * len(jobs)
+    if args.speechmatics:
+        if not os.environ.get("SPEECHMATICS_API_KEY"):
+            sys.exit("--speechmatics needs SPEECHMATICS_API_KEY")
+        print(f"Speechmatics real-time translation of the same {len(jobs)} sessions...")
+
+        async def run_speechmatics():
+            sem = asyncio.Semaphore(10)
+
+            async def one(src, tgt, s):
+                async with sem:
+                    return await speechmatics_translate(s, src, tgt, args)
+
+            return await asyncio.gather(*(one(src, tgt, s) for src, tgt, s in jobs), return_exceptions=True)
+
+        smx = asyncio.run(run_speechmatics())
+        for (src, tgt, s), r in zip(jobs, smx):
+            if isinstance(r, Exception):
+                print(f"  Speechmatics FAILED {s['name']}-{tgt}: {r}")
+        smx = [None if isinstance(r, Exception) else r for r in smx]
+
     sonx = [None] * len(jobs)
     if args.soniox:
         if not os.environ.get("SONIOX_API_KEY"):
@@ -624,7 +726,7 @@ def main():
     rows = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=6) as ex:
         futs = []
-        for (src, tgt, s, ref, transcript), r, el, dub, sx in zip(sessions, e2e, eleven, dubs, sonx):
+        for (src, tgt, s, ref, transcript), r, el, dub, sx, sm in zip(sessions, e2e, eleven, dubs, sonx, smx):
             systems = [("e2e", " ".join(t for t in r["translations"] if t)), ("async_full", full[s["name"]].get(tgt, ""))]
             if el is not None:
                 systems.append(("elevenlabs", " ".join(t for t in el["translations"] if t)))
@@ -632,6 +734,8 @@ def main():
                 systems.append(("elevenlabs_dub", dub["text"]))
             if sx is not None:
                 systems.append(("soniox", sx["translations"][0]))
+            if sm is not None:
+                systems.append(("speechmatics", " ".join(sm["translations"])))
             for system, text in systems:
                 futs.append((src, tgt, s["name"], system, text, ref, transcript, ex.submit(judge, key, tgt, ref, text, args.judge_model, transcript)))
         for src, tgt, name, system, text, ref, transcript, f in futs:
@@ -646,7 +750,7 @@ def main():
     turns_n = sum(len(r["turns"]) for r in e2e)
     against = "the human transcript (no chrF: no reference translations)" if args.dataset == "ami" else "joined references"
     print(f"\n{args.dataset}: prompt {args.prompt}, model {args.model}, judge {args.judge_model}. Whole streams, scored against {against}.")
-    systems = [x for x in ("e2e", "async_full", "soniox", "elevenlabs", "elevenlabs_dub") if any(r["system"] == x for r in rows)]
+    systems = [x for x in ("e2e", "async_full", "speechmatics", "soniox", "elevenlabs", "elevenlabs_dub") if any(r["system"] == x for r in rows)]
     print(f"{'pair':6}" + "".join(f" | {x + ' chrF':>16} {'acc':>5} {'flu':>5}" for x in systems))
     summary = {}
     for pair in sorted({r["pair"] for r in rows}) + ["ALL"]:
@@ -662,6 +766,11 @@ def main():
     p = lambda q: lat_sorted[min(len(lat_sorted) - 1, int(q * len(lat_sorted)))] if lat_sorted else float("nan")
     print(f"\nturn-end to translation: p50 {p(.5):.2f}s, p95 {p(.95):.2f}s over {len(lat)} turns; "
           f"{missing} of {turns_n} turns got no translation")
+    sm_lat = sorted(x for r in smx if r for x in r["latency_s"])
+    sm_p = lambda q: sm_lat[min(len(sm_lat) - 1, int(q * len(sm_lat)))] if sm_lat else float("nan")
+    if args.speechmatics:
+        print(f"Speechmatics final transcript to translation: p50 {sm_p(.5):.2f}s, p95 {sm_p(.95):.2f}s over {len(sm_lat)} segments; "
+              f"{sum(r is None for r in smx)} sessions failed")
     sx_lat = sorted(x for r in sonx if r for x in r["latency_s"])
     sx_p = lambda q: sx_lat[min(len(sx_lat) - 1, int(q * len(sx_lat)))] if sx_lat else float("nan")
     if args.soniox:
@@ -676,6 +785,7 @@ def main():
     prefix = "" if args.dataset == "fleurs" else f"{args.dataset}__"
     out = OUT / f"{prefix}{args.prompt}__{args.model}.json"
     out.write_text(json.dumps({"args": vars(args), "summary": summary, "latency_p50": p(.5), "latency_p95": p(.95),
+                               "speechmatics_latency_p50": sm_p(.5), "speechmatics_latency_p95": sm_p(.95),
                                "soniox_latency_p50": sx_p(.5), "soniox_latency_p95": sx_p(.95),
                                "elevenlabs_latency_p50": el_p(.5), "elevenlabs_latency_p95": el_p(.95),
                                "missing": missing, "turns": turns_n, "rows": rows}, ensure_ascii=False, indent=1))

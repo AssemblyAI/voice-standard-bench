@@ -4,6 +4,7 @@ FLEURS stream (Spanish) through it for English and prints what came back.
 
     python3 scripts/live_translation/smoke.py soniox
     python3 scripts/live_translation/smoke.py elevenlabs
+    python3 scripts/live_translation/smoke.py speechmatics
 """
 import asyncio
 import hashlib
@@ -27,7 +28,8 @@ def main():
               "pcm": b"".join(clips[tsv[i]["file"]] + b"\0" * prep.RATE * 2 for i in ids)}  # 1 s pause between clips
     args = types.SimpleNamespace(dataset="smoke", soniox_model=sys.argv[2] if len(sys.argv) > 2 else "stt-rt-v6",
                                  elevenlabs_eagerness="medium")
-    fn = {"soniox": e2e.soniox_translate, "elevenlabs": e2e.elevenlabs_scribe_edit}[which]
+    fn = {"soniox": e2e.soniox_translate, "elevenlabs": e2e.elevenlabs_scribe_edit,
+          "speechmatics": e2e.speechmatics_translate}[which]
     print(f"streaming {len(stream['pcm']) / prep.RATE / 2:.0f}s of Spanish through {which}...")
     r = asyncio.run(fn(stream, src, tgt, args))
     print("\nwhat was said:   ", " ".join(tsv[i]["text"] for i in ids))

@@ -46,6 +46,7 @@ def main():
     ap.add_argument("--skip-go", action="store_true", help="skip the per-turn Go benchmark")
     ap.add_argument("--no-elevenlabs", action="store_true", help="skip ElevenLabs even when ELEVENLABS_API_KEY is set")
     ap.add_argument("--elevenlabs-api", default="scribe_edit", choices=["scribe_edit", "translation"])
+    ap.add_argument("--no-speechmatics", action="store_true", help="skip Speechmatics even when SPEECHMATICS_API_KEY is set")
     ap.add_argument("--no-soniox", action="store_true", help="skip Soniox even when SONIOX_API_KEY is set")
     ap.add_argument("--elevenlabs-dub", action="store_true",
                     help="also score ElevenLabs batch dubbing (bills dubbing minutes; ~3 hours of audio across all datasets)")
@@ -57,6 +58,8 @@ def main():
     py = sys.executable
     eleven = bool(os.environ.get("ELEVENLABS_API_KEY")) and not args.no_elevenlabs
     soniox = bool(os.environ.get("SONIOX_API_KEY")) and not args.no_soniox
+    speechmatics = bool(os.environ.get("SPEECHMATICS_API_KEY")) and not args.no_speechmatics
+    print(f"Speechmatics comparison: {'on' if speechmatics else 'off (set SPEECHMATICS_API_KEY to add it)'}")
     print(f"Soniox comparison: {'on' if soniox else 'off (set SONIOX_API_KEY to add it)'}")
     print(f"ElevenLabs comparison: {'on' if eleven else 'off (set ELEVENLABS_API_KEY to add it)'}")
 
@@ -79,6 +82,7 @@ def main():
             extra = ["--elevenlabs", "--elevenlabs-api", args.elevenlabs_api] if eleven else []
             extra += ["--elevenlabs-dub"] if eleven and args.elevenlabs_dub else []
             extra += ["--soniox"] if soniox else []
+            extra += ["--speechmatics"] if speechmatics else []
             if not run([py, str(HERE / "e2e.py"), "--dataset", d, "--prompt", p, "--model", args.model] + extra, log):
                 failed.append(log)
 
@@ -102,9 +106,9 @@ def main():
     print("\n4. end-to-end results: whole streams, mean judge scores (1-5) and chrF.")
     print("   ami has no chrF: no reference translations, it's judged against the human transcript.")
     print("   Competitor latency is measured from their own segment ends, so compare it loosely.\n")
-    names = {"async_full": "AssemblyAI async", "soniox": "Soniox", "elevenlabs": "ElevenLabs live",
+    names = {"async_full": "AssemblyAI async", "speechmatics": "Speechmatics", "soniox": "Soniox", "elevenlabs": "ElevenLabs live",
              "elevenlabs_dub": "ElevenLabs dub (batch)"}
-    lat_keys = {"soniox": "soniox_latency", "elevenlabs": "elevenlabs_latency"}
+    lat_keys = {"speechmatics": "speechmatics_latency", "soniox": "soniox_latency", "elevenlabs": "elevenlabs_latency"}
     c = lambda v: "     -" if v is None or v != v else f"{v:6.1f}"
     for d in datasets:
         print(f"{d}")
