@@ -45,6 +45,7 @@ def main():
     ap.add_argument("--datasets", default=",".join(DATASETS))
     ap.add_argument("--skip-go", action="store_true", help="skip the per-turn Go benchmark")
     ap.add_argument("--no-elevenlabs", action="store_true", help="skip ElevenLabs even when ELEVENLABS_API_KEY is set")
+    ap.add_argument("--elevenlabs-api", default="scribe_edit", choices=["scribe_edit", "translation"])
     args = ap.parse_args()
     prompts, datasets = args.prompts.split(","), args.datasets.split(",")
     if not os.environ.get("ASSEMBLYAI_API_KEY"):
@@ -70,7 +71,7 @@ def main():
     def one_dataset(d):
         for p in prompts:
             log = LOGS / f"e2e_{d}_{p}_{args.model}.log"
-            extra = ["--elevenlabs"] if eleven else []
+            extra = ["--elevenlabs", "--elevenlabs-api", args.elevenlabs_api] if eleven else []
             if not run([py, str(HERE / "e2e.py"), "--dataset", d, "--prompt", p, "--model", args.model] + extra, log):
                 failed.append(log)
 

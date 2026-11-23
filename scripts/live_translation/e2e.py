@@ -128,6 +128,77 @@ async def stream_translate(key, stream, src, tgt, args):
 
 
 ELEVENLABS_WS = "wss://api.elevenlabs.io/v1/translation/realtime"
+ELEVENLABS_STT_WS = "wss://api.elevenlabs.io/v1/speech-to-text/realtime"
+
+
+async def elevenlabs_scribe_edit(stream, src, tgt, args):
+    """ElevenLabs' text-only route: Scribe live transcription with a transcript_edit instruction asking
+    for the translation, the same shape as our streaming + llm_gateway. ElevenLabs doesn't sell this as
+    translation (Scribe "does not translate"); it is the nearest thing without the enterprise speech-to-speech
+    API. Latency is from each committed_transcript to its edited_transcript."""
+    import websockets
+
+    base = CACHE if args.dataset == "fleurs" else CACHE / args.dataset
+    cache = base / "elevenlabs_scribe_edit" / f"{stream['name']}-{tgt}.json"
+    if cache.exists():
+        return json.loads(cache.read_text())
+    instruction = (f"Translate the transcript from {NAMES[src]} into natural {NAMES[tgt]}. "
+                   f"Output only the {NAMES[tgt]} translation, nothing else.")
+    q = {"model_id": "scribe_v3_live", "audio_format": "pcm_16000", "language_code": src,
+         "commit_strategy": "vad", "transcript_edit": instruction, "enable_logging": "false"}
+    major = int(str(getattr(websockets, "__version__", "0")).split(".")[0] or 0)
+    hdr = "additional_headers" if major >= 14 else "extra_headers"
+    finals, translations, latency, errors, pending = [], [], [], [], []
+    done = {"sending": False}
+    pcm, step = stream["pcm"], prep.RATE * 2 // 20
+    async with websockets.connect(f"{ELEVENLABS_STT_WS}?{urlencode(q)}", max_size=None,
+                                  **{hdr: {"xi-api-key": os.environ["ELEVENLABS_API_KEY"]}}) as ws:
+        async def send():
+            t0 = time.monotonic()
+            for i in range(0, len(pcm), step):
+                await ws.send(json.dumps({"message_type": "input_audio_chunk", "sample_rate": prep.RATE,
+                                          "audio_base_64": base64.b64encode(pcm[i:i + step]).decode()}))
+                wait = t0 + (i // step + 1) * 0.05 - time.monotonic()
+                if wait > 0:
+                    await asyncio.sleep(wait)
+            done["sending"] = True
+            await ws.send(json.dumps({"message_type": "input_audio_chunk", "sample_rate": prep.RATE,
+                                      "audio_base_64": "", "commit": True}))  # flush the last segment
+            await asyncio.sleep(6)
+            await ws.close()
+
+        async def recv():
+            while True:
+                try:
+                    msg = await asyncio.wait_for(ws.recv(), timeout=15)
+                except (asyncio.TimeoutError, websockets.ConnectionClosed):
+                    return
+                if isinstance(msg, bytes):
+                    continue
+                m = json.loads(msg)
+                kind = m.get("message_type", "")
+                if kind == "committed_transcript" and m.get("text", "").strip():
+                    finals.append(m["text"])
+                    pending.append(time.monotonic())
+                elif kind == "edited_transcript":
+                    translations.append(m.get("edited_text", m.get("text", "")))
+                    if pending:
+                        latency.append(round(time.monotonic() - pending.pop(0), 3))
+                elif kind == "warning":
+                    errors.append(str(m)[:200])
+                elif "error" in kind.lower() or kind in ("rate_limited", "auth_error", "quota_exceeded"):
+                    if done["sending"]:  # e.g. the empty closing commit refused; the audio is all in
+                        errors.append(str(m)[:200])
+                        continue
+                    raise RuntimeError(f"elevenlabs scribe {stream['name']}-{tgt}: {str(m)[:300]}")
+
+        await asyncio.gather(send(), recv())
+    if finals and not translations:
+        raise RuntimeError(f"elevenlabs scribe {stream['name']}-{tgt}: transcripts came back but no edited_transcript")
+    result = {"turns": finals, "translations": translations, "missing": [], "latency_s": latency, "errors": errors}
+    cache.parent.mkdir(parents=True, exist_ok=True)
+    cache.write_text(json.dumps(result, ensure_ascii=False))
+    return result
 ELEVENLABS_VOICE = "21m00Tcm4TlvDq8EMAEw"  # a premade voice; the API requires one and speaks every translation
 
 
@@ -331,7 +402,10 @@ def main():
     ap.add_argument("--minutes", type=float, default=8, help="ami only: minutes of each meeting")
     ap.add_argument("--prompt", default="interpreter_v1", choices=sorted(PROMPTS))
     ap.add_argument("--elevenlabs", action="store_true",
-                    help="also run ElevenLabs realtime translation on the same audio (needs ELEVENLABS_API_KEY, enterprise)")
+                    help="also run ElevenLabs on the same audio (needs ELEVENLABS_API_KEY)")
+    ap.add_argument("--elevenlabs-api", default="scribe_edit", choices=["scribe_edit", "translation"],
+                    help="scribe_edit: Scribe live + a transcript_edit asking for the translation (text only, any plan). "
+                         "translation: the speech-to-speech realtime translation API (enterprise only)")
     ap.add_argument("--elevenlabs-eagerness", default="medium", choices=["low", "medium", "high"])
     ap.add_argument("--model", default="gemini-3.1-flash-lite")
     ap.add_argument("--judge-model", default="claude-opus-5-5")
@@ -373,13 +447,15 @@ def main():
     if args.elevenlabs:
         if not os.environ.get("ELEVENLABS_API_KEY"):
             sys.exit("--elevenlabs needs ELEVENLABS_API_KEY")
-        print(f"ElevenLabs realtime translation of the same {len(jobs)} sessions (eagerness {args.elevenlabs_eagerness})...")
+        print(f"ElevenLabs ({args.elevenlabs_api}) on the same {len(jobs)} sessions...")
 
         async def run_eleven():
             sem = asyncio.Semaphore(10)  # stay under a workspace's concurrent session limit
 
             async def one(src, tgt, s):
                 async with sem:
+                    if args.elevenlabs_api == "scribe_edit":
+                        return await elevenlabs_scribe_edit(s, src, tgt, args)
                     return await elevenlabs_translate(s, src, tgt, args)
 
             return await asyncio.gather(*(one(src, tgt, s) for src, tgt, s in jobs), return_exceptions=True)
@@ -389,7 +465,7 @@ def main():
             if isinstance(r, Exception):
                 print(f"  ElevenLabs FAILED {s['name']}-{tgt}: {r}")
         if all(isinstance(r, Exception) for r in eleven):
-            sys.exit("every ElevenLabs session failed (enterprise only: check the key's workspace); re-run without --elevenlabs")
+            sys.exit("every ElevenLabs session failed; see the errors above, or re-run without --elevenlabs")
         eleven = [None if isinstance(r, Exception) else r for r in eleven]
 
     print("scoring...")
@@ -433,7 +509,7 @@ def main():
     el_lat = sorted(x for r in eleven if r for x in r["latency_s"])
     el_p = lambda q: el_lat[min(len(el_lat) - 1, int(q * len(el_lat)))] if el_lat else float("nan")
     if args.elevenlabs:
-        print(f"ElevenLabs final_transcript to translation: p50 {el_p(.5):.2f}s, p95 {el_p(.95):.2f}s over {len(el_lat)} segments; "
+        print(f"ElevenLabs segment end to translation: p50 {el_p(.5):.2f}s, p95 {el_p(.95):.2f}s over {len(el_lat)} segments; "
               f"{sum(r is None for r in eleven)} sessions failed")
     OUT.mkdir(parents=True, exist_ok=True)
     prefix = "" if args.dataset == "fleurs" else f"{args.dataset}__"
