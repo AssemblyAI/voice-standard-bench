@@ -161,7 +161,11 @@ against async speech understanding translation of the same audio.
 python3 scripts/live_translation/e2e.py                          # FLEURS, scored against references
 python3 scripts/live_translation/e2e.py --dataset fleurs_hard    # FLEURS with no pauses and another language underneath
 python3 scripts/live_translation/e2e.py --dataset ami            # AMI meetings, judged against the human transcript
+python3 scripts/live_translation/e2e.py --elevenlabs             # also ElevenLabs realtime translation (ELEVENLABS_API_KEY, enterprise workspaces only)
 ```
+
+ElevenLabs picks its own segments, so its latency is from each `final_transcript` to the next
+`translation`, not from our turn end; compare the two loosely.
 
 ## Time-to-first-token
 

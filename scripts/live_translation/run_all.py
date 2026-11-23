@@ -44,12 +44,15 @@ def main():
     ap.add_argument("--prompts", default=",".join(PROMPTS))
     ap.add_argument("--datasets", default=",".join(DATASETS))
     ap.add_argument("--skip-go", action="store_true", help="skip the per-turn Go benchmark")
+    ap.add_argument("--no-elevenlabs", action="store_true", help="skip ElevenLabs even when ELEVENLABS_API_KEY is set")
     args = ap.parse_args()
     prompts, datasets = args.prompts.split(","), args.datasets.split(",")
     if not os.environ.get("ASSEMBLYAI_API_KEY"):
         sys.exit("set ASSEMBLYAI_API_KEY first")
     LOGS.mkdir(parents=True, exist_ok=True)
     py = sys.executable
+    eleven = bool(os.environ.get("ELEVENLABS_API_KEY")) and not args.no_elevenlabs
+    print(f"ElevenLabs comparison: {'on' if eleven else 'off (set ELEVENLABS_API_KEY to add it)'}")
 
     print("1. datasets")
     if not (DATA / "fleurs.jsonl").exists():
@@ -67,7 +70,8 @@ def main():
     def one_dataset(d):
         for p in prompts:
             log = LOGS / f"e2e_{d}_{p}_{args.model}.log"
-            if not run([py, str(HERE / "e2e.py"), "--dataset", d, "--prompt", p, "--model", args.model], log):
+            extra = ["--elevenlabs"] if eleven else []
+            if not run([py, str(HERE / "e2e.py"), "--dataset", d, "--prompt", p, "--model", args.model] + extra, log):
                 failed.append(log)
 
     threads = [threading.Thread(target=one_dataset, args=(d,)) for d in datasets]
@@ -88,7 +92,8 @@ def main():
                 failed.append(log)
 
     print("\n4. end-to-end results (whole streams; ami has no chrF, it's judged against the human transcript)\n")
-    print(f"{'dataset':12} {'prompt':15} | {'e2e acc':>7} {'flu':>5} {'chrF':>6} | {'async acc':>9} {'flu':>5} {'chrF':>6} | {'p50':>5} {'p95':>5}  missed")
+    print(f"{'dataset':12} {'prompt':15} | {'ours acc':>8} {'flu':>5} {'chrF':>6} | {'async acc':>9} {'flu':>5} {'chrF':>6} | "
+          f"{'11labs acc':>10} {'flu':>5} {'chrF':>6} | {'ours p50':>8} {'p95':>5} | {'11labs p50':>10} {'p95':>5}")
     for d in datasets:
         for p in prompts:
             f = OUT / (f"{p}__{args.model}.json" if d == "fleurs" else f"{d}__{p}__{args.model}.json")
@@ -97,10 +102,14 @@ def main():
                 continue
             r = json.loads(f.read_text())
             e, a = r["summary"]["ALL"]["e2e"], r["summary"]["ALL"]["async_full"]
+            el = r["summary"]["ALL"].get("elevenlabs")
             c = lambda v: "   -  " if v != v else f"{v:6.1f}"  # nan when there's no reference
-            print(f"{d:12} {p:15} | {e['translation_accuracy']:7.2f} {e['fluency']:5.2f} {c(e['chrf'])} | "
-                  f"{a['translation_accuracy']:9.2f} {a['fluency']:5.2f} {c(a['chrf'])} | "
-                  f"{r['latency_p50']:4.2f}s {r['latency_p95']:4.2f}s  {r['missing']}/{r['turns']}")
+            el_cols = (f"{el['translation_accuracy']:10.2f} {el['fluency']:5.2f} {c(el['chrf'])}" if el else f"{'-':>10} {'-':>5} {'-':>6}")
+            el_lat = (f"{r['elevenlabs_latency_p50']:9.2f}s {r['elevenlabs_latency_p95']:4.2f}s"
+                      if el and r.get("elevenlabs_latency_p50") == r.get("elevenlabs_latency_p50") else f"{'-':>10} {'-':>5}")
+            print(f"{d:12} {p:15} | {e['translation_accuracy']:8.2f} {e['fluency']:5.2f} {c(e['chrf'])} | "
+                  f"{a['translation_accuracy']:9.2f} {a['fluency']:5.2f} {c(a['chrf'])} | {el_cols} | "
+                  f"{r['latency_p50']:7.2f}s {r['latency_p95']:4.2f}s | {el_lat}")
     if failed:
         print("\nfailed (re-run to retry; finished parts are cached):")
         for log in failed:

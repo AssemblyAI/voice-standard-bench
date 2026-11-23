@@ -24,6 +24,7 @@ are cached under scripts/live_translation/.cache/e2e and summarised in results/l
 """
 import argparse
 import asyncio
+import base64
 import concurrent.futures
 import hashlib
 import json
@@ -121,6 +122,72 @@ async def stream_translate(key, stream, src, tgt, args):
         "latency_s": [round(trans_at[k] - turn_at[k], 3) for k in order if k in trans_at and k in turn_at],
         "errors": errors,
     }
+    cache.parent.mkdir(parents=True, exist_ok=True)
+    cache.write_text(json.dumps(result, ensure_ascii=False))
+    return result
+
+
+ELEVENLABS_WS = "wss://api.elevenlabs.io/v1/translation/realtime"
+ELEVENLABS_VOICE = "21m00Tcm4TlvDq8EMAEw"  # a premade voice; the API requires one and speaks every translation
+
+
+async def elevenlabs_translate(stream, src, tgt, args):
+    """The same audio through ElevenLabs realtime translation, at real-time speed. It decides its own
+    segments, so latency is from each final_transcript to the next translation after it."""
+    import websockets
+
+    base = CACHE if args.dataset == "fleurs" else CACHE / args.dataset
+    cache = base / "elevenlabs" / args.elevenlabs_eagerness / f"{stream['name']}-{tgt}.json"
+    if cache.exists():
+        return json.loads(cache.read_text())
+    q = {"source_language": src, "target_language": tgt, "voice_id": ELEVENLABS_VOICE, "input_format": "pcm_16000",
+         "tts_model_id": "eleven_flash_v2_5", "eagerness": args.elevenlabs_eagerness, "enable_logging": "false"}
+    major = int(str(getattr(websockets, "__version__", "0")).split(".")[0] or 0)
+    hdr = "additional_headers" if major >= 14 else "extra_headers"
+    finals, translations, latency, errors = [], [], [], []
+    last_final = None
+    pcm, step = stream["pcm"], prep.RATE * 2 // 20
+    async with websockets.connect(f"{ELEVENLABS_WS}?{urlencode(q)}", max_size=None,
+                                  **{hdr: {"xi-api-key": os.environ["ELEVENLABS_API_KEY"]}}) as ws:
+        async def send():
+            t0 = time.monotonic()
+            for i in range(0, len(pcm), step):
+                await ws.send(json.dumps({"message_type": "input_audio_chunk",
+                                          "audio_base_64": base64.b64encode(pcm[i:i + step]).decode()}))
+                wait = t0 + (i // step + 1) * 0.05 - time.monotonic()
+                if wait > 0:
+                    await asyncio.sleep(wait)
+            await asyncio.sleep(2)
+            await ws.send(json.dumps({"message_type": "end_of_stream"}))
+
+        async def recv():
+            nonlocal last_final
+            while True:
+                try:
+                    msg = await asyncio.wait_for(ws.recv(), timeout=15)
+                except (asyncio.TimeoutError, websockets.ConnectionClosed):
+                    return
+                if isinstance(msg, bytes):
+                    continue
+                m = json.loads(msg)
+                kind = m.get("message_type")
+                if kind == "final_transcript" and m.get("text", "").strip():
+                    finals.append(m["text"])
+                    last_final = time.monotonic()
+                elif kind == "translation":
+                    translations.append(m.get("text", ""))
+                    if last_final is not None:
+                        latency.append(round(time.monotonic() - last_final, 3))
+                        last_final = None
+                elif kind in ("translation_error", "audio_output_error", "transcriber_error"):
+                    errors.append(str(m)[:200])
+                elif kind == "status" and m.get("status") == "stopped":
+                    return
+                elif kind and ("error" in kind or kind in ("rate_limited", "queue_overflow")):
+                    raise RuntimeError(f"elevenlabs {stream['name']}-{tgt}: {str(m)[:300]}")
+
+        await asyncio.gather(send(), recv())
+    result = {"turns": finals, "translations": translations, "missing": [], "latency_s": latency, "errors": errors}
     cache.parent.mkdir(parents=True, exist_ok=True)
     cache.write_text(json.dumps(result, ensure_ascii=False))
     return result
@@ -263,6 +330,9 @@ def main():
     ap.add_argument("--meetings", default=",".join(prep_ami.DEFAULT_MEETINGS), help="ami only")
     ap.add_argument("--minutes", type=float, default=8, help="ami only: minutes of each meeting")
     ap.add_argument("--prompt", default="interpreter_v1", choices=sorted(PROMPTS))
+    ap.add_argument("--elevenlabs", action="store_true",
+                    help="also run ElevenLabs realtime translation on the same audio (needs ELEVENLABS_API_KEY, enterprise)")
+    ap.add_argument("--elevenlabs-eagerness", default="medium", choices=["low", "medium", "high"])
     ap.add_argument("--model", default="gemini-3.1-flash-lite")
     ap.add_argument("--judge-model", default="claude-opus-5-5")
     ap.add_argument("--pairs", default=json.dumps(prep.DEFAULT_PAIRS))
@@ -299,12 +369,38 @@ def main():
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as ex:
         full = dict(zip(uniq, ex.map(lambda a: async_full(key, *a), uniq.values())))
 
+    eleven = [None] * len(jobs)
+    if args.elevenlabs:
+        if not os.environ.get("ELEVENLABS_API_KEY"):
+            sys.exit("--elevenlabs needs ELEVENLABS_API_KEY")
+        print(f"ElevenLabs realtime translation of the same {len(jobs)} sessions (eagerness {args.elevenlabs_eagerness})...")
+
+        async def run_eleven():
+            sem = asyncio.Semaphore(10)  # stay under a workspace's concurrent session limit
+
+            async def one(src, tgt, s):
+                async with sem:
+                    return await elevenlabs_translate(s, src, tgt, args)
+
+            return await asyncio.gather(*(one(src, tgt, s) for src, tgt, s in jobs), return_exceptions=True)
+
+        eleven = asyncio.run(run_eleven())
+        for (src, tgt, s), r in zip(jobs, eleven):
+            if isinstance(r, Exception):
+                print(f"  ElevenLabs FAILED {s['name']}-{tgt}: {r}")
+        if all(isinstance(r, Exception) for r in eleven):
+            sys.exit("every ElevenLabs session failed (enterprise only: check the key's workspace); re-run without --elevenlabs")
+        eleven = [None if isinstance(r, Exception) else r for r in eleven]
+
     print("scoring...")
     rows = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=6) as ex:
         futs = []
-        for (src, tgt, s, ref, transcript), r in zip(sessions, e2e):
-            for system, text in (("e2e", " ".join(t for t in r["translations"] if t)), ("async_full", full[s["name"]].get(tgt, ""))):
+        for (src, tgt, s, ref, transcript), r, el in zip(sessions, e2e, eleven):
+            systems = [("e2e", " ".join(t for t in r["translations"] if t)), ("async_full", full[s["name"]].get(tgt, ""))]
+            if el is not None:
+                systems.append(("elevenlabs", " ".join(t for t in el["translations"] if t)))
+            for system, text in systems:
                 futs.append((src, tgt, s["name"], system, text, ref, transcript, ex.submit(judge, key, tgt, ref, text, args.judge_model, transcript)))
         for src, tgt, name, system, text, ref, transcript, f in futs:
             j = f.result()
@@ -318,24 +414,32 @@ def main():
     turns_n = sum(len(r["turns"]) for r in e2e)
     against = "the human transcript (no chrF: no reference translations)" if args.dataset == "ami" else "joined references"
     print(f"\n{args.dataset}: prompt {args.prompt}, model {args.model}, judge {args.judge_model}. Whole streams, scored against {against}.")
-    print(f"{'pair':6}  {'e2e chrF':>8} {'acc':>5} {'flu':>5}   {'async_full chrF':>15} {'acc':>5} {'flu':>5}")
+    systems = [x for x in ("e2e", "async_full", "elevenlabs") if any(r["system"] == x for r in rows)]
+    print(f"{'pair':6}" + "".join(f" | {x + ' chrF':>16} {'acc':>5} {'flu':>5}" for x in systems))
     summary = {}
     for pair in sorted({r["pair"] for r in rows}) + ["ALL"]:
-        line = f"{pair:6} "
-        for system in ("e2e", "async_full"):
+        line = f"{pair:6}"
+        for system in systems:
             sel = [r for r in rows if r["system"] == system and (pair == "ALL" or r["pair"] == pair)]
-            m = {k: round(st.mean(r.get(k, float("nan")) for r in sel), 2) for k in ("chrf", "translation_accuracy", "fluency")}
+            m = {k: round(st.mean(r.get(k, float("nan")) for r in sel), 2) if sel else float("nan")
+                 for k in ("chrf", "translation_accuracy", "fluency")}
             summary.setdefault(pair, {})[system] = m
-            line += f"  {m['chrf']:8.1f} {m['translation_accuracy']:5.2f} {m['fluency']:5.2f}   " if system == "e2e" else f"{m['chrf']:15.1f} {m['translation_accuracy']:5.2f} {m['fluency']:5.2f}"
+            line += f" | {m['chrf']:16.1f} {m['translation_accuracy']:5.2f} {m['fluency']:5.2f}"
         print(line)
     lat_sorted = sorted(lat)
     p = lambda q: lat_sorted[min(len(lat_sorted) - 1, int(q * len(lat_sorted)))] if lat_sorted else float("nan")
     print(f"\nturn-end to translation: p50 {p(.5):.2f}s, p95 {p(.95):.2f}s over {len(lat)} turns; "
           f"{missing} of {turns_n} turns got no translation")
+    el_lat = sorted(x for r in eleven if r for x in r["latency_s"])
+    el_p = lambda q: el_lat[min(len(el_lat) - 1, int(q * len(el_lat)))] if el_lat else float("nan")
+    if args.elevenlabs:
+        print(f"ElevenLabs final_transcript to translation: p50 {el_p(.5):.2f}s, p95 {el_p(.95):.2f}s over {len(el_lat)} segments; "
+              f"{sum(r is None for r in eleven)} sessions failed")
     OUT.mkdir(parents=True, exist_ok=True)
     prefix = "" if args.dataset == "fleurs" else f"{args.dataset}__"
     out = OUT / f"{prefix}{args.prompt}__{args.model}.json"
     out.write_text(json.dumps({"args": vars(args), "summary": summary, "latency_p50": p(.5), "latency_p95": p(.95),
+                               "elevenlabs_latency_p50": el_p(.5), "elevenlabs_latency_p95": el_p(.95),
                                "missing": missing, "turns": turns_n, "rows": rows}, ensure_ascii=False, indent=1))
     print(f"wrote {out.relative_to(prep.ROOT)}")
 
