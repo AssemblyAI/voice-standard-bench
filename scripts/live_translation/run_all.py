@@ -57,7 +57,8 @@ def main():
             sys.exit("FLEURS prep failed, see the log")
     if "ami" in datasets and not (DATA / "ami.jsonl").exists():
         if not run([py, str(HERE / "prep_ami.py")], LOGS / "prep_ami.log"):
-            sys.exit("AMI prep failed, see the log")
+            print("  AMI download failed (the Edinburgh server is often busy); carrying on without it. Re-run later to add it.")
+            datasets.remove("ami")
     print("  datasets ready")
 
     print(f"2. streaming end to end: {len(datasets)} datasets x {len(prompts)} prompts, datasets in parallel")

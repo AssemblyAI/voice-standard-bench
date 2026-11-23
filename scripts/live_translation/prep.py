@@ -52,15 +52,26 @@ FLEURS = {"en": "en_us", "es": "es_419", "fr": "fr_fr", "de": "de_de", "pt": "pt
 DEFAULT_PAIRS = {"en": ["es", "fr", "de", "pt", "ja"], "es": ["en"], "fr": ["en"], "de": ["en"], "pt": ["en"]}
 
 
-def fetch(url, dest):
+def fetch(url, dest, tries=5):
+    """Download url to dest once, retrying a busy server (429/5xx) with a growing wait."""
     if dest.exists():
         return dest
     dest.parent.mkdir(parents=True, exist_ok=True)
     tmp = dest.with_suffix(dest.suffix + ".part")
     print(f"  downloading {url.split('/data/')[-1] if '/data/' in url else url.rsplit('/', 1)[-1]}")
-    with urllib.request.urlopen(url, timeout=600) as r, open(tmp, "wb") as f:
-        while chunk := r.read(1 << 20):
-            f.write(chunk)
+    for attempt in range(tries):
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "voice-standard-bench"})
+            with urllib.request.urlopen(req, timeout=600) as r, open(tmp, "wb") as f:
+                while chunk := r.read(1 << 20):
+                    f.write(chunk)
+            break
+        except urllib.error.HTTPError as e:
+            if e.code != 429 and e.code < 500 or attempt == tries - 1:
+                raise
+            wait = 10 * 2 ** attempt
+            print(f"  {e.code} from the server, retrying in {wait}s")
+            time.sleep(wait)
     tmp.rename(dest)
     return dest
 
