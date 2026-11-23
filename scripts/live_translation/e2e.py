@@ -703,11 +703,11 @@ def main():
 
             async def one(src, tgt, s):
                 async with sem:
-                    for attempt in range(40):
+                    for attempt in range(480):  # up to 2 hours: another dataset's run can hold every slot for a while
                         try:
                             return await speechmatics_translate(s, src, tgt, args)
                         except RuntimeError as e:
-                            if "quota_exceeded" not in str(e) or attempt == 39:
+                            if "quota_exceeded" not in str(e) or attempt == 479:
                                 raise
                             await asyncio.sleep(15)  # another run holds the account's sessions; wait for one
 

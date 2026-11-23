@@ -34,7 +34,8 @@ def run(cmd, log, cwd=ROOT, env=None):
     """Run cmd, write its output to log, and say whether it worked."""
     with open(log, "w") as f:
         code = subprocess.call(cmd, cwd=cwd, stdout=f, stderr=subprocess.STDOUT, env=env)
-    print(f"  {'ok  ' if code == 0 else 'FAIL'} {' '.join(cmd[1:4] if cmd[0] == sys.executable else cmd[:5])}  (log: {log.relative_to(ROOT)})")
+    shown = [c for c in cmd if c != "-u"]
+    print(f"  {'ok  ' if code == 0 else 'FAIL'} {' '.join(shown[1:4] if shown[0] == sys.executable else shown[:5])}  (log: {log.relative_to(ROOT)})")
     return code == 0
 
 
@@ -83,7 +84,7 @@ def main():
             extra += ["--elevenlabs-dub"] if eleven and args.elevenlabs_dub else []
             extra += ["--soniox"] if soniox else []
             extra += ["--speechmatics"] if speechmatics else []
-            if not run([py, str(HERE / "e2e.py"), "--dataset", d, "--prompt", p, "--model", args.model] + extra, log):
+            if not run([py, "-u", str(HERE / "e2e.py"), "--dataset", d, "--prompt", p, "--model", args.model] + extra, log):
                 failed.append(log)
 
     threads = [threading.Thread(target=one_dataset, args=(d,)) for d in datasets]
