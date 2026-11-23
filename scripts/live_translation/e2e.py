@@ -231,8 +231,9 @@ def build(args, key):
     if args.dataset == "ami":
         targets = [t for t in pairs.get("en", [])] or ["es"]
         out = []
-        for m in args.meetings.split(","):
-            meeting = prep_ami.load_meeting(m, args.minutes)
+        names = args.meetings.split(",")
+        for m in names:
+            meeting = prep_ami.load_meeting(m, args.minutes, names)
             said = prep_ami.join_words(meeting["gold"])
             out += [("en", tgt, meeting, said, True) for tgt in targets]
         return out, pairs | {"en": targets}

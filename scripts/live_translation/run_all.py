@@ -11,7 +11,7 @@
 3. Runs the per-turn Go benchmark once per prompt (skip with --skip-go).
 4. Prints one table of everything e2e.py wrote.
 
-Logs go to results/live_translation_e2e/logs/.
+Logs go to results/live_translation_e2e/logs/. AMI needs `pip install pyarrow`.
 """
 import argparse
 import json

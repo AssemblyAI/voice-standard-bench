@@ -2,18 +2,19 @@
 """Build normalized/live_translation/ami.jsonl: real multi-speaker meetings for the live_translation task.
 
 The AMI Meeting Corpus (CC BY 4.0) has English meetings of about four people, with overlap, cross-talk
-and a human word-level transcript. There are no reference translations, so these records carry the
+and a human transcript. Audio and transcript come from the Hugging Face copy (edinburghcstr/ami, the
+single distant microphone, so one far-field mic in the room); the Edinburgh server is often down. There are no reference translations, so these records carry the
 human transcript of what was said in each turn (input.source_truth) and are judged against it rather
 than scored with chrF.
 
-1. Downloads the headset mix of each meeting and the manual annotations (about 25 MB, plus about
-   60 MB per meeting).
+1. Downloads the AMI test split (about 1.2 GB of parquet, once) and rebuilds the first --minutes of
+   each meeting as one recording by putting every transcribed segment back at its own time.
 2. Streams the first --minutes of each meeting once through the notetaker model at real-time speed.
 3. Gives every final streaming turn the human-transcribed words spoken during it.
 4. Runs async speech understanding translation on each turn's audio, the async-su-translation row.
 5. Writes one record per (turn, target language) with the previous 3 turns as context.
 
-Run from the repo root (needs ASSEMBLYAI_API_KEY and websockets):
+Run from the repo root (needs ASSEMBLYAI_API_KEY, websockets and pyarrow):
     python3 scripts/live_translation/prep_ami.py
 Streaming runs every meeting at once at real-time speed, so it takes about --minutes (default 8).
 Report buckets are en-<target>/ami.
@@ -25,50 +26,81 @@ import io
 import json
 import os
 import sys
-import xml.etree.ElementTree as ET
-import zipfile
+import subprocess
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import prep  # noqa: E402
 
-ANNOTATIONS_URL = "https://groups.inf.ed.ac.uk/ami/AMICorpusAnnotations/ami_public_manual_1.6.2.zip"
-WAV_URL = "https://groups.inf.ed.ac.uk/ami/AMICorpusMirror/amicorpus/{m}/audio/{m}.Mix-Headset.wav"
+PARQUET_URL = "https://huggingface.co/datasets/edinburghcstr/ami/resolve/main/sdm/test/test-{i:05d}-of-00004.parquet"
 # From the AMI full-corpus test set: three scenario meetings and one free meeting.
 DEFAULT_MEETINGS = ["ES2004a", "IS1009a", "TS3003a", "EN2002a"]
 CACHE = prep.CACHE / "ami"
 
 
-def gold_words(meeting):
-    """Every human-transcribed word of the meeting, all speakers, sorted by start time (seconds)."""
-    zpath = prep.fetch(ANNOTATIONS_URL, CACHE / "ami_public_manual_1.6.2.zip")
-    words = []
-    with zipfile.ZipFile(zpath) as z:
-        names = [n for n in z.namelist() if n.split("/")[-1].startswith(f"{meeting}.") and n.endswith(".words.xml")]
-        if not names:
-            sys.exit(f"no word annotations for {meeting} in the AMI zip")
-        for name in names:
-            speaker = name.split("/")[-1].split(".")[1]
-            for el in ET.fromstring(z.read(name)).iter():
-                if el.tag.split("}")[-1] != "w" or "starttime" not in el.attrib or not (el.text or "").strip():
-                    continue
-                words.append({"start": float(el.attrib["starttime"]), "end": float(el.attrib.get("endtime", el.attrib["starttime"])),
-                              "text": el.text.strip(), "punc": "punc" in el.attrib, "speaker": speaker})
-    return sorted(words, key=lambda w: w["start"])
+def decode(audio):
+    """16 kHz mono PCM16 from one segment's encoded audio (WAV, or FLAC via soundfile or ffmpeg)."""
+    if audio[:4] == b"RIFF":
+        return prep.pcm16_mono_16k(audio)
+    try:
+        import soundfile as sf
+        import numpy as np
+        data, rate = sf.read(io.BytesIO(audio), dtype="int16", always_2d=True)
+        if rate == prep.RATE:
+            return np.ascontiguousarray(data[:, 0]).tobytes()
+    except ImportError:
+        pass
+    return subprocess.run(["ffmpeg", "-loglevel", "error", "-i", "pipe:0", "-f", "s16le", "-ac", "1", "-ar", str(prep.RATE), "pipe:1"],
+                          input=audio, capture_output=True, check=True).stdout
+
+
+_SEGMENTS = {}
+
+
+def segments(meetings):
+    """Every transcribed segment of the wanted meetings: meeting_id, begin_time, end_time, text, audio bytes."""
+    want = tuple(sorted(meetings))
+    if want not in _SEGMENTS:
+        try:
+            import pyarrow.parquet as pq
+        except ImportError:
+            sys.exit("AMI needs pyarrow: pip install pyarrow")
+        rows = []
+        for i in range(4):
+            path = prep.fetch(PARQUET_URL.format(i=i), CACHE / f"sdm-test-{i}.parquet")
+            t = pq.read_table(path, columns=["meeting_id", "begin_time", "end_time", "text", "audio"],
+                              filters=[("meeting_id", "in", list(want))])
+            for r in t.to_pylist():
+                rows.append({**r, "audio": r["audio"]["bytes"]})
+        _SEGMENTS[want] = rows
+    return _SEGMENTS[want]
 
 
 def join_words(words):
-    out = ""
-    for w in words:
-        out += w["text"] if w["punc"] or not out else " " + w["text"]
-    return out
+    return " ".join(w["text"] for w in words)
 
 
-def load_meeting(meeting, minutes):
-    wav = prep.fetch(WAV_URL.format(m=meeting), CACHE / f"{meeting}.Mix-Headset.wav")
-    pcm = prep.pcm16_mono_16k(wav.read_bytes())[: int(minutes * 60 * prep.RATE) * 2]
-    gold = [w for w in gold_words(meeting) if w["start"] < minutes * 60]
-    return {"name": f"ami-{meeting}", "pcm": pcm, "gold": gold}
+def load_meeting(meeting, minutes, meetings=None):
+    """The first `minutes` of one meeting as one recording, plus its human words with times.
+    The distant mic is one channel, so overlapping segments hold the same audio and writing them
+    back at their own times rebuilds the recording; stretches nobody transcribed stay silent."""
+    limit = int(minutes * 60 * prep.RATE)
+    buf = bytearray(limit * 2)
+    gold = []
+    rows = [r for r in segments(meetings or DEFAULT_MEETINGS + [meeting]) if r["meeting_id"] == meeting]
+    if not rows:
+        sys.exit(f"{meeting} is not in the AMI test split")
+    for r in sorted(rows, key=lambda r: r["begin_time"]):
+        start = int(r["begin_time"] * prep.RATE)
+        if start >= limit:
+            continue
+        pcm = decode(r["audio"])[: (limit - start) * 2]
+        buf[start * 2: start * 2 + len(pcm)] = pcm
+        words = r["text"].lower().split()
+        step = (r["end_time"] - r["begin_time"]) / max(1, len(words))
+        for k, w in enumerate(words):
+            gold.append({"start": r["begin_time"] + k * step, "end": r["begin_time"] + (k + 1) * step, "text": w})
+    return {"name": f"ami-{meeting}", "pcm": bytes(buf), "gold": sorted(gold, key=lambda w: w["start"])}
 
 
 def turns_with_gold(turns, gold):
@@ -112,7 +144,8 @@ def main():
     if not key:
         sys.exit("Set ASSEMBLYAI_API_KEY first.")
     targets = args.targets.split(",")
-    meetings = [load_meeting(m, args.minutes) for m in args.meetings.split(",")]
+    names = args.meetings.split(",")
+    meetings = [load_meeting(m, args.minutes, names) for m in names]
     print(f"streaming {len(meetings)} meetings ({args.minutes:g} min each) through {args.streaming_model} at real-time speed")
 
     async def run_all():
@@ -150,7 +183,7 @@ def main():
                 for tgt in targets:
                     out.write(json.dumps({
                         "id": f"{m['name']}-t{i:03d}-{tgt}" + (f"-{args.mode}" if args.mode else ""),
-                        "dataset": "ami/manual-1.6.2",
+                        "dataset": "edinburghcstr/ami sdm test",
                         "input": {"source_language": "en", "target_language": tgt, "turn": s["text"],
                                   "history": [h["text"] for h in ss[max(0, i - args.history):i]],
                                   "source_truth": s["gold"], "variant": variant,

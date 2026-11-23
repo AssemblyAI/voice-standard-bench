@@ -138,7 +138,7 @@ judge scores each turn against the human transcript of what was said
 (`LiveTranslationTranscriptJudge`). Their buckets end in `/ami` (`en-es/ami`).
 
 ```bash
-python3 scripts/live_translation/prep_ami.py   # normalized/live_translation/ami.jsonl: 4 meetings x 8 minutes, en -> es/fr/de/pt/ja
+pip install pyarrow && python3 scripts/live_translation/prep_ami.py   # normalized/live_translation/ami.jsonl: 4 meetings x 8 minutes, en -> es/fr/de/pt/ja
 ```
 
 The TTFT pass only runs the `30s`/`120s` buckets, so it skips this task; the
