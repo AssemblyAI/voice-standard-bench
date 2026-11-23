@@ -17,7 +17,6 @@ Run from the repo root after prep.py (it reuses prep.py's FLEURS cache and sente
     python3 scripts/live_translation/e2e.py                           # interpreter_v1
     python3 scripts/live_translation/e2e.py --prompt docs_oneliner
     python3 scripts/live_translation/e2e.py --model qwen3.5-4b-32k-fast
-    python3 scripts/live_translation/e2e.py --dataset fleurs_hard   # no pauses, another voice underneath
     python3 scripts/live_translation/e2e.py --dataset ami           # real meetings, judged against the human transcript
 Needs ASSEMBLYAI_API_KEY and websockets. About 3 minutes of streaming per prompt and model; results
 are cached under scripts/live_translation/.cache/e2e and summarised in results/live_translation_e2e/.
@@ -577,16 +576,6 @@ def judge(key, tgt, ref, cand, judge_model, transcript=False):
     return scores
 
 
-def with_babble(stream, babble_pcm, gain=0.25):
-    """Mix another speaker in another language under the whole stream, about 12 dB down."""
-    import array
-    a = array.array("h", stream["pcm"])
-    b = array.array("h", babble_pcm)
-    for i in range(len(a)):
-        a[i] = max(-32768, min(32767, a[i] + int(b[i % len(b)] * gain)))
-    return {**stream, "name": "hard-" + stream["name"], "pcm": a.tobytes()}
-
-
 def build(args, key):
     """Sessions to run: (source, target, stream, text to score against, judged against a transcript?)."""
     pairs = json.loads(args.pairs)
@@ -603,16 +592,10 @@ def build(args, key):
     tsv = {l: prep.read_tsv(l, args.split) for l in langs}
     common = set.intersection(*(set(t) for t in tsv.values()))
     ids = sorted(common, key=lambda i: hashlib.md5(i.encode()).hexdigest())[:args.clips]
-    hard = args.dataset == "fleurs_hard"
     out = []
     for src in pairs:
         clips = prep.read_clips(src, args.split, [tsv[src][i]["file"] for i in ids])
-        streams = prep.build_streams(src, ids, clips, tsv[src], args.per_stream, 0 if hard else args.gap_ms)
-        if hard:
-            other = "es" if src != "es" else "en"
-            other_clips = prep.read_clips(other, args.split, [tsv[other][i]["file"] for i in ids[::-1]])
-            babble = b"".join(other_clips.values())
-            streams = [with_babble(s, babble) for s in streams]
+        streams = prep.build_streams(src, ids, clips, tsv[src], args.per_stream, args.gap_ms)
         for s in streams:
             for tgt in pairs[src]:
                 out.append((src, tgt, s, " ".join(tsv[tgt][span["id"]]["text"] for span in s["spans"]), False))
@@ -621,7 +604,7 @@ def build(args, key):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("--dataset", default="fleurs", choices=["fleurs", "fleurs_hard", "ami"])
+    ap.add_argument("--dataset", default="fleurs", choices=["fleurs", "ami"])
     ap.add_argument("--meetings", default=",".join(prep_ami.DEFAULT_MEETINGS), help="ami only")
     ap.add_argument("--minutes", type=float, default=8, help="ami only: minutes of each meeting")
     ap.add_argument("--prompt", default="interpreter_v1", choices=sorted(PROMPTS))

@@ -159,7 +159,6 @@ against async speech understanding translation of the same audio.
 
 ```bash
 python3 scripts/live_translation/e2e.py                          # FLEURS, scored against references
-python3 scripts/live_translation/e2e.py --dataset fleurs_hard    # FLEURS with no pauses and another language underneath
 python3 scripts/live_translation/e2e.py --dataset ami            # AMI meetings, judged against the human transcript
 python3 scripts/live_translation/e2e.py --elevenlabs             # also ElevenLabs on the same audio (ELEVENLABS_API_KEY)
 ```

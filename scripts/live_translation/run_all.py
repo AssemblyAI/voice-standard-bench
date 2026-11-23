@@ -5,7 +5,7 @@
     python3 scripts/live_translation/run_all.py --model qwen3.5-4b-32k-fast --skip-go
 
 1. Builds the datasets that are missing (FLEURS, AMI meetings).
-2. Streams every dataset (fleurs, fleurs_hard, ami) through llm_gateway with every prompt (e2e.py).
+2. Streams every dataset (fleurs, ami) through llm_gateway with every prompt (e2e.py).
    The three datasets run side by side; each takes real time, so the whole step is ~25 minutes.
    Finished sessions are cached, so a re-run only redoes what failed.
 3. Runs the per-turn Go benchmark once per prompt (skip with --skip-go).
@@ -27,7 +27,7 @@ DATA = ROOT / "normalized" / "live_translation"
 OUT = ROOT / "results" / "live_translation_e2e"
 LOGS = OUT / "logs"
 PROMPTS = ["interpreter_v1", "docs_oneliner", "docs_history"]
-DATASETS = ["fleurs", "fleurs_hard", "ami"]
+DATASETS = ["fleurs", "ami"]
 
 
 def run(cmd, log, cwd=ROOT, env=None):
