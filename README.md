@@ -168,6 +168,8 @@ ElevenLabs Scribe doesn't translate, so `--elevenlabs` runs Scribe live with a `
 instruction asking for the translation: text only, the same shape as streaming + `llm_gateway`.
 `--elevenlabs-api translation` uses their speech-to-speech realtime translation API instead
 (enterprise workspaces only). ElevenLabs picks its own segments, so compare latency loosely.
+`--elevenlabs-dub` also scores ElevenLabs batch dubbing of each whole stream (its translated
+transcript only), their nearest thing to async translation. It bills dubbing minutes.
 
 ## Time-to-first-token
 

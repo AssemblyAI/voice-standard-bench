@@ -264,6 +264,56 @@ async def elevenlabs_translate(stream, src, tgt, args):
     return result
 
 
+ELEVENLABS_API = "https://api.elevenlabs.io/v1"
+
+
+def elevenlabs_request(method, path, data=None, content_type=None):
+    import urllib.error
+    import urllib.request
+    headers = {"xi-api-key": os.environ["ELEVENLABS_API_KEY"]}
+    if content_type:
+        headers["content-type"] = content_type
+    req = urllib.request.Request(f"{ELEVENLABS_API}{path}", data=data, headers=headers, method=method)
+    for attempt in range(5):
+        try:
+            with urllib.request.urlopen(req, timeout=300) as r:
+                return json.loads(r.read())
+        except urllib.error.HTTPError as e:
+            if e.code in (429, 500, 502, 503, 504) and attempt < 4:
+                time.sleep(10 * (attempt + 1))
+                continue
+            raise RuntimeError(f"ElevenLabs {method} {path}: {e.code} {e.read().decode(errors='replace')[:300]}")
+
+
+def elevenlabs_dub(stream, src, tgt, dataset):
+    """ElevenLabs batch dubbing of the whole stream file; we keep only its translated transcript."""
+    base = CACHE if dataset == "fleurs" else CACHE / dataset
+    cache = base / "elevenlabs_dub" / f"{stream['name']}-{tgt}.json"
+    if cache.exists():
+        return json.loads(cache.read_text())
+    boundary = "----vsb" + hashlib.md5(stream["name"].encode()).hexdigest()
+    fields = {"source_lang": src, "target_lang": tgt, "num_speakers": "0", "watermark": "true", "name": f"vsb-{stream['name']}-{tgt}"}
+    body = b"".join(f'--{boundary}\r\nContent-Disposition: form-data; name="{k}"\r\n\r\n{v}\r\n'.encode() for k, v in fields.items())
+    body += (f'--{boundary}\r\nContent-Disposition: form-data; name="file"; filename="{stream["name"]}.wav"\r\n'
+             f"Content-Type: audio/wav\r\n\r\n").encode() + prep.wav_bytes(stream["pcm"]) + f"\r\n--{boundary}--\r\n".encode()
+    dub = elevenlabs_request("POST", "/dubbing", data=body, content_type=f"multipart/form-data; boundary={boundary}")["dubbing_id"]
+    t0 = time.monotonic()
+    while True:
+        status = elevenlabs_request("GET", f"/dubbing/{dub}")
+        if status.get("status") == "dubbed":
+            break
+        if status.get("status") == "failed" or time.monotonic() - t0 > 1800:
+            raise RuntimeError(f"ElevenLabs dub {stream['name']}-{tgt}: {str(status)[:300]}")
+        time.sleep(10)
+    tr = elevenlabs_request("GET", f"/dubbing/{dub}/transcripts/{tgt}/format/json")
+    utterances = (tr.get("json") or {}).get("utterances") or []
+    text = " ".join(u.get("text", "").strip() for u in sorted(utterances, key=lambda u: u.get("start_s", 0)) if u.get("text"))
+    result = {"dubbing_id": dub, "text": text, "seconds": round(time.monotonic() - t0, 1)}
+    cache.parent.mkdir(parents=True, exist_ok=True)
+    cache.write_text(json.dumps(result, ensure_ascii=False))
+    return result
+
+
 def async_full(key, stream, src, targets):
     """Async speech understanding translation of the whole stream file."""
     cache = CACHE / "async_full" / f"{stream['name']}.json"
@@ -406,6 +456,9 @@ def main():
     ap.add_argument("--elevenlabs-api", default="scribe_edit", choices=["scribe_edit", "translation"],
                     help="scribe_edit: Scribe live + a transcript_edit asking for the translation (text only, any plan). "
                          "translation: the speech-to-speech realtime translation API (enterprise only)")
+    ap.add_argument("--elevenlabs-dub", action="store_true",
+                    help="also run ElevenLabs batch dubbing on each whole stream and score its translated transcript "
+                         "(needs ELEVENLABS_API_KEY; bills dubbing minutes per stream and target)")
     ap.add_argument("--elevenlabs-eagerness", default="medium", choices=["low", "medium", "high"])
     ap.add_argument("--model", default="gemini-3.1-flash-lite")
     ap.add_argument("--judge-model", default="claude-opus-5-5")
@@ -468,14 +521,29 @@ def main():
             sys.exit("every ElevenLabs session failed; see the errors above, or re-run without --elevenlabs")
         eleven = [None if isinstance(r, Exception) else r for r in eleven]
 
+    dubs = [None] * len(jobs)
+    if args.elevenlabs_dub:
+        if not os.environ.get("ELEVENLABS_API_KEY"):
+            sys.exit("--elevenlabs-dub needs ELEVENLABS_API_KEY")
+        print(f"ElevenLabs batch dubbing of {len(jobs)} stream x target files (polls until each is dubbed)...")
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as ex:
+            futs = [ex.submit(elevenlabs_dub, s, src, tgt, args.dataset) for src, tgt, s in jobs]
+            for i, ((src, tgt, s), f) in enumerate(zip(jobs, futs)):
+                try:
+                    dubs[i] = f.result()
+                except Exception as e:  # noqa: BLE001 - one failed dub shouldn't sink the run
+                    print(f"  ElevenLabs dub FAILED {s['name']}-{tgt}: {e}")
+
     print("scoring...")
     rows = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=6) as ex:
         futs = []
-        for (src, tgt, s, ref, transcript), r, el in zip(sessions, e2e, eleven):
+        for (src, tgt, s, ref, transcript), r, el, dub in zip(sessions, e2e, eleven, dubs):
             systems = [("e2e", " ".join(t for t in r["translations"] if t)), ("async_full", full[s["name"]].get(tgt, ""))]
             if el is not None:
                 systems.append(("elevenlabs", " ".join(t for t in el["translations"] if t)))
+            if dub is not None:
+                systems.append(("elevenlabs_dub", dub["text"]))
             for system, text in systems:
                 futs.append((src, tgt, s["name"], system, text, ref, transcript, ex.submit(judge, key, tgt, ref, text, args.judge_model, transcript)))
         for src, tgt, name, system, text, ref, transcript, f in futs:
@@ -490,7 +558,7 @@ def main():
     turns_n = sum(len(r["turns"]) for r in e2e)
     against = "the human transcript (no chrF: no reference translations)" if args.dataset == "ami" else "joined references"
     print(f"\n{args.dataset}: prompt {args.prompt}, model {args.model}, judge {args.judge_model}. Whole streams, scored against {against}.")
-    systems = [x for x in ("e2e", "async_full", "elevenlabs") if any(r["system"] == x for r in rows)]
+    systems = [x for x in ("e2e", "async_full", "elevenlabs", "elevenlabs_dub") if any(r["system"] == x for r in rows)]
     print(f"{'pair':6}" + "".join(f" | {x + ' chrF':>16} {'acc':>5} {'flu':>5}" for x in systems))
     summary = {}
     for pair in sorted({r["pair"] for r in rows}) + ["ALL"]:
