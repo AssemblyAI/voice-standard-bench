@@ -27,12 +27,14 @@ import json
 import os
 import sys
 import subprocess
+import urllib.request
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import prep  # noqa: E402
 
-PARQUET_URL = "https://huggingface.co/datasets/edinburghcstr/ami/resolve/main/sdm/test/test-{i:05d}-of-00004.parquet"
+HF_TREE = "https://huggingface.co/api/datasets/edinburghcstr/ami/tree/main/sdm?recursive=true"
+HF_FILE = "https://huggingface.co/datasets/edinburghcstr/ami/resolve/main/{path}"
 # From the AMI full-corpus test set: three scenario meetings and one free meeting.
 DEFAULT_MEETINGS = ["ES2004a", "IS1009a", "TS3003a", "EN2002a"]
 CACHE = prep.CACHE / "ami"
@@ -66,8 +68,17 @@ def segments(meetings):
         except ImportError:
             sys.exit("AMI needs pyarrow: pip install pyarrow")
         rows = []
-        for i in range(4):
-            path = prep.fetch(PARQUET_URL.format(i=i), CACHE / f"sdm-test-{i}.parquet")
+        listing = CACHE / "sdm-tree.json"
+        if not listing.exists():
+            CACHE.mkdir(parents=True, exist_ok=True)
+            with urllib.request.urlopen(urllib.request.Request(HF_TREE, headers={"User-Agent": "voice-standard-bench"}), timeout=60) as r:
+                listing.write_bytes(r.read())
+        files = sorted(f["path"] for f in json.loads(listing.read_text())
+                       if f.get("type") == "file" and f["path"].endswith(".parquet") and "test" in f["path"].rsplit("/", 1)[-1])
+        if not files:
+            sys.exit(f"no sdm test parquet files listed at {HF_TREE}")
+        for name in files:
+            path = prep.fetch(HF_FILE.format(path=name), CACHE / name.replace("/", "_"))
             t = pq.read_table(path, columns=["meeting_id", "begin_time", "end_time", "text", "audio"],
                               filters=[("meeting_id", "in", list(want))])
             for r in t.to_pylist():
