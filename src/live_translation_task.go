@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"path/filepath"
+	"strings"
 
 	"github.com/AssemblyAI/voice-standard-bench/src/prompts"
 )
@@ -24,6 +25,7 @@ type LiveTranslationTask struct {
 	gateway     *Gateway
 	datasetGlob string
 	spec        prompts.Spec
+	prompt      prompts.LiveTranslationPrompt
 }
 
 func NewLiveTranslationTask(gateway *Gateway) (*LiveTranslationTask, error) {
@@ -32,10 +34,18 @@ func NewLiveTranslationTask(gateway *Gateway) (*LiveTranslationTask, error) {
 		return nil, fmt.Errorf("no prompts.Spec registered for %q", prompts.LiveTranslation)
 	}
 
+	name, prompt, ok := prompts.ActiveLiveTranslationPrompt()
+	if !ok {
+		return nil, fmt.Errorf("LIVE_TRANSLATION_PROMPT=%q is not a known prompt (valid: %s)", name, strings.Join(prompts.LiveTranslationPromptNames(), ", "))
+	}
+
+	log.Printf("live_translation: prompt %s", name)
+
 	return &LiveTranslationTask{
 		gateway:     gateway,
 		datasetGlob: filepath.Join(normalizedRoot, prompts.LiveTranslation, "*.jsonl"),
 		spec:        spec,
+		prompt:      prompt,
 	}, nil
 }
 
@@ -100,9 +110,9 @@ func (t *LiveTranslationTask) RunRecord(ctx context.Context, model ModelInfo, re
 		return sample, CompletionResult{Text: record.AsyncBaseline}, nil
 	}
 
-	input := liveTranslationUserMessage(record)
+	input := liveTranslationUserMessage(t.prompt.User, record)
 
-	result, err := t.gateway.RunCompletion(ctx, model, t.spec.Task, input, t.maxCompletionTokens(input, model))
+	result, err := t.gateway.RunCompletion(ctx, model, t.prompt.System, input, t.maxCompletionTokens(input, model))
 	if err != nil {
 		sample.Err = err
 
@@ -132,9 +142,9 @@ func (t *LiveTranslationTask) RunTTFT(ctx context.Context, model ModelInfo, reco
 		return sample, CompletionResult{Text: record.AsyncBaseline}, nil
 	}
 
-	input := liveTranslationUserMessage(record)
+	input := liveTranslationUserMessage(t.prompt.User, record)
 
-	stream, err := t.gateway.RunCompletionStream(ctx, model, t.spec.Task, input, t.maxCompletionTokens(input, model))
+	stream, err := t.gateway.RunCompletionStream(ctx, model, t.prompt.System, input, t.maxCompletionTokens(input, model))
 	if err != nil {
 		sample.Err = err
 

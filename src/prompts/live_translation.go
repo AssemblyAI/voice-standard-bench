@@ -1,27 +1,81 @@
 package prompts
 
-// liveTranslationPromptVariants holds every live translation task-prompt
-// candidate, keyed by a short label, so a tuning pass can see what was
-// already tried. Each one is the system prompt for a single streaming turn:
-// the user message (built by the task, see live_translation_task.go) names
-// the target language, carries up to three previous turns as context, and
-// then the turn to translate -- the same shape the streaming API's
-// llm_gateway parameter sends per turn with {{history_3}} and {{turn}}.
-//
-// Only liveTranslationPromptActive is sent to a model.
-var liveTranslationPromptVariants = map[string]string{
+import (
+	"os"
+	"sort"
+)
+
+// LiveTranslationPrompt is one candidate prompt for translating a streaming
+// turn. User is a template: the task fills in {{source}} and {{target}}
+// (language names), {{history}} (up to three previous turns, one per line, or
+// "(none)") and {{turn}}, the same values the streaming API's llm_gateway
+// templates ({{history_3}}, {{turn}}) carry. An empty System sends no system
+// message, like a prompt given to llm_gateway as a single user message.
+type LiveTranslationPrompt struct {
+	System string
+	User   string
+}
+
+// LiveTranslationPrompts holds every candidate, keyed by a short label, so a
+// tuning pass can see what was already tried. Pick one with the
+// LIVE_TRANSLATION_PROMPT environment variable (default
+// DefaultLiveTranslationPrompt); each run reports one prompt, so compare
+// prompts across runs.
+var LiveTranslationPrompts = map[string]LiveTranslationPrompt{
 	// interpreter_v1: the prompt shared in the Notion channel on 2026-10-15
-	// for streaming translation through llm_gateway, adapted to take the
-	// target language from the user message instead of hardcoding Spanish.
-	"interpreter_v1": `You are a simultaneous interpreter translating a live conversation, one speaker turn at a time.
+	// for streaming translation through llm_gateway, with the target language
+	// taken from the user message instead of hardcoded.
+	"interpreter_v1": {
+		System: `You are a simultaneous interpreter translating a live conversation, one speaker turn at a time.
 
 The user message gives the target language, the previous turns for context only (already translated, do not repeat them), and the current turn.
 
 Translate ONLY the current turn into natural, fluent text in the target language. Keep names, numbers and units as spoken. Do not add explanations, quotes, or any text other than the translation. If the turn is only a filler such as "um" or "okay", translate it to the closest natural equivalent.`,
+		User: "Target language: {{target}}\n\nPrevious turns (context only):\n{{history}}\n\nCurrent turn:\n{{turn}}",
+	},
+
+	// docs_oneliner: the quickstart prompt on the real-time translation docs
+	// page, as written: one user message, no context.
+	"docs_oneliner": {
+		User: "Translate the following {{source}} into natural {{target}} and reply with only the translation: {{turn}}",
+	},
+
+	// docs_history: docs_oneliner with the previous turns above the current
+	// one, as the docs page suggests for {{history_3}}. Against docs_oneliner
+	// it shows what context adds; against interpreter_v1, what the wording adds.
+	"docs_history": {
+		User: "Previous turns, for context only:\n{{history}}\n\nTranslate the following {{source}} into natural {{target}} and reply with only the translation: {{turn}}",
+	},
 }
 
-// liveTranslationPromptActive selects which variant is sent.
-const liveTranslationPromptActive = "interpreter_v1"
+// DefaultLiveTranslationPrompt is the prompt used when LIVE_TRANSLATION_PROMPT
+// is unset.
+const DefaultLiveTranslationPrompt = "interpreter_v1"
+
+// ActiveLiveTranslationPrompt returns the selected prompt's label and value.
+// An unknown label is an error for the caller to report, not a silent default.
+func ActiveLiveTranslationPrompt() (name string, prompt LiveTranslationPrompt, ok bool) {
+	name = os.Getenv("LIVE_TRANSLATION_PROMPT")
+	if name == "" {
+		name = DefaultLiveTranslationPrompt
+	}
+
+	prompt, ok = LiveTranslationPrompts[name]
+
+	return name, prompt, ok
+}
+
+// LiveTranslationPromptNames lists the labels, sorted, for error messages.
+func LiveTranslationPromptNames() []string {
+	names := make([]string, 0, len(LiveTranslationPrompts))
+	for n := range LiveTranslationPrompts {
+		names = append(names, n)
+	}
+
+	sort.Strings(names)
+
+	return names
+}
 
 // liveTranslationJudge grades one translated turn against a human reference
 // translation. Unlike the transcript tasks this is reference-based: FLEURS
@@ -40,8 +94,15 @@ Score the candidate on two 1-5 scales:
 
 Reply with brief reasoning, then a JSON object: {"translation_accuracy": <1-5>, "fluency": <1-5>, "notes": "<one line>"}`
 
-var liveTranslationSpec = Spec{
-	Task:   liveTranslationPromptVariants[liveTranslationPromptActive],
-	Judge:  liveTranslationJudge,
-	Rubric: []string{"translation_accuracy", "fluency"},
-}
+// liveTranslationSpec's Task is the active prompt's system and user template
+// together, so a replayed run refuses to mix outputs from different prompts
+// (replay compares Task between runs).
+var liveTranslationSpec = func() Spec {
+	_, p, _ := ActiveLiveTranslationPrompt()
+
+	return Spec{
+		Task:   p.System + "\n\n---\n\n" + p.User,
+		Judge:  liveTranslationJudge,
+		Rubric: []string{"translation_accuracy", "fluency"},
+	}
+}()

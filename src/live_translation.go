@@ -193,29 +193,22 @@ func languageName(code string) string {
 	return code
 }
 
-// liveTranslationUserMessage builds the per-turn user message: the target
-// language, the previous turns as context, then the turn. It mirrors what the
-// streaming API's llm_gateway template sends with {{history_3}} and {{turn}}.
-func liveTranslationUserMessage(r LiveTranslationRecord) string {
-	var b strings.Builder
-
-	fmt.Fprintf(&b, "Target language: %s\n\n", languageName(r.TargetLanguage))
-
-	b.WriteString("Previous turns (context only):\n")
-
-	if len(r.History) == 0 {
-		b.WriteString("(none)\n")
+// liveTranslationUserMessage fills a prompt's user template for one record:
+// language names, the previous turns (one per line, or "(none)") and the
+// turn. It mirrors what the streaming API's llm_gateway template sends with
+// {{history_3}} and {{turn}}.
+func liveTranslationUserMessage(template string, r LiveTranslationRecord) string {
+	history := "(none)"
+	if len(r.History) > 0 {
+		history = strings.Join(r.History, "\n")
 	}
 
-	for _, h := range r.History {
-		b.WriteString(h)
-		b.WriteString("\n")
-	}
-
-	b.WriteString("\nCurrent turn:\n")
-	b.WriteString(r.Turn)
-
-	return b.String()
+	return strings.NewReplacer(
+		"{{source}}", languageName(r.SourceLanguage),
+		"{{target}}", languageName(r.TargetLanguage),
+		"{{history}}", history,
+		"{{turn}}", r.Turn,
+	).Replace(template)
 }
 
 // ChrF returns the character n-gram F-score (Popovic, 2015) of hypothesis

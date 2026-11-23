@@ -100,12 +100,13 @@ func TestSampleLiveTranslationRecordsIsPerPairAndStable(t *testing.T) {
 }
 
 func TestLiveTranslationUserMessage(t *testing.T) {
-	msg := liveTranslationUserMessage(LiveTranslationRecord{TargetLanguage: "ja", Turn: "See you at nine.", History: []string{"Hi.", "When do we meet?"}})
+	interpreter := prompts.LiveTranslationPrompts["interpreter_v1"].User
+	msg := liveTranslationUserMessage(interpreter, LiveTranslationRecord{TargetLanguage: "ja", Turn: "See you at nine.", History: []string{"Hi.", "When do we meet?"}})
 	assert.Contains(t, msg, "Target language: Japanese")
 	assert.Contains(t, msg, "Hi.\nWhen do we meet?\n")
 	assert.True(t, strings.HasSuffix(msg, "Current turn:\nSee you at nine."))
 
-	first := liveTranslationUserMessage(LiveTranslationRecord{TargetLanguage: "xx", Turn: "Hello."})
+	first := liveTranslationUserMessage(interpreter, LiveTranslationRecord{TargetLanguage: "xx", Turn: "Hello."})
 	assert.Contains(t, first, "Target language: xx")
 	assert.Contains(t, first, "(none)")
 }
@@ -221,4 +222,59 @@ func TestLiveTranslationConstructorAddsAsyncBaselineRow(t *testing.T) {
 
 	_, ok := frameworkTaskConstructors[prompts.LiveTranslation]
 	assert.True(t, ok)
+}
+
+func TestLiveTranslationPromptVariants(t *testing.T) {
+	r := LiveTranslationRecord{SourceLanguage: "en", TargetLanguage: "es", Turn: "See you at nine.", History: []string{"When do we meet?"}}
+
+	oneliner := liveTranslationUserMessage(prompts.LiveTranslationPrompts["docs_oneliner"].User, r)
+	assert.Equal(t, "Translate the following English into natural Spanish and reply with only the translation: See you at nine.", oneliner)
+
+	withHistory := liveTranslationUserMessage(prompts.LiveTranslationPrompts["docs_history"].User, r)
+	assert.Contains(t, withHistory, "When do we meet?")
+	assert.True(t, strings.HasSuffix(withHistory, "reply with only the translation: See you at nine."))
+
+	for name, p := range prompts.LiveTranslationPrompts {
+		assert.Contains(t, p.User, "{{turn}}", name)
+		assert.Contains(t, p.User, "{{target}}", name)
+	}
+}
+
+func TestLiveTranslationPromptSelection(t *testing.T) {
+	t.Setenv("LIVE_TRANSLATION_PROMPT", "")
+	name, _, ok := prompts.ActiveLiveTranslationPrompt()
+	assert.True(t, ok)
+	assert.Equal(t, prompts.DefaultLiveTranslationPrompt, name)
+
+	t.Setenv("LIVE_TRANSLATION_PROMPT", "docs_oneliner")
+	task, err := NewLiveTranslationTask(NewGateway("http://unused", "k", time.Second))
+	require.NoError(t, err)
+	assert.Empty(t, task.prompt.System)
+
+	t.Setenv("LIVE_TRANSLATION_PROMPT", "nope")
+	_, err = NewLiveTranslationTask(NewGateway("http://unused", "k", time.Second))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "docs_history")
+}
+
+func TestOneMessagePromptSendsNoSystemMessage(t *testing.T) {
+	var body map[string]any
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(raw, &body)
+		writeChatCompletion(w, "Nos vemos a las nueve.", 10, 5)
+	}))
+	defer server.Close()
+
+	t.Setenv("LIVE_TRANSLATION_PROMPT", "docs_oneliner")
+	task, err := NewLiveTranslationTask(NewGateway(server.URL, "k", 5*time.Second))
+	require.NoError(t, err)
+
+	_, _, err = task.RunRecord(context.Background(), ModelInfo{ID: "m"}, LiveTranslationRecord{ID: "r", Bucket: "en-es", SourceLanguage: "en", TargetLanguage: "es", Turn: "See you at nine."}, nil)
+	require.NoError(t, err)
+
+	msgs := body["messages"].([]any)
+	require.Len(t, msgs, 1)
+	assert.Equal(t, "user", msgs[0].(map[string]any)["role"])
 }

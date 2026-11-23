@@ -255,11 +255,8 @@ func (g *Gateway) RunCompletion(ctx context.Context, model ModelInfo, systemProm
 	defer cancel()
 
 	params := openai.ChatCompletionNewParams{
-		Model: model.ID,
-		Messages: []openai.ChatCompletionMessageParamUnion{
-			openai.SystemMessage(systemPrompt),
-			openai.UserMessage(userMessage),
-		},
+		Model:     model.ID,
+		Messages:  chatMessages(systemPrompt, userMessage),
 		MaxTokens: openai.Int(int64(maxTokens)),
 	}
 
@@ -347,11 +344,8 @@ func (g *Gateway) RunCompletionStream(ctx context.Context, model ModelInfo, syst
 	defer cancel()
 
 	params := openai.ChatCompletionNewParams{
-		Model: model.ID,
-		Messages: []openai.ChatCompletionMessageParamUnion{
-			openai.SystemMessage(systemPrompt),
-			openai.UserMessage(userMessage),
-		},
+		Model:     model.ID,
+		Messages:  chatMessages(systemPrompt, userMessage),
 		MaxTokens: openai.Int(int64(maxTokens)),
 		StreamOptions: openai.ChatCompletionStreamOptionsParam{
 			IncludeUsage: openai.Bool(true),
@@ -438,4 +432,18 @@ func RawAPIError(err error) string {
 	}
 
 	return ""
+}
+
+// chatMessages builds the request's messages. An empty system prompt sends
+// no system message at all, rather than an empty one some providers reject,
+// so a task can benchmark a prompt given as a single user message.
+func chatMessages(systemPrompt, userMessage string) []openai.ChatCompletionMessageParamUnion {
+	if systemPrompt == "" {
+		return []openai.ChatCompletionMessageParamUnion{openai.UserMessage(userMessage)}
+	}
+
+	return []openai.ChatCompletionMessageParamUnion{
+		openai.SystemMessage(systemPrompt),
+		openai.UserMessage(userMessage),
+	}
 }
