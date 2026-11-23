@@ -106,9 +106,10 @@ def main():
     print("\n4. end-to-end results: whole streams, mean judge scores (1-5) and chrF.")
     print("   ami has no chrF: no reference translations, it's judged against the human transcript.")
     print("   Latency = speaker stops talking -> translated text arrives (same clock for every vendor).\n")
-    names = {"async_full": "AssemblyAI async", "speechmatics": "Speechmatics", "soniox": "Soniox", "elevenlabs": "ElevenLabs live",
+    names = {"async_full": "AssemblyAI async", "speechmatics": "Speechmatics (subset, see row above)",
+             "e2e_vs_speechmatics": "ours (same sessions as Speechmatics)", "soniox": "Soniox", "elevenlabs": "ElevenLabs live",
              "elevenlabs_dub": "ElevenLabs dub (batch)"}
-    lat_keys = {"speechmatics": "speechmatics_speech_latency", "soniox": "soniox_latency", "elevenlabs": "elevenlabs_latency"}
+    lat_keys = {"speechmatics": "speechmatics_speech_latency",  "soniox": "soniox_latency", "elevenlabs": "elevenlabs_latency"}
     c = lambda v: "     -" if v is None or v != v else f"{v:6.1f}"
     for d in datasets:
         print(f"{d}")
@@ -125,8 +126,13 @@ def main():
             sp50, sp95 = r.get("speech_latency_p50"), r.get("speech_latency_p95")
             lat = f"{sp50:5.2f}s {sp95:5.2f}s" if sp50 is not None and sp50 == sp50 else f"{'-':>6} {'-':>6}"
             print(f"  {'ours: ' + p:34} {e['translation_accuracy']:5.2f} {e['fluency']:5.2f} {c(e['chrf'])}   {lat}")
+            same = all_.get("e2e_vs_speechmatics")
+            if same:
+                q50, q95 = r.get("e2e_vs_speechmatics_speech_latency_p50"), r.get("e2e_vs_speechmatics_speech_latency_p95")
+                lat2 = f"{q50:5.2f}s {q95:5.2f}s" if q50 is not None and q50 == q50 else f"{'-':>6} {'-':>6}"
+                print(f"  {'   on Speechmatics sessions':34} {same['translation_accuracy']:5.2f} {same['fluency']:5.2f} {c(same['chrf'])}   {lat2}")
             for k, v in all_.items():
-                if k != "e2e":
+                if k not in ("e2e", "e2e_vs_speechmatics"):
                     others.setdefault(k, (v, r))
         for k, (v, r) in others.items():
             lk = lat_keys.get(k)

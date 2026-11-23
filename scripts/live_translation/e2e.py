@@ -553,12 +553,25 @@ def judge(key, tgt, ref, cand, judge_model, transcript=False):
     cache = CACHE / "judge" / f"{h}.json"
     if cache.exists():
         return json.loads(cache.read_text())
-    r = prep.http("POST", LLM, key, body={"model": judge_model, "max_tokens": 1500, "messages": [
-        {"role": "system", "content": TRANSCRIPT_JUDGE if transcript else JUDGE},
-        {"role": "user", "content": f"TARGET LANGUAGE: {NAMES[tgt]}\n\n{'WHAT WAS SAID' if transcript else 'REFERENCE'}:\n{ref}\n\nCANDIDATE:\n{cand}"}]})
-    text = r["choices"][0]["message"]["content"]
-    obj = json.loads(re.findall(r"\{[^{}]*\}", text)[-1])
-    scores = {k: float(obj[k]) for k in ("translation_accuracy", "fluency")}
+    if not cand.strip():
+        return {"translation_accuracy": 1.0, "fluency": 1.0}  # nothing came back: the rubric's floor
+    scores = None
+    for attempt in range(3):  # a long meeting can push the score past max_tokens, or the reply can skip the JSON
+        r = prep.http("POST", LLM, key, body={"model": judge_model, "max_tokens": 3000, "messages": [
+            {"role": "system", "content": TRANSCRIPT_JUDGE if transcript else JUDGE},
+            {"role": "user", "content": f"TARGET LANGUAGE: {NAMES[tgt]}\n\n{'WHAT WAS SAID' if transcript else 'REFERENCE'}:\n{ref}\n\nCANDIDATE:\n{cand}"
+             + ("" if attempt == 0 else "\n\nKeep the reasoning to two sentences and end with the JSON object.")}]})
+        text = r["choices"][0]["message"]["content"] or ""
+        found = re.findall(r"\{[^{}]*\}", text)
+        try:
+            obj = json.loads(found[-1])
+            scores = {k: float(obj[k]) for k in ("translation_accuracy", "fluency")}
+            break
+        except (IndexError, KeyError, ValueError, TypeError):
+            continue
+    if scores is None:
+        print(f"  judge gave no scores for one {tgt} candidate after 3 tries; left out of the means")
+        return {}
     cache.parent.mkdir(parents=True, exist_ok=True)
     cache.write_text(json.dumps(scores))
     return scores
@@ -619,6 +632,10 @@ def main():
                          "translation: the speech-to-speech realtime translation API (enterprise only)")
     ap.add_argument("--speechmatics", action="store_true",
                     help="also run Speechmatics real-time translation, finals only (needs SPEECHMATICS_API_KEY)")
+    ap.add_argument("--speechmatics-concurrency", type=int, default=2,
+                    help="sessions at once; Speechmatics refuses more than the account's concurrent quota")
+    ap.add_argument("--speechmatics-per-pair", type=int, default=2,
+                    help="streams per language pair to run through Speechmatics (0 = all); ours is also scored on the same ones")
     ap.add_argument("--soniox", action="store_true", help="also run Soniox real-time translation (needs SONIOX_API_KEY)")
     ap.add_argument("--soniox-model", default="stt-rt-v6", help="Soniox real-time model (stt-rt-v5 if v6 is refused)")
     ap.add_argument("--elevenlabs-dub", action="store_true",
@@ -690,22 +707,39 @@ def main():
     if args.speechmatics:
         if not os.environ.get("SPEECHMATICS_API_KEY"):
             sys.exit("--speechmatics needs SPEECHMATICS_API_KEY")
-        print(f"Speechmatics real-time translation of the same {len(jobs)} sessions...")
+        picked, per_pair = [], {}
+        for i, (src, tgt, s) in enumerate(jobs):
+            per_pair[(src, tgt)] = per_pair.get((src, tgt), 0) + 1
+            if args.speechmatics_per_pair <= 0 or per_pair[(src, tgt)] <= args.speechmatics_per_pair:
+                picked.append(i)
+        print(f"Speechmatics real-time translation of {len(picked)} of the {len(jobs)} sessions "
+              f"({args.speechmatics_concurrency} at a time)...")
 
         async def run_speechmatics():
-            sem = asyncio.Semaphore(10)
+            sem = asyncio.Semaphore(args.speechmatics_concurrency)
 
             async def one(src, tgt, s):
                 async with sem:
-                    return await speechmatics_translate(s, src, tgt, args)
+                    for attempt in range(40):
+                        try:
+                            return await speechmatics_translate(s, src, tgt, args)
+                        except RuntimeError as e:
+                            if "quota_exceeded" not in str(e) or attempt == 39:
+                                raise
+                            await asyncio.sleep(15)  # another run holds the account's sessions; wait for one
 
-            return await asyncio.gather(*(one(src, tgt, s) for src, tgt, s in jobs), return_exceptions=True)
+            out = await asyncio.gather(*(one(*jobs[i]) for i in picked), return_exceptions=True)
+            full_list = [None] * len(jobs)
+            for i, r in zip(picked, out):
+                full_list[i] = r
+            return full_list
 
         smx = asyncio.run(run_speechmatics())
         for (src, tgt, s), r in zip(jobs, smx):
             if isinstance(r, Exception):
                 print(f"  Speechmatics FAILED {s['name']}-{tgt}: {r}")
         smx = [None if isinstance(r, Exception) else r for r in smx]
+        print(f"  Speechmatics: {sum(r is not None for r in smx)} sessions done")
 
     sonx = [None] * len(jobs)
     if args.soniox:
@@ -755,6 +789,7 @@ def main():
                 systems.append(("soniox", sx["translations"][0]))
             if sm is not None:
                 systems.append(("speechmatics", " ".join(sm["translations"])))
+                systems.append(("e2e_vs_speechmatics", systems[0][1]))  # ours on exactly the sessions Speechmatics ran
             for system, text in systems:
                 futs.append((src, tgt, s["name"], system, text, ref, transcript, ex.submit(judge, key, tgt, ref, text, args.judge_model, transcript)))
         for src, tgt, name, system, text, ref, transcript, f in futs:
@@ -769,14 +804,15 @@ def main():
     turns_n = sum(len(r["turns"]) for r in e2e)
     against = "the human transcript (no chrF: no reference translations)" if args.dataset == "ami" else "joined references"
     print(f"\n{args.dataset}: prompt {args.prompt}, model {args.model}, judge {args.judge_model}. Whole streams, scored against {against}.")
-    systems = [x for x in ("e2e", "async_full", "speechmatics", "soniox", "elevenlabs", "elevenlabs_dub") if any(r["system"] == x for r in rows)]
+    systems = [x for x in ("e2e", "async_full", "e2e_vs_speechmatics", "speechmatics", "soniox", "elevenlabs", "elevenlabs_dub") if any(r["system"] == x for r in rows)]
     print(f"{'pair':6}" + "".join(f" | {x + ' chrF':>16} {'acc':>5} {'flu':>5}" for x in systems))
     summary = {}
     for pair in sorted({r["pair"] for r in rows}) + ["ALL"]:
         line = f"{pair:6}"
         for system in systems:
             sel = [r for r in rows if r["system"] == system and (pair == "ALL" or r["pair"] == pair)]
-            m = {k: round(st.mean(r.get(k, float("nan")) for r in sel), 2) if sel else float("nan")
+            vals = lambda k: [r[k] for r in sel if r.get(k) is not None and r[k] == r[k]]
+            m = {k: round(st.mean(vals(k)), 2) if vals(k) else float("nan")
                  for k in ("chrf", "translation_accuracy", "fluency")}
             summary.setdefault(pair, {})[system] = m
             line += f" | {m['chrf']:16.1f} {m['translation_accuracy']:5.2f} {m['fluency']:5.2f}"
@@ -787,6 +823,7 @@ def main():
           f"{missing} of {turns_n} turns got no translation")
     pct = lambda xs, q: sorted(xs)[min(len(xs) - 1, int(q * len(xs)))] if xs else float("nan")
     ours_speech = [x for r in e2e for x in r.get("speech_latency_s", [])]
+    ours_speech_same = [x for r, sm in zip(e2e, smx) if sm is not None for x in r.get("speech_latency_s", [])]
     print(f"OURS speech end to translation: p50 {pct(ours_speech, .5):.2f}s, p95 {pct(ours_speech, .95):.2f}s over {len(ours_speech)} turns")
     sm_lat = sorted(x for r in smx if r for x in r["latency_s"])
     sm_p = lambda q: sm_lat[min(len(sm_lat) - 1, int(q * len(sm_lat)))] if sm_lat else float("nan")
@@ -810,6 +847,8 @@ def main():
     out.write_text(json.dumps({"args": vars(args), "summary": summary, "latency_p50": p(.5), "latency_p95": p(.95),
                                "speechmatics_latency_p50": sm_p(.5), "speechmatics_latency_p95": sm_p(.95),
                                "speech_latency_p50": pct(ours_speech, .5), "speech_latency_p95": pct(ours_speech, .95),
+                               "e2e_vs_speechmatics_speech_latency_p50": pct(ours_speech_same, .5),
+                               "e2e_vs_speechmatics_speech_latency_p95": pct(ours_speech_same, .95),
                                "speechmatics_speech_latency_p50": pct(sm_speech, .5), "speechmatics_speech_latency_p95": pct(sm_speech, .95),
                                "soniox_latency_p50": sx_p(.5), "soniox_latency_p95": sx_p(.95),
                                "elevenlabs_latency_p50": el_p(.5), "elevenlabs_latency_p95": el_p(.95),
