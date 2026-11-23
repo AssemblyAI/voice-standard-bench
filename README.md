@@ -102,6 +102,37 @@ other task's scores do (see "Per-task quality breakdown" below) —
 `src`'s `normalize` just knows to invert `word_error_rate` (lower is
 better) and scale the rest.
 
+## Live translation
+
+`-tasks live_translation` benchmarks translating a live conversation one
+streaming turn at a time, the way the streaming API's `llm_gateway` parameter
+does. Each record is one turn from `assemblyai-stt-3-7-realtime` plus up to
+three previous turns as context; the candidate translates it into the target
+language (prompt: `prompts/live_translation.go`, variants kept in
+`liveTranslationPromptVariants`). Buckets are language pairs (`en-es`,
+`de-en`, ...), not audio lengths.
+
+Scores: `chrf` against a professional reference translation (mechanical,
+character n-grams, so Japanese works without a tokenizer) plus a
+reference-based judge for `translation_accuracy` and `fluency` (1-5).
+
+Every run adds an `async-su-translation` row: async speech understanding
+translation of the same clips, read from the dataset rather than called, and
+scored the same way. It is the bar a streaming prompt and model have to reach.
+
+Build the dataset first (needs `ASSEMBLYAI_API_KEY` and `pip install
+websockets`; about 1 GB of FLEURS audio, then about 3 minutes of real-time
+streaming):
+
+```bash
+python3 scripts/live_translation/prep.py                      # normalized/live_translation/fleurs.jsonl
+python3 scripts/live_translation/prep.py --mode max_accuracy  # optional: its own buckets, e.g. en-es/max_accuracy
+cd src && go run . -tasks live_translation -models gemini-3.1-flash-lite -max-samples-per-bucket 0
+```
+
+The TTFT pass only runs the `30s`/`120s` buckets, so it skips this task; the
+standard pass's per-turn latency is reported instead.
+
 ## Time-to-first-token
 
 The standard benchmark's `RunCompletion` calls the gateway synchronously, so

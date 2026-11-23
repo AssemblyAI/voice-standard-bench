@@ -29,10 +29,13 @@ const (
 	// dictationSpec's doc comment in dictation.go for why it breaks nearly
 	// every rule this package's own README lays out for "adding a task".
 	Dictation = "dictation"
+	// LiveTranslation translates streaming speech turns and is graded
+	// against reference translations -- see live_translation.go.
+	LiveTranslation = "live_translation"
 )
 
 // All is the full task set, in report order.
-var All = []string{Summarization, InformationExtraction, TextCorrection, Dictation}
+var All = []string{Summarization, InformationExtraction, TextCorrection, Dictation, LiveTranslation}
 
 // Spec pairs one task's execution prompt with its judge prompt and names the
 // score fields the judge is asked to fill in.
@@ -55,6 +58,7 @@ var specs = map[string]Spec{
 	InformationExtraction: extractionSpec,
 	TextCorrection:        correctionSpec,
 	Dictation:             dictationSpec,
+	LiveTranslation:       liveTranslationSpec,
 }
 
 // For looks up a task's prompt spec. ok is false for an unrecognized task
