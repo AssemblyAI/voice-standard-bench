@@ -105,10 +105,10 @@ def main():
 
     print("\n4. end-to-end results: whole streams, mean judge scores (1-5) and chrF.")
     print("   ami has no chrF: no reference translations, it's judged against the human transcript.")
-    print("   Competitor latency is measured from their own segment ends, so compare it loosely.\n")
+    print("   Latency = speaker stops talking -> translated text arrives (same clock for every vendor).\n")
     names = {"async_full": "AssemblyAI async", "speechmatics": "Speechmatics", "soniox": "Soniox", "elevenlabs": "ElevenLabs live",
              "elevenlabs_dub": "ElevenLabs dub (batch)"}
-    lat_keys = {"speechmatics": "speechmatics_latency", "soniox": "soniox_latency", "elevenlabs": "elevenlabs_latency"}
+    lat_keys = {"speechmatics": "speechmatics_speech_latency", "soniox": "soniox_latency", "elevenlabs": "elevenlabs_latency"}
     c = lambda v: "     -" if v is None or v != v else f"{v:6.1f}"
     for d in datasets:
         print(f"{d}")
@@ -122,8 +122,9 @@ def main():
             r = json.loads(f.read_text())
             all_ = r["summary"]["ALL"]
             e = all_["e2e"]
-            print(f"  {'ours: ' + p:34} {e['translation_accuracy']:5.2f} {e['fluency']:5.2f} {c(e['chrf'])}   "
-                  f"{r['latency_p50']:5.2f}s {r['latency_p95']:5.2f}s")
+            sp50, sp95 = r.get("speech_latency_p50"), r.get("speech_latency_p95")
+            lat = f"{sp50:5.2f}s {sp95:5.2f}s" if sp50 is not None and sp50 == sp50 else f"{'-':>6} {'-':>6}"
+            print(f"  {'ours: ' + p:34} {e['translation_accuracy']:5.2f} {e['fluency']:5.2f} {c(e['chrf'])}   {lat}")
             for k, v in all_.items():
                 if k != "e2e":
                     others.setdefault(k, (v, r))

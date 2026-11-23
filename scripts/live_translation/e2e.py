@@ -72,17 +72,21 @@ async def stream_translate(key, stream, src, tgt, args):
     base = CACHE if args.dataset == "fleurs" else CACHE / args.dataset  # fleurs keeps the cache of earlier runs
     cache = base / args.prompt / args.model / f"{stream['name']}-{tgt}.json"
     if cache.exists():
-        return json.loads(cache.read_text())
+        cached = json.loads(cache.read_text())
+        if "speech_latency_s" in cached:
+            return cached  # older runs lack speech-end latency, so they stream again
     gw = {"model": args.model, "max_tokens": 400, "messages": PROMPTS[args.prompt](NAMES[src], NAMES[tgt])}
     q = {"sample_rate": prep.RATE, "encoding": "pcm_s16le", "speech_model": args.streaming_model,
          "language_codes": json.dumps([src]), "llm_gateway": json.dumps(gw)}
     major = int(str(getattr(websockets, "__version__", "0")).split(".")[0] or 0)
     hdr = "additional_headers" if major >= 14 else "extra_headers"
     turns, trans, turn_at, trans_at, errors = {}, {}, {}, {}, []
+    speech_end = {}  # turn -> seconds into the audio where its last word ended
+    clock = {}
     pcm, step = stream["pcm"], prep.RATE * 2 // 20
     async with websockets.connect(f"{prep.WS}?{urlencode(q)}", max_size=None, **{hdr: {"Authorization": key}}) as ws:
         async def send():
-            t0 = time.monotonic()
+            t0 = clock["t0"] = time.monotonic()
             for i in range(0, len(pcm), step):
                 await ws.send(pcm[i:i + step])
                 wait = t0 + (i // step + 1) * 0.05 - time.monotonic()
@@ -100,6 +104,9 @@ async def stream_translate(key, stream, src, tgt, args):
                     k = m.get("turn_order")
                     turns[k] = m.get("transcript", "")
                     turn_at[k] = time.monotonic()
+                    ends = [w.get("end") for w in m.get("words", []) if w.get("end") is not None]
+                    if ends:
+                        speech_end[k] = max(ends) / 1000
                 elif m.get("type") == "LLMGatewayResponse":
                     k = m.get("turn_order")
                     try:
@@ -120,6 +127,10 @@ async def stream_translate(key, stream, src, tgt, args):
         "translations": [trans.get(k, "") for k in order],
         "missing": [k for k in order if turns[k].strip() and k not in trans],
         "latency_s": [round(trans_at[k] - turn_at[k], 3) for k in order if k in trans_at and k in turn_at],
+        # From the moment the speaker's last word ended (the audio is sent in real time, so that is
+        # t0 + its timestamp) to the translation arriving: the delay a viewer sees, comparable across vendors.
+        "speech_latency_s": [round(trans_at[k] - clock["t0"] - speech_end[k], 3)
+                             for k in order if k in trans_at and k in speech_end and "t0" in clock],
         "errors": errors,
     }
     cache.parent.mkdir(parents=True, exist_ok=True)
@@ -276,15 +287,18 @@ async def speechmatics_translate(stream, src, tgt, args):
     base = CACHE if args.dataset == "fleurs" else CACHE / args.dataset
     cache = base / "speechmatics" / f"{stream['name']}-{tgt}.json"
     if cache.exists():
-        return json.loads(cache.read_text())
+        cached = json.loads(cache.read_text())
+        if "speech_latency_s" in cached:
+            return cached
     start = {"message": "StartRecognition",
              "audio_format": {"type": "raw", "encoding": "pcm_s16le", "sample_rate": prep.RATE},
              "transcription_config": {"language": src, "operating_point": "enhanced"},
              "translation_config": {"target_languages": [tgt], "enable_partials": False}}
     major = int(str(getattr(websockets, "__version__", "0")).split(".")[0] or 0)
     hdr = "additional_headers" if major >= 14 else "extra_headers"
-    finals, translations, latency, errors = [], [], [], []
+    finals, translations, latency, speech_latency, errors = [], [], [], [], []
     last_final = None
+    clock = {}
     pcm, step = stream["pcm"], prep.RATE * 2 // 20
     async with websockets.connect(SPEECHMATICS_WS, max_size=None,
                                   **{hdr: {"Authorization": f"Bearer {os.environ['SPEECHMATICS_API_KEY']}"}}) as ws:
@@ -294,6 +308,7 @@ async def speechmatics_translate(stream, src, tgt, args):
         async def send():
             await asyncio.wait_for(started, timeout=30)
             t0, seq = time.monotonic(), 0
+            clock["t0"] = t0
             for i in range(0, len(pcm), step):
                 await ws.send(pcm[i:i + step])
                 seq += 1
@@ -324,6 +339,9 @@ async def speechmatics_translate(stream, src, tgt, args):
                     text = " ".join(r.get("content", "") for r in m.get("results", [])).strip()
                     if text:
                         translations.append(text)
+                        ends = [r.get("end_time") for r in m.get("results", []) if r.get("end_time") is not None]
+                        if ends and "t0" in clock:
+                            speech_latency.append(round(time.monotonic() - clock["t0"] - max(ends), 3))
                         if last_final is not None:
                             latency.append(round(time.monotonic() - last_final, 3))
                             last_final = None
@@ -337,7 +355,8 @@ async def speechmatics_translate(stream, src, tgt, args):
                     return
 
         await asyncio.gather(send(), recv())
-    result = {"turns": finals, "translations": translations, "missing": [], "latency_s": latency, "errors": errors}
+    result = {"turns": finals, "translations": translations, "missing": [], "latency_s": latency,
+              "speech_latency_s": speech_latency, "errors": errors}
     cache.parent.mkdir(parents=True, exist_ok=True)
     cache.write_text(json.dumps(result, ensure_ascii=False))
     return result
@@ -766,11 +785,15 @@ def main():
     p = lambda q: lat_sorted[min(len(lat_sorted) - 1, int(q * len(lat_sorted)))] if lat_sorted else float("nan")
     print(f"\nturn-end to translation: p50 {p(.5):.2f}s, p95 {p(.95):.2f}s over {len(lat)} turns; "
           f"{missing} of {turns_n} turns got no translation")
+    pct = lambda xs, q: sorted(xs)[min(len(xs) - 1, int(q * len(xs)))] if xs else float("nan")
+    ours_speech = [x for r in e2e for x in r.get("speech_latency_s", [])]
+    print(f"OURS speech end to translation: p50 {pct(ours_speech, .5):.2f}s, p95 {pct(ours_speech, .95):.2f}s over {len(ours_speech)} turns")
     sm_lat = sorted(x for r in smx if r for x in r["latency_s"])
     sm_p = lambda q: sm_lat[min(len(sm_lat) - 1, int(q * len(sm_lat)))] if sm_lat else float("nan")
+    sm_speech = [x for r in smx if r for x in r.get("speech_latency_s", [])]
     if args.speechmatics:
-        print(f"Speechmatics final transcript to translation: p50 {sm_p(.5):.2f}s, p95 {sm_p(.95):.2f}s over {len(sm_lat)} segments; "
-              f"{sum(r is None for r in smx)} sessions failed")
+        print(f"Speechmatics speech end to translation: p50 {pct(sm_speech, .5):.2f}s, p95 {pct(sm_speech, .95):.2f}s over {len(sm_speech)} segments; "
+              f"final transcript to translation p50 {sm_p(.5):.2f}s; {sum(r is None for r in smx)} sessions failed")
     sx_lat = sorted(x for r in sonx if r for x in r["latency_s"])
     sx_p = lambda q: sx_lat[min(len(sx_lat) - 1, int(q * len(sx_lat)))] if sx_lat else float("nan")
     if args.soniox:
@@ -786,6 +809,8 @@ def main():
     out = OUT / f"{prefix}{args.prompt}__{args.model}.json"
     out.write_text(json.dumps({"args": vars(args), "summary": summary, "latency_p50": p(.5), "latency_p95": p(.95),
                                "speechmatics_latency_p50": sm_p(.5), "speechmatics_latency_p95": sm_p(.95),
+                               "speech_latency_p50": pct(ours_speech, .5), "speech_latency_p95": pct(ours_speech, .95),
+                               "speechmatics_speech_latency_p50": pct(sm_speech, .5), "speechmatics_speech_latency_p95": pct(sm_speech, .95),
                                "soniox_latency_p50": sx_p(.5), "soniox_latency_p95": sx_p(.95),
                                "elevenlabs_latency_p50": el_p(.5), "elevenlabs_latency_p95": el_p(.95),
                                "missing": missing, "turns": turns_n, "rows": rows}, ensure_ascii=False, indent=1))
