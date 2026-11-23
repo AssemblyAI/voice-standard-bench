@@ -264,6 +264,69 @@ async def elevenlabs_translate(stream, src, tgt, args):
     return result
 
 
+SONIOX_WS = "wss://stt-rt.soniox.com/transcribe-websocket"
+
+
+async def soniox_translate(stream, src, tgt, args):
+    """The same audio through Soniox real-time transcription with one-way translation, at real-time speed.
+    Soniox streams translated tokens mid-sentence; we keep the final ones. Latency is from the last final
+    original token to the first final translated token after it."""
+    import websockets
+
+    base = CACHE if args.dataset == "fleurs" else CACHE / args.dataset
+    cache = base / "soniox" / args.soniox_model / f"{stream['name']}-{tgt}.json"
+    if cache.exists():
+        return json.loads(cache.read_text())
+    key = os.environ["SONIOX_API_KEY"]
+    config = {"api_key": key, "model": args.soniox_model, "audio_format": "pcm_s16le", "sample_rate": prep.RATE,
+              "num_channels": 1, "language_hints": [src], "enable_endpoint_detection": True,
+              "translation": {"type": "one_way", "target_language": tgt}}
+    major = int(str(getattr(websockets, "__version__", "0")).split(".")[0] or 0)
+    hdr = "additional_headers" if major >= 14 else "extra_headers"
+    original, translated, latency, errors = [], [], [], []
+    last_original = None
+    pcm, step = stream["pcm"], prep.RATE * 2 // 20
+    async with websockets.connect(SONIOX_WS, max_size=None, **{hdr: {"Authorization": f"Bearer {key}"}}) as ws:
+        await ws.send(json.dumps(config))
+
+        async def send():
+            t0 = time.monotonic()
+            for i in range(0, len(pcm), step):
+                await ws.send(pcm[i:i + step])
+                wait = t0 + (i // step + 1) * 0.05 - time.monotonic()
+                if wait > 0:
+                    await asyncio.sleep(wait)
+            await ws.send(b"")  # end of audio; Soniox finalizes and replies with finished: true
+
+        async def recv():
+            nonlocal last_original
+            async for msg in ws:
+                m = json.loads(msg)
+                if m.get("error_code") or m.get("error_message"):
+                    raise RuntimeError(f"soniox {stream['name']}-{tgt}: {m.get('error_code')} {m.get('error_message')}")
+                for tok in m.get("tokens", []):
+                    text = tok.get("text", "")
+                    if not tok.get("is_final") or (text.startswith("<") and text.endswith(">")):
+                        continue  # partials get re-sent as finals; <end>, <fin> are markers
+                    if tok.get("translation_status") == "translation":
+                        if last_original is not None:
+                            latency.append(round(time.monotonic() - last_original, 3))
+                            last_original = None
+                        translated.append(text)
+                    else:
+                        original.append(text)
+                        last_original = time.monotonic()
+                if m.get("finished"):
+                    return
+
+        await asyncio.gather(send(), recv())
+    result = {"turns": ["".join(original).strip()], "translations": ["".join(translated).strip()],
+              "missing": [], "latency_s": latency, "errors": errors}
+    cache.parent.mkdir(parents=True, exist_ok=True)
+    cache.write_text(json.dumps(result, ensure_ascii=False))
+    return result
+
+
 ELEVENLABS_API = "https://api.elevenlabs.io/v1"
 
 
@@ -456,6 +519,8 @@ def main():
     ap.add_argument("--elevenlabs-api", default="scribe_edit", choices=["scribe_edit", "translation"],
                     help="scribe_edit: Scribe live + a transcript_edit asking for the translation (text only, any plan). "
                          "translation: the speech-to-speech realtime translation API (enterprise only)")
+    ap.add_argument("--soniox", action="store_true", help="also run Soniox real-time translation (needs SONIOX_API_KEY)")
+    ap.add_argument("--soniox-model", default="stt-rt-v6", help="Soniox real-time model (stt-rt-v5 if v6 is refused)")
     ap.add_argument("--elevenlabs-dub", action="store_true",
                     help="also run ElevenLabs batch dubbing on each whole stream and score its translated transcript "
                          "(needs ELEVENLABS_API_KEY; bills dubbing minutes per stream and target)")
@@ -521,6 +586,27 @@ def main():
             sys.exit("every ElevenLabs session failed; see the errors above, or re-run without --elevenlabs")
         eleven = [None if isinstance(r, Exception) else r for r in eleven]
 
+    sonx = [None] * len(jobs)
+    if args.soniox:
+        if not os.environ.get("SONIOX_API_KEY"):
+            sys.exit("--soniox needs SONIOX_API_KEY")
+        print(f"Soniox real-time translation ({args.soniox_model}) of the same {len(jobs)} sessions...")
+
+        async def run_soniox():
+            sem = asyncio.Semaphore(10)
+
+            async def one(src, tgt, s):
+                async with sem:
+                    return await soniox_translate(s, src, tgt, args)
+
+            return await asyncio.gather(*(one(src, tgt, s) for src, tgt, s in jobs), return_exceptions=True)
+
+        sonx = asyncio.run(run_soniox())
+        for (src, tgt, s), r in zip(jobs, sonx):
+            if isinstance(r, Exception):
+                print(f"  Soniox FAILED {s['name']}-{tgt}: {r}")
+        sonx = [None if isinstance(r, Exception) else r for r in sonx]
+
     dubs = [None] * len(jobs)
     if args.elevenlabs_dub:
         if not os.environ.get("ELEVENLABS_API_KEY"):
@@ -538,12 +624,14 @@ def main():
     rows = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=6) as ex:
         futs = []
-        for (src, tgt, s, ref, transcript), r, el, dub in zip(sessions, e2e, eleven, dubs):
+        for (src, tgt, s, ref, transcript), r, el, dub, sx in zip(sessions, e2e, eleven, dubs, sonx):
             systems = [("e2e", " ".join(t for t in r["translations"] if t)), ("async_full", full[s["name"]].get(tgt, ""))]
             if el is not None:
                 systems.append(("elevenlabs", " ".join(t for t in el["translations"] if t)))
             if dub is not None:
                 systems.append(("elevenlabs_dub", dub["text"]))
+            if sx is not None:
+                systems.append(("soniox", sx["translations"][0]))
             for system, text in systems:
                 futs.append((src, tgt, s["name"], system, text, ref, transcript, ex.submit(judge, key, tgt, ref, text, args.judge_model, transcript)))
         for src, tgt, name, system, text, ref, transcript, f in futs:
@@ -558,7 +646,7 @@ def main():
     turns_n = sum(len(r["turns"]) for r in e2e)
     against = "the human transcript (no chrF: no reference translations)" if args.dataset == "ami" else "joined references"
     print(f"\n{args.dataset}: prompt {args.prompt}, model {args.model}, judge {args.judge_model}. Whole streams, scored against {against}.")
-    systems = [x for x in ("e2e", "async_full", "elevenlabs", "elevenlabs_dub") if any(r["system"] == x for r in rows)]
+    systems = [x for x in ("e2e", "async_full", "soniox", "elevenlabs", "elevenlabs_dub") if any(r["system"] == x for r in rows)]
     print(f"{'pair':6}" + "".join(f" | {x + ' chrF':>16} {'acc':>5} {'flu':>5}" for x in systems))
     summary = {}
     for pair in sorted({r["pair"] for r in rows}) + ["ALL"]:
@@ -574,6 +662,11 @@ def main():
     p = lambda q: lat_sorted[min(len(lat_sorted) - 1, int(q * len(lat_sorted)))] if lat_sorted else float("nan")
     print(f"\nturn-end to translation: p50 {p(.5):.2f}s, p95 {p(.95):.2f}s over {len(lat)} turns; "
           f"{missing} of {turns_n} turns got no translation")
+    sx_lat = sorted(x for r in sonx if r for x in r["latency_s"])
+    sx_p = lambda q: sx_lat[min(len(sx_lat) - 1, int(q * len(sx_lat)))] if sx_lat else float("nan")
+    if args.soniox:
+        print(f"Soniox last original token to translation: p50 {sx_p(.5):.2f}s, p95 {sx_p(.95):.2f}s over {len(sx_lat)} segments; "
+              f"{sum(r is None for r in sonx)} sessions failed")
     el_lat = sorted(x for r in eleven if r for x in r["latency_s"])
     el_p = lambda q: el_lat[min(len(el_lat) - 1, int(q * len(el_lat)))] if el_lat else float("nan")
     if args.elevenlabs:
@@ -583,6 +676,7 @@ def main():
     prefix = "" if args.dataset == "fleurs" else f"{args.dataset}__"
     out = OUT / f"{prefix}{args.prompt}__{args.model}.json"
     out.write_text(json.dumps({"args": vars(args), "summary": summary, "latency_p50": p(.5), "latency_p95": p(.95),
+                               "soniox_latency_p50": sx_p(.5), "soniox_latency_p95": sx_p(.95),
                                "elevenlabs_latency_p50": el_p(.5), "elevenlabs_latency_p95": el_p(.95),
                                "missing": missing, "turns": turns_n, "rows": rows}, ensure_ascii=False, indent=1))
     print(f"wrote {out.relative_to(prep.ROOT)}")

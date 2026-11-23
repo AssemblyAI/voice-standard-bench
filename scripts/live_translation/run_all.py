@@ -46,6 +46,7 @@ def main():
     ap.add_argument("--skip-go", action="store_true", help="skip the per-turn Go benchmark")
     ap.add_argument("--no-elevenlabs", action="store_true", help="skip ElevenLabs even when ELEVENLABS_API_KEY is set")
     ap.add_argument("--elevenlabs-api", default="scribe_edit", choices=["scribe_edit", "translation"])
+    ap.add_argument("--no-soniox", action="store_true", help="skip Soniox even when SONIOX_API_KEY is set")
     ap.add_argument("--elevenlabs-dub", action="store_true",
                     help="also score ElevenLabs batch dubbing (bills dubbing minutes; ~3 hours of audio across all datasets)")
     args = ap.parse_args()
@@ -55,6 +56,8 @@ def main():
     LOGS.mkdir(parents=True, exist_ok=True)
     py = sys.executable
     eleven = bool(os.environ.get("ELEVENLABS_API_KEY")) and not args.no_elevenlabs
+    soniox = bool(os.environ.get("SONIOX_API_KEY")) and not args.no_soniox
+    print(f"Soniox comparison: {'on' if soniox else 'off (set SONIOX_API_KEY to add it)'}")
     print(f"ElevenLabs comparison: {'on' if eleven else 'off (set ELEVENLABS_API_KEY to add it)'}")
 
     print("1. datasets")
@@ -75,6 +78,7 @@ def main():
             log = LOGS / f"e2e_{d}_{p}_{args.model}.log"
             extra = ["--elevenlabs", "--elevenlabs-api", args.elevenlabs_api] if eleven else []
             extra += ["--elevenlabs-dub"] if eleven and args.elevenlabs_dub else []
+            extra += ["--soniox"] if soniox else []
             if not run([py, str(HERE / "e2e.py"), "--dataset", d, "--prompt", p, "--model", args.model] + extra, log):
                 failed.append(log)
 
@@ -95,27 +99,36 @@ def main():
                         "-max-samples-per-bucket", "0"], log, cwd=ROOT / "src", env=env):
                 failed.append(log)
 
-    print("\n4. end-to-end results (whole streams; ami has no chrF, it's judged against the human transcript)\n")
-    print(f"{'dataset':12} {'prompt':15} | {'ours acc':>8} {'flu':>5} {'chrF':>6} | {'async acc':>9} {'flu':>5} {'chrF':>6} | "
-          f"{'11labs acc':>10} {'flu':>5} {'chrF':>6} | {'11dub acc':>9} {'flu':>5} {'chrF':>6} | {'ours p50':>8} {'p95':>5} | {'11labs p50':>10} {'p95':>5}")
+    print("\n4. end-to-end results: whole streams, mean judge scores (1-5) and chrF.")
+    print("   ami has no chrF: no reference translations, it's judged against the human transcript.")
+    print("   Competitor latency is measured from their own segment ends, so compare it loosely.\n")
+    names = {"async_full": "AssemblyAI async", "soniox": "Soniox", "elevenlabs": "ElevenLabs live",
+             "elevenlabs_dub": "ElevenLabs dub (batch)"}
+    lat_keys = {"soniox": "soniox_latency", "elevenlabs": "elevenlabs_latency"}
+    c = lambda v: "     -" if v is None or v != v else f"{v:6.1f}"
     for d in datasets:
+        print(f"{d}")
+        print(f"  {'system':34} {'acc':>5} {'flu':>5} {'chrF':>6}   {'p50':>6} {'p95':>6}")
+        others = {}
         for p in prompts:
             f = OUT / (f"{p}__{args.model}.json" if d == "fleurs" else f"{d}__{p}__{args.model}.json")
             if not f.exists():
-                print(f"{d:12} {p:15} | (no result)")
+                print(f"  {'ours: ' + p:34} (no result)")
                 continue
             r = json.loads(f.read_text())
-            e, a = r["summary"]["ALL"]["e2e"], r["summary"]["ALL"]["async_full"]
-            el = r["summary"]["ALL"].get("elevenlabs")
-            c = lambda v: "   -  " if v != v else f"{v:6.1f}"  # nan when there's no reference
-            dub = r["summary"]["ALL"].get("elevenlabs_dub")
-            dub_cols = (f"{dub['translation_accuracy']:9.2f} {dub['fluency']:5.2f} {c(dub['chrf'])}" if dub else f"{'-':>9} {'-':>5} {'-':>6}")
-            el_cols = (f"{el['translation_accuracy']:10.2f} {el['fluency']:5.2f} {c(el['chrf'])}" if el else f"{'-':>10} {'-':>5} {'-':>6}")
-            el_lat = (f"{r['elevenlabs_latency_p50']:9.2f}s {r['elevenlabs_latency_p95']:4.2f}s"
-                      if el and r.get("elevenlabs_latency_p50") == r.get("elevenlabs_latency_p50") else f"{'-':>10} {'-':>5}")
-            print(f"{d:12} {p:15} | {e['translation_accuracy']:8.2f} {e['fluency']:5.2f} {c(e['chrf'])} | "
-                  f"{a['translation_accuracy']:9.2f} {a['fluency']:5.2f} {c(a['chrf'])} | {el_cols} | {dub_cols} | "
-                  f"{r['latency_p50']:7.2f}s {r['latency_p95']:4.2f}s | {el_lat}")
+            all_ = r["summary"]["ALL"]
+            e = all_["e2e"]
+            print(f"  {'ours: ' + p:34} {e['translation_accuracy']:5.2f} {e['fluency']:5.2f} {c(e['chrf'])}   "
+                  f"{r['latency_p50']:5.2f}s {r['latency_p95']:5.2f}s")
+            for k, v in all_.items():
+                if k != "e2e":
+                    others.setdefault(k, (v, r))
+        for k, (v, r) in others.items():
+            lk = lat_keys.get(k)
+            lat = (f"{r[lk + '_p50']:5.2f}s {r[lk + '_p95']:5.2f}s"
+                   if lk and r.get(lk + "_p50") == r.get(lk + "_p50") and r.get(lk + "_p50") is not None else f"{'-':>6} {'-':>6}")
+            print(f"  {names.get(k, k):34} {v['translation_accuracy']:5.2f} {v['fluency']:5.2f} {c(v['chrf'])}   {lat}")
+        print()
     if failed:
         print("\nfailed (re-run to retry; finished parts are cached):")
         for log in failed:
