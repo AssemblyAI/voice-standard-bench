@@ -144,6 +144,12 @@ python3 scripts/live_translation/prep_ami.py   # normalized/live_translation/ami
 The TTFT pass only runs the `30s`/`120s` buckets, so it skips this task; the
 standard pass's per-turn latency is reported instead.
 
+### Everything in one go
+
+```bash
+python3 scripts/live_translation/run_all.py   # builds missing datasets, runs every dataset x prompt end to end, then the Go benchmark per prompt
+```
+
 ### End to end through the streaming API
 
 `scripts/live_translation/e2e.py` streams the same audio through the

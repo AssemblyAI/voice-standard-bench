@@ -57,7 +57,7 @@ def fetch(url, dest):
         return dest
     dest.parent.mkdir(parents=True, exist_ok=True)
     tmp = dest.with_suffix(dest.suffix + ".part")
-    print(f"  downloading {url.split('/data/')[1]}")
+    print(f"  downloading {url.split('/data/')[-1] if '/data/' in url else url.rsplit('/', 1)[-1]}")
     with urllib.request.urlopen(url, timeout=600) as r, open(tmp, "wb") as f:
         while chunk := r.read(1 << 20):
             f.write(chunk)
