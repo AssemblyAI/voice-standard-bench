@@ -111,6 +111,16 @@ var frameworkTaskConstructors = map[string]func(*Gateway, RunConfig) (frameworkR
 
 		return NewRunner[DictationRecord](task, cfg), nil
 	},
+	prompts.LiveTranslation: func(gw *Gateway, cfg RunConfig) (frameworkRunner, error) {
+		task, err := NewLiveTranslationTask(gw)
+		if err != nil {
+			return nil, err
+		}
+
+		cfg.Models = withAsyncBaseline(cfg.Models)
+
+		return NewRunner[LiveTranslationRecord](task, cfg), nil
+	},
 	prompts.Summarization: func(gw *Gateway, cfg RunConfig) (frameworkRunner, error) {
 		task, err := NewSummarizationTask(gw)
 		if err != nil {

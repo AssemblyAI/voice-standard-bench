@@ -5,3 +5,6 @@ results_ttft
 errors
 errors_ttft
 src/src
+# live_translation prep downloads
+scripts/live_translation/.cache
+__pycache__/

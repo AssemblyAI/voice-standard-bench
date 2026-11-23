@@ -102,6 +102,77 @@ other task's scores do (see "Per-task quality breakdown" below) —
 `src`'s `normalize` just knows to invert `word_error_rate` (lower is
 better) and scale the rest.
 
+## Live translation
+
+`-tasks live_translation` benchmarks translating a live conversation one
+streaming turn at a time, the way the streaming API's `llm_gateway` parameter
+does. Each record is one turn from `assemblyai-stt-3-7-realtime` plus up to
+three previous turns as context; the candidate translates it into the target
+language (prompt: `prompts/live_translation.go`, variants kept in
+`liveTranslationPromptVariants`). Buckets are language pairs (`en-es`,
+`de-en`, ...), not audio lengths.
+
+Scores: `chrf` against a professional reference translation (mechanical,
+character n-grams, so Japanese works without a tokenizer) plus a
+reference-based judge for `translation_accuracy` and `fluency` (1-5).
+
+Every run adds an `async-su-translation` row: async speech understanding
+translation of the same clips, read from the dataset rather than called, and
+scored the same way. It is the bar a streaming prompt and model have to reach.
+
+Build the dataset first (needs `ASSEMBLYAI_API_KEY` and `pip install
+websockets`; about 1 GB of FLEURS audio, then about 3 minutes of real-time
+streaming):
+
+```bash
+python3 scripts/live_translation/prep.py                      # normalized/live_translation/fleurs.jsonl
+python3 scripts/live_translation/prep.py --mode max_accuracy  # optional: its own buckets, e.g. en-es/max_accuracy
+cd src && go run . -tasks live_translation -models gemini-3.1-flash-lite -max-samples-per-bucket 0
+```
+
+FLEURS is read speech, one sentence per clip, with a pause between clips. For
+conversational audio, `prep_ami.py` builds the same records from AMI meeting
+recordings (CC BY 4.0: several people, overlapping speech, fillers). AMI has no
+translations, so these records carry no reference: `chrf` is left out and the
+judge scores each turn against the human transcript of what was said
+(`LiveTranslationTranscriptJudge`). Their buckets end in `/ami` (`en-es/ami`).
+
+```bash
+pip install pyarrow && python3 scripts/live_translation/prep_ami.py   # normalized/live_translation/ami.jsonl: 4 meetings x 8 minutes, en -> es/fr/de/pt/ja
+```
+
+The TTFT pass only runs the `30s`/`120s` buckets, so it skips this task; the
+standard pass's per-turn latency is reported instead.
+
+### Everything in one go
+
+```bash
+python3 scripts/live_translation/run_all.py   # builds missing datasets, runs every dataset x prompt end to end, then the Go benchmark per prompt
+```
+
+### End to end through the streaming API
+
+`scripts/live_translation/e2e.py` streams the same audio through the
+streaming API with `llm_gateway` set, at real-time speed, so the translations
+come from the real per-turn path rather than a replay. It scores whole streams
+against async speech understanding translation of the same audio.
+
+```bash
+python3 scripts/live_translation/e2e.py                          # FLEURS, scored against references
+python3 scripts/live_translation/e2e.py --dataset ami            # AMI meetings, judged against the human transcript
+python3 scripts/live_translation/e2e.py --elevenlabs             # also ElevenLabs on the same audio (ELEVENLABS_API_KEY)
+```
+
+ElevenLabs Scribe doesn't translate, so `--elevenlabs` runs Scribe live with a `transcript_edit`
+instruction asking for the translation: text only, the same shape as streaming + `llm_gateway`.
+`--elevenlabs-api translation` uses their speech-to-speech realtime translation API instead
+(enterprise workspaces only). ElevenLabs picks its own segments, so compare latency loosely.
+`--speechmatics` (with `SPEECHMATICS_API_KEY`) scores Speechmatics real-time translation, final
+translations only (their EU endpoint, enhanced model). `--soniox` (with `SONIOX_API_KEY`) scores Soniox real-time translation (one-way, one target per
+session) on the same audio; `run_all.py` turns it on when the key is set.
+`--elevenlabs-dub` also scores ElevenLabs batch dubbing of each whole stream (its translated
+transcript only), their nearest thing to async translation. It bills dubbing minutes.
+
 ## Time-to-first-token
 
 The standard benchmark's `RunCompletion` calls the gateway synchronously, so

@@ -131,6 +131,9 @@ var dimensionRange = map[string]scale{
 	"punctuation_accuracy":        {0, 100},
 	"capitalization_accuracy":     {0, 100},
 	"formatting_command_accuracy": {0, 100},
+	"chrf":                        {0, 100},
+	"translation_accuracy":        {1, 5},
+	"fluency":                     {1, 5},
 }
 
 // normalize maps a raw judge score to [0, 1], 1 being the best possible
