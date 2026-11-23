@@ -63,8 +63,8 @@ type rawLiveTranslationRecord struct {
 }
 
 // LoadLiveTranslationRecords reads every file matching glob. A line that
-// doesn't parse or lacks a turn, languages or reference is skipped and
-// counted, not fatal, the same convention as LoadDictationRecords. A turn the
+// doesn't parse, lacks its languages, or has neither a reference nor a source
+// truth is skipped and counted, not fatal, the same convention as LoadDictationRecords. A turn the
 // speech model returned empty is kept: dropping it would hide exactly the
 // recognition misses the benchmark should show.
 func LoadLiveTranslationRecords(glob string) (records []LiveTranslationRecord, skipped int, err error) {
@@ -95,8 +95,11 @@ func LoadLiveTranslationRecords(glob string) (records []LiveTranslationRecord, s
 			}
 
 			var raw rawLiveTranslationRecord
+			// A record needs something to be judged against: a reference
+			// translation (FLEURS), or failing that the human transcript of
+			// what was said (AMI meetings, which have no translations).
 			if json.Unmarshal([]byte(line), &raw) != nil || raw.ID == "" || raw.Input.SourceLanguage == "" ||
-				raw.Input.TargetLanguage == "" || raw.Expected.Reference == "" {
+				raw.Input.TargetLanguage == "" || (raw.Expected.Reference == "" && raw.Input.SourceTruth == "") {
 				skipped++
 				continue
 			}

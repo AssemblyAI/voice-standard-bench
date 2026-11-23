@@ -130,8 +130,32 @@ python3 scripts/live_translation/prep.py --mode max_accuracy  # optional: its ow
 cd src && go run . -tasks live_translation -models gemini-3.1-flash-lite -max-samples-per-bucket 0
 ```
 
+FLEURS is read speech, one sentence per clip, with a pause between clips. For
+conversational audio, `prep_ami.py` builds the same records from AMI meeting
+recordings (CC BY 4.0: several people, overlapping speech, fillers). AMI has no
+translations, so these records carry no reference: `chrf` is left out and the
+judge scores each turn against the human transcript of what was said
+(`LiveTranslationTranscriptJudge`). Their buckets end in `/ami` (`en-es/ami`).
+
+```bash
+python3 scripts/live_translation/prep_ami.py   # normalized/live_translation/ami.jsonl: 4 meetings x 8 minutes, en -> es/fr/de/pt/ja
+```
+
 The TTFT pass only runs the `30s`/`120s` buckets, so it skips this task; the
 standard pass's per-turn latency is reported instead.
+
+### End to end through the streaming API
+
+`scripts/live_translation/e2e.py` streams the same audio through the
+streaming API with `llm_gateway` set, at real-time speed, so the translations
+come from the real per-turn path rather than a replay. It scores whole streams
+against async speech understanding translation of the same audio.
+
+```bash
+python3 scripts/live_translation/e2e.py                          # FLEURS, scored against references
+python3 scripts/live_translation/e2e.py --dataset fleurs_hard    # FLEURS with no pauses and another language underneath
+python3 scripts/live_translation/e2e.py --dataset ami            # AMI meetings, judged against the human transcript
+```
 
 ## Time-to-first-token
 

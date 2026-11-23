@@ -278,3 +278,34 @@ func TestOneMessagePromptSendsNoSystemMessage(t *testing.T) {
 	require.Len(t, msgs, 1)
 	assert.Equal(t, "user", msgs[0].(map[string]any)["role"])
 }
+
+func TestLiveTranslationRecordWithoutReferenceIsJudgedAgainstTranscript(t *testing.T) {
+	glob := writeLiveTranslationFixture(t,
+		`{"id":"ami-ES2004a-t001-es","input":{"source_language":"en","target_language":"es","turn":"So the remote should be cheap.","source_truth":"so the uh remote should be cheap","variant":"ami"},"expected":{"reference":""},"baselines":{"async_su_translation":"El mando debe ser barato."}}`,
+	)
+
+	records, skipped, err := LoadLiveTranslationRecords(glob)
+	require.NoError(t, err)
+	assert.Zero(t, skipped)
+	require.Len(t, records, 1)
+	assert.Equal(t, "en-es/ami", records[0].Bucket)
+
+	var judgeInput string
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		judgeInput = string(raw)
+		writeChatCompletion(w, `{"translation_accuracy": 5, "fluency": 5}`, 10, 10)
+	}))
+	defer server.Close()
+
+	task, err := NewLiveTranslationTask(NewGateway(server.URL, "k", 5*time.Second))
+	require.NoError(t, err)
+
+	judged, err := task.RunJudge(context.Background(), ModelInfo{ID: "m"}, records[0], "judge", CompletionResult{Text: "El mando debería ser barato."}, nil)
+	require.NoError(t, err)
+	assert.NotContains(t, judged.Judge, "chrf", "no reference, so no chrF")
+	assert.Equal(t, 5.0, judged.Judge["translation_accuracy"])
+	assert.Contains(t, judgeInput, "WHAT WAS SAID")
+	assert.Contains(t, judgeInput, "There is no reference translation")
+}

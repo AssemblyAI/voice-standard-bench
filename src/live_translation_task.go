@@ -163,22 +163,34 @@ func (t *LiveTranslationTask) RunTTFT(ctx context.Context, model ModelInfo, reco
 	return sample, completionResultFromStream(stream), nil
 }
 
-// RunJudge always scores chrF against the reference, mechanically. When a
-// judge model is set it also asks it for translation_accuracy and fluency;
-// chrF rewards matching the reference's wording, and the judge catches a
+// RunJudge scores chrF against the reference translation when the record has
+// one, mechanically. When a judge model is set it also asks it for
+// translation_accuracy and fluency: against the reference translation, or,
+// for a record with none (a meeting), against the human transcript of what
+// was said. chrF rewards matching the reference's wording; the judge catches a
 // correct translation worded differently and a fluent one that changed the
 // meaning.
 func (t *LiveTranslationTask) RunJudge(ctx context.Context, model ModelInfo, record LiveTranslationRecord, judgeModel string, result CompletionResult, failures *FailureRecorder) (Sample, error) {
 	sample := t.sample(model, record)
-	sample.Judge = map[string]float64{"chrf": ChrF(result.Text, record.Reference)}
+	sample.Judge = map[string]float64{}
+
+	if record.Reference != "" {
+		sample.Judge["chrf"] = ChrF(result.Text, record.Reference)
+	}
 
 	if judgeModel == "" {
 		return sample, nil
 	}
 
+	spec := t.spec
 	material := fmt.Sprintf("TARGET LANGUAGE: %s\n\nSOURCE:\n%s\n\nREFERENCE:\n%s", languageName(record.TargetLanguage), record.Turn, record.Reference)
 
-	scores, err := RunJudge(ctx, t.gateway, judgeModel, t.spec, material, result.Text)
+	if record.Reference == "" {
+		spec.Judge = prompts.LiveTranslationTranscriptJudge
+		material = fmt.Sprintf("TARGET LANGUAGE: %s\n\nSOURCE:\n%s\n\nWHAT WAS SAID:\n%s", languageName(record.TargetLanguage), record.Turn, record.SourceTruth)
+	}
+
+	scores, err := RunJudge(ctx, t.gateway, judgeModel, spec, material, result.Text)
 	if err != nil {
 		log.Printf("model %s task %s record %s: judge failed: %v", model.ID, t.Name(), record.ID, err)
 

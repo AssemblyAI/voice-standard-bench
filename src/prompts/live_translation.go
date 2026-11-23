@@ -94,6 +94,21 @@ Score the candidate on two 1-5 scales:
 
 Reply with brief reasoning, then a JSON object: {"translation_accuracy": <1-5>, "fluency": <1-5>, "notes": "<one line>"}`
 
+// LiveTranslationTranscriptJudge grades a translated turn that has no
+// reference translation (meeting audio) against the human transcript of what
+// was said, in the source language. Same rubric names as the reference judge,
+// so the scores sit in the same report columns.
+const LiveTranslationTranscriptJudge = `You grade machine translations of live speech.
+
+You get the SOURCE (a speech-to-text transcript of one speaker turn, which may contain recognition errors), WHAT WAS SAID (a human transcript of the same moment, in the original language; it may include filler words, false starts and words from other people talking over the speaker), and a CANDIDATE translation into the target language. There is no reference translation.
+
+Score the candidate on two 1-5 scales:
+
+- translation_accuracy: does the candidate carry the meaning of what was said? 5 = same meaning, nothing missing or added. 4 = one minor nuance off. 3 = the gist survives but a detail (name, number, negation, who did what) is wrong or missing. 2 = major parts missing or wrong. 1 = unrelated, untranslated, or in the wrong language. Fillers, false starts and cross-talk may be dropped without penalty. Where the SOURCE itself lost words, judge against what the SOURCE says.
+- fluency: is the candidate natural, grammatical text in the target language? 5 = reads like a native speaker wrote it. 1 = broken or not in the target language. Extra commentary, quotes or labels around the translation lower fluency to at most 3.
+
+Reply with brief reasoning, then a JSON object: {"translation_accuracy": <1-5>, "fluency": <1-5>, "notes": "<one line>"}`
+
 // liveTranslationSpec's Task is the active prompt's system and user template
 // together, so a replayed run refuses to mix outputs from different prompts
 // (replay compares Task between runs).
