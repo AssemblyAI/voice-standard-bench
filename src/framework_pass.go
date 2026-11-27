@@ -96,6 +96,7 @@ const (
 // satisfies this.
 type frameworkRunner interface {
 	Name() string
+	replayRecords() ([]Record, error)
 	RunBenchmark(ctx context.Context) ([]Sample, []Cell, error)
 	RunTTFTBenchmark(ctx context.Context) ([]Sample, []Cell, error)
 }
@@ -253,7 +254,7 @@ func runFrameworkBenchmarkPass(ctx context.Context, cfg frameworkPassConfig) {
 	}
 
 	if replay != nil {
-		if err := replay.checkSelection(models, requestedTasks); err != nil {
+		if err := replay.checkSelection(models, requestedTasks, buckets, cfg.MaxSamplesPerBucket); err != nil {
 			fatal(fmt.Errorf("framework: %w", err))
 		}
 	}

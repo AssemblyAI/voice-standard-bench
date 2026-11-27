@@ -210,29 +210,6 @@ func (s *TaskRunStore) Stashed() int {
 	return n
 }
 
-// hasRunsOf reports whether the store holds any run of task by model at
-// reasoningEffort, for any bucket and record. It goes by the start of the file
-// names (see path) rather than opening them, so it can answer for a whole stash
-// cheaply -- and, the names being lossy, can in principle say yes for a model whose
-// ID sanitizes the same as another's, which is harmless for what it is used for:
-// telling a replay with nothing to reuse from one with something.
-func (s *TaskRunStore) hasRunsOf(task, model, reasoningEffort string) bool {
-	entries, err := os.ReadDir(filepath.Join(s.dir, sanitizeFilename(task)))
-	if err != nil {
-		return false
-	}
-
-	prefix := sanitizeFilename(model + "__" + reasoningEffort + "__")
-
-	for _, entry := range entries {
-		if !entry.IsDir() && isTaskRunFileName(entry.Name()) && strings.HasPrefix(entry.Name(), prefix) {
-			return true
-		}
-	}
-
-	return false
-}
-
 // stashedModels lists the "model (reasoning effort)" pairs the store holds runs
 // of, for telling a person what a stash contains. They are read off the file
 // names, so a model ID appears as its file-name-safe form.

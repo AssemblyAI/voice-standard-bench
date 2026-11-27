@@ -284,7 +284,9 @@ func mustPrompt(t *testing.T, task string) string {
 // its model AND its reasoning effort, so forgetting -reasoning-effort turns every
 // lookup into a miss.
 func TestReplaySource_checkSelection(t *testing.T) {
-	t.Chdir(t.TempDir())
+	writeFrameworkFixtures(t)
+	writeFile(t, filepath.Join(normalizedRoot, "summarization", "aai_transcripts.jsonl"), recordLine("rec-1", "30s", "a call"))
+	writeFile(t, filepath.Join(normalizedRoot, "text_correction", "aai_transcripts.jsonl"), recordLine("rec-1", "30s", "a call"))
 
 	// The earlier run: gpt-6-luna at reasoning effort "none", and a model whose ID
 	// has a "/" in it (a file name says "openai_gpt-4o"), both on summarization.
@@ -306,23 +308,23 @@ func TestReplaySource_checkSelection(t *testing.T) {
 	summarization := []string{prompts.Summarization}
 
 	t.Run("a model and effort the run stashed", func(t *testing.T) {
-		assert.NoError(t, source.checkSelection([]ModelInfo{lunaNone}, summarization))
+		assert.NoError(t, source.checkSelection([]ModelInfo{lunaNone}, summarization, nil, 0))
 	})
 
 	t.Run("a model whose ID has a slash in it", func(t *testing.T) {
-		assert.NoError(t, source.checkSelection([]ModelInfo{gpt4o}, summarization))
+		assert.NoError(t, source.checkSelection([]ModelInfo{gpt4o}, summarization, nil, 0))
 	})
 
 	t.Run("some reuse is enough: a model added to the ones the run had runs live", func(t *testing.T) {
-		assert.NoError(t, source.checkSelection([]ModelInfo{newModel, lunaNone}, summarization))
+		assert.NoError(t, source.checkSelection([]ModelInfo{newModel, lunaNone}, summarization, nil, 0))
 	})
 
 	t.Run("one task it stashed among several", func(t *testing.T) {
-		assert.NoError(t, source.checkSelection([]ModelInfo{lunaNone}, []string{prompts.Dictation, prompts.Summarization}))
+		assert.NoError(t, source.checkSelection([]ModelInfo{lunaNone}, []string{prompts.Dictation, prompts.Summarization}, nil, 0))
 	})
 
 	t.Run("-reasoning-effort forgotten", func(t *testing.T) {
-		err := source.checkSelection([]ModelInfo{lunaDefault}, summarization)
+		err := source.checkSelection([]ModelInfo{lunaDefault}, summarization, nil, 0)
 
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "nothing to reuse")
@@ -332,11 +334,11 @@ func TestReplaySource_checkSelection(t *testing.T) {
 	})
 
 	t.Run("a model the run never had", func(t *testing.T) {
-		assert.Error(t, source.checkSelection([]ModelInfo{newModel}, summarization))
+		assert.Error(t, source.checkSelection([]ModelInfo{newModel}, summarization, nil, 0))
 	})
 
 	t.Run("a task the run never ran", func(t *testing.T) {
-		assert.Error(t, source.checkSelection([]ModelInfo{lunaNone}, []string{prompts.TextCorrection}))
+		assert.Error(t, source.checkSelection([]ModelInfo{lunaNone}, []string{prompts.TextCorrection}, nil, 0))
 	})
 }
 

@@ -172,21 +172,56 @@ func checkReplayPrompts(source *replaySource, requestedTasks []string) error {
 	return nil
 }
 
-// checkSelection refuses a replay that would reuse nothing: none of the models
-// this run is about to call -- at the reasoning effort it will call them at -- has
-// a stashed standard run of any task this run asks for. Every run is stashed under
-// its model AND its reasoning effort, so the likeliest way to get here is a replay
-// given different -models, -tasks or -reasoning-effort than the run it replays
-// (forget -reasoning-effort, and a run made with it is all misses) -- and the
-// result would be the whole benchmark called live, at full price, under a flag
-// that exists to avoid that. So it is refused, with what the run stashed next to
-// what this one asks for. Some reuse is enough: a replay that adds a model to the
-// ones the run had is fine, and runs the new one live.
-func (r *replaySource) checkSelection(models []ModelInfo, requestedTasks []string) error {
-	for _, model := range models {
-		for _, task := range requestedTasks {
-			if r.standard.hasRunsOf(task, model.ID, model.ReasoningEffortLabel()) {
-				return nil
+// checkSelection refuses a replay that would reuse nothing: none of the
+// records this run will actually select — after the -buckets filter and the
+// same deterministic per-bucket sampling both passes apply (see
+// Runner.LoadAndSample) — has a stashed standard run for any model this run
+// calls, at the reasoning effort it will call them at, for any task it runs;
+// and nothing in the TTFT stash's half of the streaming buckets either (see
+// TTFTBuckets: the TTFT pass never measures outside them). It answers over
+// the SELECTED records, not over the stash as a whole, because those are the
+// only lookups the run will ever make: a stash full of 30s outputs replays
+// nothing for a -buckets 120s run, and a stash of record IDs a regenerated
+// dataset no longer carries is all misses — either way the result would be
+// every candidate call made live, at full price, under a flag that exists to
+// avoid that, so it is refused, with what the run stashed next to what this
+// one asks for. Some reuse is enough, in either pass: a replay that adds a
+// model, a bucket, or a record the run didn't have is fine, and runs the new
+// ones live.
+//
+// It samples the datasets itself, through the same task constructors and
+// LoadAndSample the passes use, because it runs before them — before any
+// candidate completion is requested. The gateway has already been called
+// once, for the model discovery that resolves the -models list (see
+// runFrameworkBenchmarkPass); that is all. A nil *Gateway is enough for the
+// task constructors here: they only resolve prompts and dataset paths. The
+// stores it looks things up in are fresh views of the run's stashes rather
+// than the replaySource's own, so these preflight lookups don't count in the
+// Reused tallies the passes report afterwards (see logReplay).
+func (r *replaySource) checkSelection(models []ModelInfo, requestedTasks, buckets []string, maxSamples int) error {
+	tasks, err := frameworkTasks(nil, RunConfig{
+		Models: models, Buckets: buckets, MaxSamplesPerBucket: maxSamples,
+	}, requestedTasks)
+	if err != nil {
+		return err
+	}
+	standard := NewTaskRunStore(filepath.Dir(r.standard.Dir()))
+	ttft := NewTaskRunStore(filepath.Dir(r.ttft.Dir()))
+	for _, task := range tasks {
+		records, err := task.replayRecords()
+		if err != nil {
+			return err
+		}
+		for _, model := range models {
+			for _, record := range records {
+				if _, _, ok, err := standard.Load(model.ID, model.ReasoningEffortLabel(), task.Name(), record.RecordBucket(), record.RecordID()); err == nil && ok {
+					return nil
+				}
+			}
+			for _, record := range filterBucketed(records, TTFTBuckets) {
+				if _, _, ok, err := ttft.Load(model.ID, model.ReasoningEffortLabel(), task.Name(), record.RecordBucket(), record.RecordID()); err == nil && ok {
+					return nil
+				}
 			}
 		}
 	}
@@ -196,8 +231,8 @@ func (r *replaySource) checkSelection(models []ModelInfo, requestedTasks []strin
 		asked = append(asked, model.ID+" ("+model.ReasoningEffortLabel()+")")
 	}
 
-	return fmt.Errorf("replay: nothing to reuse: run %s stashed no standard run of any model this run calls, for any task it runs, so replaying it would call everything live. This run calls %s, for %s; the run stashed %s. Match -models, -tasks and -reasoning-effort to the run you are replaying",
-		r.name, listUpTo(asked, 8), strings.Join(requestedTasks, ", "), listUpTo(r.standard.stashedModels(), 8))
+	return fmt.Errorf("replay: nothing to reuse: run %s stashed no usable standard or ttft run for the selected records, so replaying it would call everything live. This run calls %s, for %s; the run stashed standard %s, ttft %s. Match -models, -tasks, -reasoning-effort, -buckets and sampled record IDs to the run you are replaying",
+		r.name, listUpTo(asked, 8), strings.Join(requestedTasks, ", "), listUpTo(r.standard.stashedModels(), 8), listUpTo(r.ttft.stashedModels(), 8))
 }
 
 // listUpTo joins items with ", ", cutting a long list off after max of them.
