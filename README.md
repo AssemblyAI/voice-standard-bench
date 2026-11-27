@@ -415,6 +415,13 @@ see Zheng et al., 2023, "Judging LLM-as-a-Judge and Benchmarking..."). If you
 pass `-models` explicitly and include the judge model in it, that's respected
 as a deliberate choice, with a warning logged.
 
+That self-grading exclusion exists to stop an LLM judge grading its own
+output, so it applies to the tasks an LLM actually grades. Dictation is the
+exception: it's scored entirely mechanically against its own answer key — the
+judge label never grades anything — so a dictation run whose candidate model
+is also the judge model still produces a real score, and `summarize` keeps
+it rather than dropping it from the summary.
+
 `-judge-model` also takes several models, comma-separated
 (`-judge-model claude-opus-5,gpt-5`). Each candidate is still called once per
 record; its single output is then graded by every judge, each judge call taking
