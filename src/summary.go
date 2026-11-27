@@ -59,6 +59,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/AssemblyAI/voice-standard-bench/src/prompts"
 )
 
 type sourceReport struct {
@@ -576,11 +578,16 @@ type judgedSample struct {
 }
 
 // loadReports reads every report-*.json file in dir. A sample whose model
-// equals its own report's judge is dropped: the benchmark never lets a
-// judge grade itself (see the self-preference-bias note on -judge-model in
-// voicebench.go), so such a sample can only come from a stale or hand-edited
-// file, and keeping it would silently reintroduce exactly the bias that
-// exclusion exists to avoid.
+// equals its own report's judge is dropped for the LLM-graded tasks: the
+// benchmark never lets a judge grade itself (see the self-preference-bias
+// note on -judge-model in voicebench.go), so such a sample can only come
+// from a stale or hand-edited file, and keeping it would silently
+// reintroduce exactly the bias that exclusion exists to avoid. Dictation is
+// the one exception: it is scored mechanically against its own answer key
+// (ScoreDictation), so the configured judge label never grades anything,
+// and a candidate that happens to share it still produced a real, unbiased
+// score — dropping it would make those runs vanish from the summary
+// entirely, report and all.
 func loadReports(dir string) (names []string, samples []judgedSample, err error) {
 	paths, err := filepath.Glob(filepath.Join(dir, "report-*.json"))
 	if err != nil {
@@ -608,7 +615,7 @@ func loadReports(dir string) (names []string, samples []judgedSample, err error)
 		names = append(names, filepath.Base(path))
 
 		for _, s := range report.Samples {
-			if s.Model == judge {
+			if s.Model == judge && s.Task != prompts.Dictation {
 				continue
 			}
 
