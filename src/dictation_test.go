@@ -474,7 +474,7 @@ func TestScoreDictation_missingPossessive(t *testing.T) {
 	candidate := "He said \"hello there\" to the cross-functional team.\n\nJordans update was clear."
 	scores := ScoreDictation(formattingTruth, candidate, allDictationMetrics)
 
-	assert.InDelta(t, 80.0, scores["formatting_command_accuracy"], 1e-9, "only the possessive check now fails")
+	assert.InDelta(t, 60.0, scores["formatting_command_accuracy"], 1e-9, "the substituted word (Jordan's -> Jordans) fails both features it carried: its possessive 's, and the paragraph break, which rides on its paragraph's first word")
 	assert.InDelta(t, 100.0*11.0/12.0, scores["capitalization_accuracy"], 1e-9, "the substituted word (Jordan's -> Jordans) can't have correct capitalization either")
 }
 

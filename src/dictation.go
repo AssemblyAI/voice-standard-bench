@@ -708,7 +708,7 @@ func punctuationAccuracy(ref, hyp []dictationToken, ops []tokenAlign) (float64, 
 		want := filterRunes(ref[op.refIdx].trailing, terminalPunct)
 
 		var got string
-		if op.hypIdx >= 0 {
+		if op.op == opMatch {
 			got = filterRunes(hyp[op.hypIdx].trailing, terminalPunct)
 		}
 
@@ -729,7 +729,12 @@ func punctuationAccuracy(ref, hyp []dictationToken, ops []tokenAlign) (float64, 
 // reproduced (substituted or deleted) automatically fails every formatting
 // feature IT carried, and a spurious feature the model added where truth had
 // none (e.g. an unwanted paragraph break) fails it too, since checkAccumulator
-// only skips a position where BOTH sides are empty.
+// only skips a position where BOTH sides are empty. A paragraph/line break is
+// carried by the first word of the paragraph/line that follows it (see
+// tokenizeText's pendingBreak), so it is graded like any other feature that
+// word carries: a first word the model substituted gets no credit for the
+// break, even when the candidate did start a new paragraph there — the word
+// the break rode on did not come out right.
 func formattingCommandAccuracy(ref, hyp []dictationToken, ops []tokenAlign) (float64, bool) {
 	var acc checkAccumulator
 
@@ -741,7 +746,7 @@ func formattingCommandAccuracy(ref, hyp []dictationToken, ops []tokenAlign) (flo
 		r := ref[op.refIdx]
 
 		var h dictationToken
-		if op.hypIdx >= 0 {
+		if op.op == opMatch {
 			h = hyp[op.hypIdx]
 		}
 
