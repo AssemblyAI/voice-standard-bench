@@ -243,13 +243,17 @@ faithfully, or would reuse nothing:
 - a name that isn't a run under `results/`, or a run that stashed nothing (only a
   run made since outputs were stashed can be replayed, and a mistyped name would
   otherwise run everything live at full price);
-- a run that stashed none of what this run asks for — none of its models, at the
-  reasoning effort it will call them at, for none of its tasks. Every run is
-  stashed under its model *and* reasoning effort, so the usual cause is `-models`,
-  `-tasks` or `-reasoning-effort` not matching the run being replayed: one made
-  with `-reasoning-effort low` is all misses without it. The error lists what the
-  run stashed next to what this one asks for. (Some reuse is enough: a model the
-  run didn't have is added, and runs live.);
+- a run that stashed none of what this run will actually select — none of the
+  records it will run, after `-buckets` and the same per-bucket sampling the run
+  itself uses, for any of its models, at the reasoning effort it will call them
+  at, in either pass. Every run is stashed under its model *and* reasoning
+  effort *and* record, so the usual cause is `-models`, `-tasks`,
+  `-reasoning-effort`, `-buckets`, or a regenerated dataset's record IDs not
+  matching the run being replayed: one made with `-reasoning-effort low` is all
+  misses without it, and so is a stash of 30s records replayed with `-buckets
+  120s`. The error lists what the run stashed next to what this one asks for.
+  (Some reuse is enough: a model, bucket, or record the run didn't have is
+  added, and runs live.);
 - a requested task whose prompt has changed since the run stashed its outputs,
   since replaying them would score the old prompt's outputs as the new one's.
 

@@ -224,6 +224,20 @@ func (r *Runner[R]) LoadAndSample() ([]R, error) {
 	return r.task.SampleDataset(records, r.config.MaxSamplesPerBucket), nil
 }
 
+// replayRecords uses the same filtering and deterministic sampling as both
+// execution passes. The preflight needs only each selected record's identity.
+func (r *Runner[R]) replayRecords() ([]Record, error) {
+	records, err := r.LoadAndSample()
+	if err != nil {
+		return nil, err
+	}
+	selected := make([]Record, len(records))
+	for i, record := range records {
+		selected[i] = record
+	}
+	return selected, nil
+}
+
 // Run executes the standard, judged pass over records: every model against
 // every record, bounded per model by config.Concurrency, with each
 // successful RunRecord call immediately followed by a RunJudge call bounded

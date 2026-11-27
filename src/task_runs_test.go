@@ -616,24 +616,6 @@ func TestTaskRunStore_anyRun(t *testing.T) {
 	assert.Error(t, err, "a stashed run that can't be read is an error, not a silent miss")
 }
 
-// TestTaskRunStore_hasRunsOf: whether a stash holds any run of a task by a model
-// at a reasoning effort -- going by the file names, for a whole stash at once.
-func TestTaskRunStore_hasRunsOf(t *testing.T) {
-	store := NewTaskRunStore(t.TempDir())
-	sample, result := sampleRun()
-	sample.Model = "openai/gpt-4o"
-	sample.ReasoningEffort = "low"
-
-	require.NoError(t, store.Save(sample, result))
-	require.NoError(t, os.WriteFile(filepath.Join(store.Dir(), "summarization", ".tmp-1"), []byte("half"), 0o644))
-
-	assert.True(t, store.hasRunsOf("summarization", "openai/gpt-4o", "low"))
-	assert.False(t, store.hasRunsOf("summarization", "openai/gpt-4o", "high"), "another reasoning effort")
-	assert.False(t, store.hasRunsOf("summarization", "openai/gpt-4", "low"), "a model whose ID merely starts the same")
-	assert.False(t, store.hasRunsOf("text_correction", "openai/gpt-4o", "low"), "another task")
-	assert.False(t, NewTaskRunStore(t.TempDir()).hasRunsOf("summarization", "openai/gpt-4o", "low"), "an empty stash")
-}
-
 // TestTaskRunStore_stashedModels: what the error for a replay with nothing to
 // reuse shows of a stash -- each model and effort once, sorted, across tasks.
 func TestTaskRunStore_stashedModels(t *testing.T) {
